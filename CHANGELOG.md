@@ -13,6 +13,76 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-25 (czwarta tura) — Etap 1 DONE: restrukturyzacja monorepo
+
+### Done
+- **Etap 1 z `docs/PAYLOAD-ROADMAP.md` zakończony.** Projekt przeniesiony
+  z flat layoutu na monorepo z **npm workspaces** zgodnie z architekturą
+  z PAYLOAD-ROADMAP.md.
+
+### Decisions (odpowiedzi na pytania przed Etapem 1)
+- **Workspace manager:** npm workspaces (zero nowych narzędzi, lockfile już
+  był w projekcie).
+- **Nazewnictwo:** `apps/web` + `apps/cms` + `packages/shared` (proste,
+  zgodne z roadmap).
+- **Node.js:** 20.18.0 LTS (`.nvmrc` + `engines.node ">=20.0.0"` w root
+  `package.json`). Tomek aktualnie ma v25.9.0 — kompatybilne, testy
+  przeszły, ale rekomendacja `nvm use` dla spójności.
+- **Bezpieczeństwo:** `git init` + commit baseline przed restrukturyzacją.
+  Dotychczas projekt nie był pod kontrolą wersji — to pierwszy commit.
+- **Test acceptance:** pełen scope (dev + build + sync + 4 szablony).
+
+### Added
+- Root `package.json` z `workspaces: ["apps/*", "packages/*"]` + skróty
+  `npm run dev/build/sync:season/preview` wywołujące `--workspace=web`.
+- Root `.nvmrc` z `20.18.0`.
+- `apps/cms/package.json` — placeholder dla Payload (setup w Etapie 2).
+- `packages/shared/{index.ts,package.json}` — placeholder dla typów
+  generowanych przez `payload generate:types` (Etap 4).
+- `.gitignore` rozszerzony o `payload.db`, `apps/cms/uploads/`, `.next/`,
+  `.env.local`.
+- Sekcja "Struktura monorepo" na początku `CLAUDE.md` wyjaśniająca, że
+  wzmianki o `src/...` w reszcie dokumentu = `apps/web/src/...` (zamiast
+  kilkudziesięciu mechanicznych podmian — zachowuje czytelność historii).
+
+### Changed
+- Wszystkie pliki frontendu przeniesione przez `git mv` (zachowana
+  historia jako rename) z root do `apps/web/`:
+  - `src/`, `public/`, `scripts/`, `astro.config.mjs`,
+    `tailwind.config.mjs`, `tsconfig.json`, `package.json`.
+- `apps/web/package.json` — `name` zmienione z `"club-site"` na `"web"`
+  (do `npm run dev --workspace=web`).
+- `apps/web/package-lock.json` usunięty — npm workspaces zarządza jednym
+  lockfile w root.
+- `docs/PAYLOAD-ROADMAP.md` — Etap 1 oznaczony jako `[x] DONE` z notką
+  o commitach + test results, sekcja "Stan na 2026-04-25" zaktualizowana.
+- `docs/STATE.md` — data ostatniej aktualizacji + nowa sekcja "Postęp
+  implementacji" pod RESOLVED-ami z odznaczeniem Etapu 1.
+
+### Test results
+- `npm install` w root → 380 paczek, 1 lockfile, OK.
+- `npm run dev --workspace=web` → Astro v5.18.1 ready in **504 ms** na
+  `localhost:4321`.
+- Curl wszystkich routes: `/` 200 (427 KB), `/aktualnosci` 200, `/druzyny`
+  200, `/terminarz` 200.
+- 4 szablony renderują (`klasyk`, `magazyn`, `marka`, `stadion`)
+  potwierdzone przez `data-template-only` na home.
+- `npm run sync:season --workspace=web` → 16 drużyn, 240 meczów,
+  WKS 2. miejsce / 50 pkt (dane realne z 90minut.pl).
+- `npm run build --workspace=web` → **40 stron w 1.35s**, output trafia
+  do `apps/web/dist/` (7.1 MB).
+
+### Git history
+- `ce94e46` chore: initial commit przed restrukturyzacją monorepo (baseline).
+- `aa7a9fd` feat(monorepo): restrukturyzacja do apps/web + apps/cms + packages/shared (Etap 1).
+
+### Następna sesja
+- **Etap 2** — `create-payload-app` w `apps/cms/`, adapter SQLite,
+  built-in Users z auth (email + password), first-user signup na
+  `localhost:3000/admin`.
+
+---
+
 ## 2026-04-25 (trzecia tura) — Wybór Payload CMS + monorepo + roadmap 18 etapów
 
 ### Decisions

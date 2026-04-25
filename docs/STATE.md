@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-25 (wybór Payload CMS + monorepo, roadmap 18 etapów gotowy)
+> **Ostatnia aktualizacja:** 2026-04-25 (Etap 1 DONE — monorepo + git init)
 
 ## Produkcja
 
@@ -91,6 +91,14 @@ Implementacja:
 - **Repo (D2):** **Monorepo** — `apps/web` (obecny Astro frontend) +
   `apps/cms` (Payload+Next.js) + `packages/shared` (typy generowane).
 - **Scope (D9):** **Pełen** — wszystkie 12 grup encji edytowalne z panelu.
+
+**Postęp implementacji (PAYLOAD-ROADMAP):**
+- ✅ **Etap 1 (2026-04-25)** — restrukturyzacja monorepo zakończona.
+  Projekt na npm workspaces, `apps/web/` zawiera całe dotychczasowe Astro
+  (dev/build/sync działają tak samo jak wcześniej, tylko z prefiksem
+  `--workspace=web`). Git zinicjalizowany (commit baseline + commit
+  restrukturyzacji). Node 20.18.0 LTS w `.nvmrc`.
+- ⏳ **Etapy 2–18** — nie rozpoczęte. Następny: Etap 2 (Payload setup w `apps/cms/`).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

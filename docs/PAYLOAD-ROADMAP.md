@@ -97,7 +97,12 @@ graph LR
 
 #### Etap 1. Restrukturyzacja monorepo
 
-**Status:** [ ] not started
+**Status:** [x] DONE 2026-04-25 — commit `aa7a9fd` (poprzedzony baseline `ce94e46`).
+Decyzje: npm workspaces, nazewnictwo `apps/web` + `apps/cms` + `packages/shared`,
+Node 20.18.0 LTS (.nvmrc + engines >=20). Bezpieczeństwo: `git init` + commit
+baseline przed restrukturyzacją (rollback przez `git reset --hard ce94e46`).
+Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
+240 meczów), build (40 stron / 1.35 s / 7.1 MB w `apps/web/dist/`).
 
 **Co robimy:**
 - Tworzymy strukturę `apps/web/` i przenosimy do niej obecne: `src/`, `public/`, `scripts/`, `astro.config.mjs`, `tailwind.config.mjs`, `tsconfig.json`, `package.json` (renamed do `apps/web/package.json`).
@@ -469,5 +474,7 @@ Po każdym etapie aktualizujemy:
 - Wpis do [`STATE.md`](STATE.md) w sekcji „Wariant 2 / Panel admina".
 - Wpis do [`CHANGELOG.md`](CHANGELOG.md) z datą sesji.
 
-**Stan na 2026-04-25:** Etapy 1–18 nie rozpoczęte. Plan zatwierdzony, Tomek
-gotowy do startu Etapu 1 w następnej sesji.
+**Stan na 2026-04-25:**
+- ✅ Etap 1 DONE (monorepo + git init).
+- ⏳ Etapy 2–18 nie rozpoczęte.
+- **Następny:** Etap 2 — `create-payload-app` w `apps/cms/`.
