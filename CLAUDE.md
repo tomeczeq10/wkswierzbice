@@ -1,5 +1,47 @@
 # CLAUDE.md — WKS Wierzbice
 
+## # Struktura monorepo (od 2026-04-25, Etap 1 PAYLOAD-ROADMAP)
+
+Projekt jest **monorepo z npm workspaces**:
+
+```
+wks_cms/
+├── apps/
+│   ├── web/                  # Astro 5 frontend (SSG) — patrz reszta tego dokumentu
+│   │   ├── src/              # ← wszystkie wzmianki "src/..." niżej = "apps/web/src/..."
+│   │   ├── public/           # ← wszystkie wzmianki "public/..." niżej = "apps/web/public/..."
+│   │   ├── scripts/          # sync-90minut.mjs, generate-news.mjs, ...
+│   │   ├── astro.config.mjs
+│   │   ├── tailwind.config.mjs
+│   │   ├── tsconfig.json
+│   │   └── package.json      # name: "web"
+│   └── cms/                  # Payload CMS 3 — placeholder, setup w Etapie 2
+│       └── package.json
+├── packages/
+│   └── shared/               # typy generowane przez payload generate:types (Etap 4)
+│       ├── index.ts
+│       └── package.json      # name: "@wks/shared"
+├── docs/
+├── .nvmrc                    # Node 20 LTS (Payload 3 wymaga >=20)
+├── package.json              # root z workspaces
+└── package-lock.json         # pojedynczy lockfile dla całego monorepo
+```
+
+**Konwencja nazewnictwa:** `src/...` w tym dokumencie i w starszej dokumentacji
+oznacza `apps/web/src/...`. Pełen plan implementacji panelu admina:
+[`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md).
+
+**Komendy z root** (skróty przez workspaces):
+- `npm run dev` → `npm run dev --workspace=web`
+- `npm run build` → `npm run build --workspace=web` (uruchamia `prebuild` = `sync:season`)
+- `npm run sync:season` → `npm run sync:season --workspace=web`
+
+**Bezpośrednio w workspace:**
+- `npm run dev --workspace=web`
+- `npm install --workspace=web <pkg>` (instalacja zależności tylko dla web)
+
+---
+
 ## # Zanim zaczniesz pracę
 
 Ten plik to **stała referencja architektoniczna** (stos, konwencje, komponenty).

@@ -1,0 +1,9 @@
+{
+  "name": "@wks/shared",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Typy TS współdzielone między apps/web i apps/cms (generowane przez payload generate:types w Etapie 4)",
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts"
+}

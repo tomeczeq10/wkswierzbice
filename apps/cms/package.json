@@ -1,0 +1,9 @@
+{
+  "name": "cms",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WKS Wierzbice — backend Payload CMS 3 (w przygotowaniu, Etap 2 PAYLOAD-ROADMAP)",
+  "scripts": {
+    "placeholder": "echo 'cms workspace placeholder — setup w Etapie 2'"
+  }
+}
