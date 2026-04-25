@@ -1,0 +1,85 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import { SPONSORS, CONTACT } from "@/config/site";
+
+const tiers = [
+  { id: "strategiczny", label: "Sponsor strategiczny" },
+  { id: "glowny", label: "Sponsorzy główni" },
+  { id: "wspierajacy", label: "Partnerzy wspierający" },
+] as const;
+
+const grouped = tiers.map((tier) => ({
+  ...tier,
+  items: SPONSORS.filter((s) => s.tier === tier.id),
+}));
+---
+
+<BaseLayout
+  title="Sponsorzy"
+  description="Firmy i partnerzy wspierający działalność klubu WKS Wierzbice."
+>
+  <PageHeader
+    kicker="Partnerzy"
+    title="Sponsorzy i partnerzy klubu"
+    description="Bez Waszego wsparcia klub nie mógłby się tak dynamicznie rozwijać. Dziękujemy!"
+  />
+
+  <section class="section space-y-16">
+    {
+      grouped.map(({ id, label, items }) =>
+        items.length === 0 ? null : (
+          <div class="container mx-auto">
+            <h2 class="section-title text-center mb-8">{label}</h2>
+            <div
+              class:list={[
+                "grid gap-6",
+                id === "strategiczny"
+                  ? "grid-cols-1 max-w-md mx-auto"
+                  : id === "glowny"
+                    ? "grid-cols-2 sm:grid-cols-3"
+                    : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
+              ]}
+            >
+              {items.map((s) => (
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener"
+                  title={s.name}
+                  class:list={[
+                    "group flex items-center justify-center bg-white rounded-lg border border-slate-200 p-6 hover:border-brand-primary transition-colors",
+                    id === "strategiczny" ? "h-44" : id === "glowny" ? "h-32" : "h-24",
+                  ]}
+                >
+                  <img
+                    src={s.logo}
+                    alt={s.name}
+                    loading="lazy"
+                    class="max-h-full max-w-full object-contain grayscale group-hover:grayscale-0 transition duration-300"
+                  />
+                </a>
+              ))}
+            </div>
+          </div>
+        ),
+      )
+    }
+  </section>
+
+  <section class="bg-brand-ink text-white py-16">
+    <div class="container mx-auto text-center max-w-2xl">
+      <span class="section-kicker !text-brand-secondary">Zostań partnerem</span>
+      <h2 class="section-title">Chcesz wesprzeć nasz klub?</h2>
+      <p class="mt-4 text-slate-300">
+        Oferujemy elastyczne pakiety sponsorskie – od wsparcia drużyn młodzieżowych,
+        przez reklamę na koszulkach meczowych, aż po patronat nad obiektem. Porozmawiajmy!
+      </p>
+      <div class="mt-8">
+        <a href={`mailto:${CONTACT.email}?subject=Pakiet%20sponsorski`} class="btn-secondary">
+          Napisz do nas
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

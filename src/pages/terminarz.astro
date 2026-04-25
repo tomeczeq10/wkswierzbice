@@ -1,0 +1,376 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import { SITE, STATS } from "@/config/site";
+import season from "@/data/season.json";
+
+type SeasonMatch = (typeof season)["rounds"][number]["matches"][number];
+type WksMatch = (typeof season)["wks"]["played"][number];
+
+const CLUB = "WKS Wierzbice";
+const isWks = (name: string) => name?.trim() === CLUB;
+
+const PL_MONTHS_SHORT = [
+  "sty", "lut", "mar", "kwi", "maj", "cze",
+  "lip", "sie", "wrz", "paź", "lis", "gru",
+];
+const PL_WEEKDAYS = ["niedz.", "pon.", "wt.", "śr.", "czw.", "pt.", "sob."];
+
+const formatMatchDate = (dateStr: string | null, time: string | null, fallback: string | null) => {
+  if (!dateStr) return fallback || "Termin do ustalenia";
+  const d = new Date(`${dateStr}T${time || "12:00"}:00+02:00`);
+  if (Number.isNaN(d.getTime())) return fallback || dateStr;
+  const weekday = PL_WEEKDAYS[d.getDay()];
+  const day = d.getDate();
+  const month = PL_MONTHS_SHORT[d.getMonth()];
+  return time
+    ? `${weekday} ${day} ${month}, ${time}`
+    : `${weekday} ${day} ${month}`;
+};
+
+const formatFetchedAt = (iso: string | null) => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const wksUpcoming = season.wks.upcoming.slice(0, 6);
+const wksPlayed = [...season.wks.played].reverse();
+const nextMatch = wksUpcoming[0] ?? null;
+const lastMatch = wksPlayed[0] ?? null;
+
+const standings = season.standings;
+const wksStandingPosition =
+  standings.find((s) => isWks(s.team))?.position ?? null;
+
+const wksAllMatches: SeasonMatch[] = [];
+for (const round of season.rounds) {
+  for (const match of round.matches) {
+    if (match.involvesWks) wksAllMatches.push(match);
+  }
+}
+wksAllMatches.sort((a, b) => {
+  if (a.date && b.date) return a.date.localeCompare(b.date);
+  if (a.date) return -1;
+  if (b.date) return 1;
+  return a.round - b.round;
+});
+
+const fetchedAtLabel = formatFetchedAt(season.fetchedAt);
+
+const outcomeClass = (outcome: string | undefined) => {
+  if (outcome === "win") return "text-emerald-700 bg-emerald-50 border-emerald-200";
+  if (outcome === "loss") return "text-rose-700 bg-rose-50 border-rose-200";
+  if (outcome === "draw") return "text-amber-700 bg-amber-50 border-amber-200";
+  return "text-slate-600 bg-slate-50 border-slate-200";
+};
+
+const outcomeLabel = (outcome: string | undefined) => {
+  if (outcome === "win") return "Z";
+  if (outcome === "loss") return "P";
+  if (outcome === "draw") return "R";
+  return "–";
+};
+---
+
+<BaseLayout
+  title="Terminarz i wyniki"
+  description={`Terminarz meczów, wyniki i aktualna tabela – ${SITE.name}.`}
+>
+  <PageHeader
+    kicker="Terminarz"
+    title="Mecze, wyniki i tabela"
+    description={`Wszystkie mecze WKS-u Wierzbice w sezonie 2025/2026 oraz pełna tabela klasy okręgowej Wrocław. Dane pobierane automatycznie z serwisu 90minut.pl.`}
+  />
+
+  <!-- Najbliższy mecz + ostatni wynik -->
+  {(nextMatch || lastMatch) && (
+    <section class="section">
+      <div class="container mx-auto grid md:grid-cols-2 gap-6">
+        {lastMatch && (
+          <div class="card p-8">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display">
+              Ostatni mecz · {lastMatch.round}. kolejka
+            </div>
+            <div class="mt-2 text-sm text-slate-500">
+              {formatMatchDate(lastMatch.date, lastMatch.time, lastMatch.dateRaw)}
+            </div>
+            <div class="mt-6 flex items-center justify-between gap-4">
+              <div class="flex-1 min-w-0">
+                <div class="text-xs text-slate-500 uppercase tracking-wider">
+                  {lastMatch.venue === "home" ? "Dom" : "Wyjazd"}
+                </div>
+                <div class="font-display text-2xl mt-1 leading-tight">
+                  WKS Wierzbice
+                  <span class="block text-base font-sans text-slate-500 mt-1">
+                    vs. {lastMatch.opponent}
+                  </span>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-display text-5xl text-brand-primary leading-none">
+                  {lastMatch.result?.scoreLabel}
+                </div>
+                <div
+                  class:list={[
+                    "mt-2 inline-block px-2 py-0.5 rounded border text-xs uppercase tracking-widest font-display",
+                    outcomeClass(lastMatch.result?.outcome),
+                  ]}
+                >
+                  {lastMatch.result?.outcome === "win"
+                    ? "Zwycięstwo"
+                    : lastMatch.result?.outcome === "loss"
+                      ? "Porażka"
+                      : "Remis"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {nextMatch && (
+          <div class="card p-8 ring-1 ring-brand-primary/20">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display">
+              Najbliższy mecz · {nextMatch.round}. kolejka
+            </div>
+            <div class="mt-2 text-sm text-slate-500">
+              {formatMatchDate(nextMatch.date, nextMatch.time, nextMatch.dateRaw)}
+            </div>
+            <div class="mt-6">
+              <div class="text-xs text-slate-500 uppercase tracking-wider">
+                {nextMatch.venue === "home" ? "Dom" : "Wyjazd"}
+              </div>
+              <div class="font-display text-2xl mt-1 leading-tight">
+                WKS Wierzbice
+                <span class="block text-base font-sans text-slate-500 mt-1">
+                  vs. {nextMatch.opponent}
+                </span>
+              </div>
+            </div>
+            {nextMatch.venue === "home" && (
+              <a href="/kontakt" class="btn-outline mt-6 inline-flex text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white">
+                Dojazd na stadion
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </section>
+  )}
+
+  <!-- Pełny terminarz WKS -->
+  <section class="section bg-slate-50">
+    <div class="container mx-auto max-w-4xl">
+      <div class="text-center mb-10">
+        <span class="section-kicker">Terminarz drużyny</span>
+        <h2 class="section-title">Wszystkie mecze WKS-u w sezonie</h2>
+        <p class="mt-3 text-slate-600 text-sm">
+          Runda jesienna i wiosenna 2025/2026 – pełny komplet spotkań pierwszej drużyny.
+        </p>
+      </div>
+      <div class="card p-0 overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-brand-primary text-white font-display uppercase text-xs">
+              <tr>
+                <th class="text-left px-3 py-3 w-14">Kol.</th>
+                <th class="text-left px-3 py-3">Data</th>
+                <th class="text-left px-3 py-3">Gospodarz</th>
+                <th class="text-center px-3 py-3">Wynik</th>
+                <th class="text-left px-3 py-3">Gość</th>
+                <th class="text-center px-3 py-3 w-12">Wyn.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                wksAllMatches.map((m) => {
+                  const wksIsHome = isWks(m.home);
+                  const played = m.played;
+                  let outcome: "win" | "draw" | "loss" | null = null;
+                  if (played && m.homeScore != null && m.awayScore != null) {
+                    const ours = wksIsHome ? m.homeScore : m.awayScore;
+                    const theirs = wksIsHome ? m.awayScore : m.homeScore;
+                    outcome =
+                      ours > theirs ? "win" : ours < theirs ? "loss" : "draw";
+                  }
+                  return (
+                    <tr class="border-b border-slate-100 hover:bg-brand-accent/10 transition-colors">
+                      <td class="px-3 py-3 text-slate-500 font-display">
+                        {m.round}
+                      </td>
+                      <td class="px-3 py-3 text-slate-600 whitespace-nowrap">
+                        {formatMatchDate(m.date, m.time, m.dateRaw)}
+                      </td>
+                      <td
+                        class:list={[
+                          "px-3 py-3",
+                          wksIsHome && "font-semibold text-brand-primary",
+                        ]}
+                      >
+                        {m.home}
+                      </td>
+                      <td class="px-3 py-3 text-center font-display text-base">
+                        {played
+                          ? `${m.homeScore}:${m.awayScore}`
+                          : <span class="text-slate-400">–</span>}
+                      </td>
+                      <td
+                        class:list={[
+                          "px-3 py-3",
+                          !wksIsHome && "font-semibold text-brand-primary",
+                        ]}
+                      >
+                        {m.away}
+                      </td>
+                      <td class="px-3 py-3 text-center">
+                        {played && outcome && (
+                          <span
+                            class:list={[
+                              "inline-block px-2 py-0.5 rounded border text-xs font-display",
+                              outcomeClass(outcome),
+                            ]}
+                          >
+                            {outcomeLabel(outcome)}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p class="mt-4 text-xs text-slate-500 text-center">
+        Z = zwycięstwo, R = remis, P = porażka (z perspektywy WKS Wierzbice).
+      </p>
+    </div>
+  </section>
+
+  <!-- Tabela ligowa -->
+  {standings.length > 0 && (
+    <section class="section">
+      <div class="container mx-auto max-w-4xl">
+        <div class="text-center mb-10">
+          <span class="section-kicker">{season.season}</span>
+          <h2 class="section-title">Aktualna tabela</h2>
+          {wksStandingPosition && (
+            <p class="mt-3 text-slate-600 text-sm">
+              WKS Wierzbice zajmuje obecnie <strong>{wksStandingPosition}. miejsce</strong> w tabeli.
+            </p>
+          )}
+        </div>
+        <div class="card p-0 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead class="bg-brand-primary text-white font-display uppercase text-xs">
+                <tr>
+                  <th class="text-left px-3 py-3 w-10">#</th>
+                  <th class="text-left px-3 py-3">Drużyna</th>
+                  <th class="text-center px-2 py-3">M</th>
+                  <th class="text-center px-2 py-3">Pkt</th>
+                  <th class="text-center px-2 py-3 hidden sm:table-cell">Z</th>
+                  <th class="text-center px-2 py-3 hidden sm:table-cell">R</th>
+                  <th class="text-center px-2 py-3 hidden sm:table-cell">P</th>
+                  <th class="text-center px-2 py-3">Bramki</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  standings.map((row) => {
+                    const highlight = isWks(row.team);
+                    return (
+                      <tr
+                        class:list={[
+                          "border-b border-slate-100",
+                          highlight
+                            ? "bg-brand-accent/30 font-semibold text-brand-primary"
+                            : "hover:bg-slate-50",
+                        ]}
+                      >
+                        <td class="px-3 py-2 font-display">{row.position}.</td>
+                        <td class="px-3 py-2">{row.team}</td>
+                        <td class="px-2 py-2 text-center">{row.played}</td>
+                        <td class="px-2 py-2 text-center font-display text-base">
+                          {row.points}
+                        </td>
+                        <td class="px-2 py-2 text-center hidden sm:table-cell">
+                          {row.wins}
+                        </td>
+                        <td class="px-2 py-2 text-center hidden sm:table-cell">
+                          {row.draws}
+                        </td>
+                        <td class="px-2 py-2 text-center hidden sm:table-cell">
+                          {row.losses}
+                        </td>
+                        <td class="px-2 py-2 text-center whitespace-nowrap">
+                          {row.goals}
+                        </td>
+                      </tr>
+                    );
+                  })
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- Ostatnie osiągnięcia -->
+  <section class="section bg-slate-50">
+    <div class="container mx-auto max-w-3xl">
+      <h2 class="section-title text-center">Ostatnie osiągnięcia</h2>
+      <div class="mt-10 grid sm:grid-cols-3 gap-6">
+        <div class="card p-5 text-center">
+          <div class="font-display text-4xl text-brand-primary">IV</div>
+          <div class="text-xs uppercase tracking-widest mt-1">liga 2021/22</div>
+          <p class="text-sm mt-2 text-slate-600">Historyczny awans na 4. szczebel rozgrywek.</p>
+        </div>
+        <div class="card p-5 text-center">
+          <div class="font-display text-4xl text-brand-primary">
+            {wksStandingPosition ? `${wksStandingPosition}.` : "2."}
+          </div>
+          <div class="text-xs uppercase tracking-widest mt-1">miejsce wiosną 2026</div>
+          <p class="text-sm mt-2 text-slate-600">Walka o powrót do IV ligi dolnośląskiej.</p>
+        </div>
+        <div class="card p-5 text-center">
+          <div class="font-display text-4xl text-brand-primary">43</div>
+          <div class="text-xs uppercase tracking-widest mt-1">goli Alefe Limy 2024/25</div>
+          <p class="text-sm mt-2 text-slate-600">Król strzelców okręgówki po hat-tricku w ostatnim meczu sezonu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Źródło + linki zewnętrzne -->
+  <section class="section">
+    <div class="container mx-auto max-w-3xl text-center">
+      <h3 class="text-xl">Źródło danych</h3>
+      <p class="mt-3 text-slate-600">
+        Tabela i wyniki synchronizowane są automatycznie z serwisu
+        <a href={STATS.ninetyMinutLeague} target="_blank" rel="noopener" class="underline hover:text-brand-primary">
+          90minut.pl
+        </a>
+        {fetchedAtLabel && <> – ostatnia aktualizacja: <strong>{fetchedAtLabel}</strong></>}.
+      </p>
+      <div class="mt-6 flex flex-wrap gap-3 justify-center">
+        <a href={STATS.ninetyMinutMatches} target="_blank" rel="noopener" class="btn-outline text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white">
+          Mecze drużyny
+        </a>
+        <a href={STATS.transfermarkt} target="_blank" rel="noopener" class="btn-outline text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white">
+          Kadra na Transfermarkt
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

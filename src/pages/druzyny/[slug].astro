@@ -1,0 +1,99 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import PlayerGrid from "@/components/PlayerGrid.astro";
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const teams = await getCollection("teams");
+  return teams.map((team) => ({
+    params: { slug: team.slug },
+    props: { team },
+  }));
+};
+
+const { team } = Astro.props;
+const { Content } = await team.render();
+const { name, category, league, coach, assistantCoach, trainingSchedule, photo, roster } = team.data;
+---
+
+<BaseLayout title={name} description={`Drużyna ${name} – ${league ?? category}.`}>
+  <PageHeader
+    kicker={category}
+    title={name}
+    description={league}
+  />
+
+  <section class="section">
+    <div class="container mx-auto grid lg:grid-cols-3 gap-10">
+      <div class="lg:col-span-2 space-y-6">
+        {
+          photo && (
+            <img
+              src={photo}
+              alt={`Drużyna ${name}`}
+              class="w-full rounded-xl shadow-sm"
+            />
+          )
+        }
+        <div class="prose-club">
+          <Content />
+        </div>
+
+        {roster.length > 0 && (
+          <div class="mt-10">
+            <div class="flex items-end justify-between gap-4 mb-8">
+              <div>
+                <span class="section-kicker">Zawodnicy</span>
+                <h2 class="section-title">Kadra</h2>
+              </div>
+              <div class="text-right">
+                <div class="font-display text-4xl text-brand-primary leading-none">{roster.length}</div>
+                <div class="text-[11px] uppercase tracking-widest text-slate-500 mt-1">piłkarzy</div>
+              </div>
+            </div>
+            <PlayerGrid roster={roster} />
+          </div>
+        )}
+      </div>
+
+      <aside class="space-y-6">
+        <div class="card p-6">
+          <h3 class="text-lg">Informacje</h3>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div>
+              <dt class="text-xs uppercase tracking-widest text-slate-500">Trener</dt>
+              <dd class="mt-1 font-medium">{coach}</dd>
+            </div>
+            {
+              assistantCoach && (
+                <div>
+                  <dt class="text-xs uppercase tracking-widest text-slate-500">Asystent</dt>
+                  <dd class="mt-1 font-medium">{assistantCoach}</dd>
+                </div>
+              )
+            }
+            {
+              league && (
+                <div>
+                  <dt class="text-xs uppercase tracking-widest text-slate-500">Liga</dt>
+                  <dd class="mt-1 font-medium">{league}</dd>
+                </div>
+              )
+            }
+            {
+              trainingSchedule && (
+                <div>
+                  <dt class="text-xs uppercase tracking-widest text-slate-500">Treningi</dt>
+                  <dd class="mt-1 font-medium">{trainingSchedule}</dd>
+                </div>
+              )
+            }
+          </dl>
+        </div>
+        <a href="/nabory" class="btn-primary w-full justify-center">Zapisz się do drużyny</a>
+      </aside>
+    </div>
+  </section>
+</BaseLayout>

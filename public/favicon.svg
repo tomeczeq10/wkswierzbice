@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <path d="M32 2 L58 14 L58 36 C58 50 47 60 32 62 C17 60 6 50 6 36 L6 14 Z"
+        fill="#166534" stroke="#0c4121" stroke-width="2"/>
+  <path d="M6 34 L58 34" stroke="#ffffff" stroke-width="3"/>
+  <path d="M6 42 L58 42" stroke="#dc2626" stroke-width="3"/>
+  <text x="32" y="28" text-anchor="middle"
+        font-family="Impact, Arial, sans-serif" font-size="16" fill="#ffffff">WKS</text>
+</svg>

@@ -1,0 +1,444 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource/barlow-condensed/400.css";
+@import "@fontsource/barlow-condensed/600.css";
+@import "@fontsource/barlow-condensed/700.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   Barwy WKS Wierzbice - zielono-bialo-czerwone.
+   Format: trzy liczby 0-255 oddzielone spacjami (wymagane przez Tailwinda
+   do obslugi alpha-value, np. bg-brand-primary/80).
+   ========================================================================== */
+:root {
+  --club-primary: 22 101 52;       /* zielony klubowy (green-800) */
+  --club-primary-dark: 12 65 33;   /* ciemniejsza zielen do hover */
+  --club-secondary: 220 38 38;     /* czerwony (red-600) - drugi klubowy kolor */
+  --club-accent: 254 249 195;      /* kremowy akcent (yellow-100) do drobnych podswietlen */
+  --club-ink: 15 42 28;            /* ciemny tekst z nuta zieleni */
+  --club-paper: 255 255 255;       /* biale tlo */
+  --club-muted: 100 116 139;       /* tekst pomocniczy */
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-brand-paper text-brand-ink font-sans antialiased;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display tracking-tight uppercase;
+  }
+
+  h1 { @apply text-4xl sm:text-5xl lg:text-6xl leading-tight; }
+  h2 { @apply text-3xl sm:text-4xl leading-tight; }
+  h3 { @apply text-2xl sm:text-3xl leading-snug; }
+  h4 { @apply text-xl leading-snug; }
+
+  a {
+    @apply transition-colors;
+  }
+
+  ::selection {
+    @apply bg-brand-primary text-white;
+  }
+}
+
+@layer components {
+  .container-px { @apply px-4 sm:px-6 lg:px-8; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md px-5 py-3
+           font-display uppercase tracking-wide text-sm
+           transition-all duration-200 focus:outline-none focus-visible:ring-2
+           focus-visible:ring-brand-primary focus-visible:ring-offset-2;
+  }
+  .btn-primary {
+    @apply btn bg-brand-primary text-white hover:bg-brand-primary-dark;
+  }
+  .btn-secondary {
+    @apply btn bg-brand-secondary text-white hover:brightness-110;
+  }
+  .btn-outline {
+    @apply btn border-2 border-current bg-transparent hover:bg-white/10;
+  }
+
+  .section { @apply py-16 sm:py-20 lg:py-24; }
+  .section-title {
+    @apply text-3xl sm:text-4xl font-display uppercase tracking-tight mb-2;
+  }
+  .section-kicker {
+    @apply inline-block text-sm font-display uppercase tracking-[0.25em]
+           text-brand-primary mb-3;
+  }
+
+  .card {
+    @apply bg-white rounded-lg overflow-hidden border border-slate-200
+           shadow-sm hover:shadow-md transition-shadow;
+  }
+
+  .prose-club {
+    @apply prose prose-slate max-w-none
+           prose-headings:font-display prose-headings:uppercase prose-headings:tracking-tight
+           prose-a:text-brand-primary hover:prose-a:text-brand-primary-dark
+           prose-img:rounded-lg;
+  }
+
+  /* Skośny separator — biały klinek na dole sekcji ciemnej */
+  .section-angle-bottom {
+    position: relative;
+    padding-bottom: 5rem;
+  }
+  .section-angle-bottom::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: white;
+    clip-path: polygon(0 100%, 100% 0%, 100% 100%);
+  }
+
+  /* Animacja count-up — ukryj do momentu wejścia w widok */
+  .stat-number {
+    @apply font-display text-4xl md:text-5xl text-brand-primary transition-all duration-700;
+  }
+  .stat-number.counting {
+    @apply text-brand-secondary;
+  }
+}
+
+/* ==========================================================================
+   System szablonów (template'ów) — przełączanie wyglądu z `[data-template]`
+   na <html>. Cały blok można usunąć razem z folderem `src/templates/`.
+   ========================================================================== */
+
+/* ----- Globalne keyframes używane przez różne template'y ----- */
+@keyframes marka-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@keyframes marka-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(1.4); }
+}
+@keyframes marka-fadeup {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes marka-orb-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(60px, 40px) scale(1.1); }
+}
+@keyframes marka-orb-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(-40px, -60px) scale(1.15); }
+}
+@keyframes stadion-lightbar {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+
+.marka-ticker-track { animation: marka-marquee 40s linear infinite; }
+.marka-pulse        { animation: marka-pulse 1.5s ease-in-out infinite; }
+.marka-fadeup       { animation: marka-fadeup .9s cubic-bezier(.2,.8,.2,1) both; }
+.marka-orbA         { animation: marka-orb-a 14s ease-in-out infinite; }
+.marka-orbB         { animation: marka-orb-b 16s ease-in-out infinite; }
+.stadion-lightbar   { animation: stadion-lightbar 3s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .marka-ticker-track,
+  .marka-pulse,
+  .marka-fadeup,
+  .marka-orbA,
+  .marka-orbB,
+  .stadion-lightbar { animation: none !important; }
+}
+
+
+/* Ukrywanie wariantów strony głównej zależnie od aktywnego template'u. */
+html[data-template="klasyk"] [data-template-only="marka"],
+html[data-template="klasyk"] [data-template-only="magazyn"],
+html[data-template="klasyk"] [data-template-only="stadion"],
+html[data-template="marka"] [data-template-only="klasyk"],
+html[data-template="marka"] [data-template-only="magazyn"],
+html[data-template="marka"] [data-template-only="stadion"],
+html[data-template="magazyn"] [data-template-only="klasyk"],
+html[data-template="magazyn"] [data-template-only="marka"],
+html[data-template="magazyn"] [data-template-only="stadion"],
+html[data-template="stadion"] [data-template-only="klasyk"],
+html[data-template="stadion"] [data-template-only="marka"],
+html[data-template="stadion"] [data-template-only="magazyn"] {
+  display: none !important;
+}
+
+/* ----- Subtelne różnice na PODSTRONACH (kadra, sponsorzy, o klubie itp.) ----- */
+
+/* Template MARKA — bardziej brandowy, bardziej kontrastowy. */
+
+/* PageHeader (czarny pas u góry podstron) → gradient z zielenią klubową. */
+html[data-template="marka"] section.bg-brand-ink {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--club-ink)) 0%,
+    rgb(var(--club-primary-dark)) 60%,
+    rgb(var(--club-ink)) 100%
+  );
+  position: relative;
+}
+html[data-template="marka"] section.bg-brand-ink::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 80% 50%,
+    rgba(220, 38, 38, 0.15),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+html[data-template="marka"] section.bg-brand-ink > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Mocniejszy "lift" kart na hover. */
+html[data-template="marka"] .card {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+html[data-template="marka"] .card:hover {
+  transform: translateY(-3px);
+  border-color: rgb(var(--club-primary) / 0.3);
+  box-shadow:
+    0 10px 25px -8px rgb(var(--club-primary) / 0.18),
+    0 4px 10px -4px rgb(0 0 0 / 0.05);
+}
+
+/* Akcent kickerów — czerwony zamiast zielonego. */
+html[data-template="marka"] .section-kicker {
+  color: rgb(var(--club-secondary));
+}
+
+/* Tytuł sekcji — krótki czerwony pasek pod spodem. */
+html[data-template="marka"] .section-title {
+  position: relative;
+  padding-bottom: 0.6rem;
+}
+html[data-template="marka"] .section-title::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 3rem;
+  height: 3px;
+  background: rgb(var(--club-secondary));
+  border-radius: 2px;
+}
+/* Wycentrowane sekcje — pasek na środku. */
+html[data-template="marka"] .text-center .section-title::after {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ----- Template MAGAZYN (legia.com) — DARK MODE redakcyjny ----- */
+
+/* CAŁA strona w trybie ciemnym — body, main, sekcje. */
+html[data-template="magazyn"] body {
+  background: #020617; /* slate-950 */
+  color: rgb(241 245 249); /* slate-100 */
+}
+html[data-template="magazyn"] main {
+  background: #020617;
+}
+
+/* Większość jasnych teł sekcji → ciemne. */
+html[data-template="magazyn"] .bg-white,
+html[data-template="magazyn"] .bg-slate-50 {
+  background-color: #020617 !important;
+  color: rgb(226 232 240);
+}
+
+/* PageHeader — głęboka czerń z lewym czerwonym akcentem. */
+html[data-template="magazyn"] section.bg-brand-ink {
+  background: #000000;
+  border-left: 8px solid rgb(var(--club-secondary));
+  position: relative;
+}
+
+/* Karty — ciemne tło, jasna ramka. !important żeby przebić nadpis bg-white powyżej. */
+html[data-template="magazyn"] .card {
+  background: #0f172a !important; /* slate-900 */
+  color: rgb(226 232 240);
+  border-color: rgb(30 41 59); /* slate-800 */
+  border-radius: 2px;
+  box-shadow: none;
+  transition: border-color 200ms ease, transform 200ms ease;
+}
+html[data-template="magazyn"] .card:hover {
+  border-color: rgb(var(--club-secondary));
+  box-shadow: none;
+  transform: translateY(-2px);
+}
+html[data-template="magazyn"] .card .text-slate-600,
+html[data-template="magazyn"] .card .text-slate-700,
+html[data-template="magazyn"] .card .text-slate-500 {
+  color: rgb(148 163 184) !important; /* slate-400 */
+}
+html[data-template="magazyn"] .card .text-brand-ink {
+  color: rgb(241 245 249) !important;
+}
+
+/* Tytuły sekcji — większe, redakcyjne, biel. */
+html[data-template="magazyn"] .section-title {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1.0;
+  color: rgb(255 255 255);
+}
+
+/* Kicker — czerwony z poziomym paskiem z lewej. */
+html[data-template="magazyn"] .section-kicker {
+  color: rgb(var(--club-secondary));
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  padding-left: 1.25rem;
+  position: relative;
+}
+html[data-template="magazyn"] .section-kicker::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.8rem;
+  height: 2px;
+  background: rgb(var(--club-secondary));
+}
+
+/* Buttony — kanciaste. */
+html[data-template="magazyn"] .btn,
+html[data-template="magazyn"] .btn-primary,
+html[data-template="magazyn"] .btn-secondary,
+html[data-template="magazyn"] .btn-outline {
+  border-radius: 2px;
+}
+
+/* Tekst body — jasny na ciemnym, serif feel przez italic accents. */
+html[data-template="magazyn"] .magazyn-lead::first-letter,
+html[data-template="magazyn"] .prose-club p:first-of-type::first-letter {
+  font-family: "Barlow Condensed", Impact, sans-serif;
+  font-weight: 700;
+  font-size: 4em;
+  float: left;
+  line-height: 0.85;
+  margin: 0.05em 0.12em 0 0;
+  color: rgb(var(--club-secondary));
+}
+
+/* Prose / markdown content — jasny. */
+html[data-template="magazyn"] .prose-club {
+  --tw-prose-body: rgb(203 213 225);
+  --tw-prose-headings: rgb(255 255 255);
+  --tw-prose-bold: rgb(255 255 255);
+  --tw-prose-links: rgb(var(--club-secondary));
+}
+
+/* Footer — głęboka czerń. */
+html[data-template="magazyn"] footer {
+  background: #000000 !important;
+  border-top: 1px solid rgb(30 41 59);
+}
+
+/* ----- Template STADION (lech + wisła) — minimal, jasny, dane na froncie ----- */
+
+/* PageHeader — biały zamiast czarnego, z grubym czerwonym paskiem z lewej. */
+html[data-template="stadion"] section.bg-brand-ink {
+  background: #ffffff;
+  color: rgb(var(--club-ink));
+  border-bottom: 1px solid rgb(226 232 240);
+  position: relative;
+}
+html[data-template="stadion"] section.bg-brand-ink::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: rgb(var(--club-secondary));
+}
+html[data-template="stadion"] section.bg-brand-ink h1,
+html[data-template="stadion"] section.bg-brand-ink h2,
+html[data-template="stadion"] section.bg-brand-ink h3 {
+  color: rgb(var(--club-ink));
+}
+html[data-template="stadion"] section.bg-brand-ink .section-kicker {
+  color: rgb(var(--club-primary)) !important;
+}
+html[data-template="stadion"] section.bg-brand-ink p,
+html[data-template="stadion"] section.bg-brand-ink .text-slate-300 {
+  color: rgb(71 85 105);
+}
+
+/* Karty — minimal: tylko border, bez cienia, ostre rogi. */
+html[data-template="stadion"] .card {
+  border-radius: 0;
+  box-shadow: none;
+  border-color: rgb(226 232 240);
+  transition: border-color 200ms ease;
+}
+html[data-template="stadion"] .card:hover {
+  border-color: rgb(var(--club-primary));
+  box-shadow: none;
+}
+
+/* Buttony — ostre rogi, mniej kontrastu. */
+html[data-template="stadion"] .btn,
+html[data-template="stadion"] .btn-primary,
+html[data-template="stadion"] .btn-secondary,
+html[data-template="stadion"] .btn-outline {
+  border-radius: 0;
+}
+
+/* Sekcje — mniej paddingu (gęstszy układ). */
+html[data-template="stadion"] .section {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+@media (min-width: 1024px) {
+  html[data-template="stadion"] .section {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+}
+
+/* Tytuł sekcji — krótki zielony pasek z lewej zamiast pod spodem. */
+html[data-template="stadion"] .section-title {
+  border-left: 4px solid rgb(var(--club-primary));
+  padding-left: 0.75rem;
+  font-size: clamp(1.5rem, 2.5vw, 2rem);
+}
+html[data-template="stadion"] .text-center .section-title {
+  border-left: 0;
+  padding-left: 0;
+  display: inline-block;
+  border-bottom: 4px solid rgb(var(--club-primary));
+  padding-bottom: 0.4rem;
+}
+
+/* Kicker — bardzo wąski, w typie etykiety. */
+html[data-template="stadion"] .section-kicker {
+  color: rgb(var(--club-primary));
+  font-size: 0.65rem;
+  letter-spacing: 0.35em;
+}
+

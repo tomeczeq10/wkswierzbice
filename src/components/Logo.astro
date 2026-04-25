@@ -1,0 +1,22 @@
+---
+interface Props {
+  variant?: "light" | "dark";
+  class?: string;
+}
+
+const { variant = "dark", class: className = "" } = Astro.props;
+
+---
+
+<img
+  src="/herb-wks.png"
+  alt="Herb WKS Wierzbice"
+  width="128"
+  height="128"
+  loading="eager"
+  decoding="async"
+  class:list={[
+    "object-contain drop-shadow-md",
+    className,
+  ]}
+/>

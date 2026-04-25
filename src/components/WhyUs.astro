@@ -1,0 +1,70 @@
+---
+import { SITE, SOCIAL } from "@/config/site";
+
+const yearsOfTradition = new Date().getFullYear() - SITE.founded;
+
+const items = [
+  {
+    title: `${yearsOfTradition} lat tradycji`,
+    desc: `Klub założony w ${SITE.founded} roku, reaktywowany w ${SITE.reactivated}. Część tożsamości Wierzbic od pokoleń.`,
+    icon: "tradition",
+  },
+  {
+    title: "Pięć grup wiekowych",
+    desc: "Od żaków po seniorów. Trenujemy dzieci i młodzież z całej gminy Kobierzyce — od pierwszych kopnięć po IV ligę.",
+    icon: "ages",
+  },
+  {
+    title: `Społeczność ${SOCIAL.facebookFollowers.toLocaleString("pl-PL")}+ kibiców`,
+    desc: "Aktywny fanpage, regularne mecze u siebie, kibice z Wierzbic i okolic. Klub żyje wspólnie z mieszkańcami.",
+    icon: "community",
+  },
+];
+---
+
+<section class="relative bg-white overflow-hidden">
+  <img
+    src="/herb-wks.png"
+    aria-hidden="true"
+    alt=""
+    class="absolute -right-32 top-1/2 -translate-y-1/2 h-[120%] object-contain opacity-[0.04] pointer-events-none"
+  />
+
+  <div class="relative container mx-auto px-4 py-20 lg:py-28">
+    <div class="max-w-3xl mb-12 lg:mb-16">
+      <span class="text-[11px] uppercase tracking-[0.4em] font-display text-brand-secondary block mb-3">
+        Dlaczego WKS
+      </span>
+      <h2 class="font-display uppercase tracking-tight text-4xl sm:text-5xl lg:text-6xl leading-[0.95]">
+        Klub, który łączy<br/><span class="text-brand-primary">pokolenia</span>.
+      </h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-10 lg:gap-14">
+      {items.map((item, idx) => (
+        <div class="relative">
+          <div class="font-display text-[6rem] leading-none text-slate-100 absolute -top-8 -left-2 select-none pointer-events-none">
+            0{idx + 1}
+          </div>
+          <div class="relative">
+            <div class="inline-flex w-12 h-12 rounded-lg bg-brand-primary text-white items-center justify-center mb-5 shadow-lg shadow-brand-primary/30">
+              {item.icon === "tradition" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6 6 1-4.5 4 1 6-5.5-3-5.5 3 1-6L3 9l6-1 3-6z"/></svg>
+              )}
+              {item.icon === "ages" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M15 21v-1.5a3 3 0 013-3h1a3 3 0 013 3V21"/></svg>
+              )}
+              {item.icon === "community" && (
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 01-4 4H7l-4 4V7a4 4 0 014-4h10a4 4 0 014 4v8z"/></svg>
+              )}
+            </div>
+            <h3 class="font-display uppercase text-2xl tracking-tight text-brand-ink mb-3">
+              {item.title}
+            </h3>
+            <p class="text-base text-slate-600 leading-relaxed">{item.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

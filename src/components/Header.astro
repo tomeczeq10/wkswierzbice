@@ -1,0 +1,92 @@
+---
+import Logo from "./Logo.astro";
+import { SITE, NAV } from "@/config/site";
+
+const pathname = Astro.url.pathname.replace(/\/$/, "") || "/";
+---
+
+<header class="sticky top-0 z-50 bg-brand-ink border-b border-white/10">
+  <div class="container mx-auto flex items-center justify-between gap-6 py-3">
+    <a href="/" class="flex items-center gap-3 group">
+      <Logo class="h-12 w-12 transition-transform group-hover:scale-105" />
+      <div class="leading-tight">
+        <div class="font-display text-xl uppercase tracking-tight text-white">
+          {SITE.shortName}
+        </div>
+        <div class="text-xs text-white/50 hidden sm:block">{SITE.league}</div>
+      </div>
+    </a>
+
+    <nav aria-label="Główna nawigacja" class="hidden lg:flex items-center gap-1">
+      {
+        NAV.map(({ label, href }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <a
+              href={href}
+              class:list={[
+                "relative px-3 py-2 text-sm font-display uppercase tracking-wide rounded-md transition-colors",
+                active
+                  ? "text-white after:absolute after:bottom-0 after:left-3 after:right-3 after:h-0.5 after:bg-brand-secondary after:rounded-full"
+                  : "text-white/70 hover:text-white",
+              ]}
+              aria-current={active ? "page" : undefined}
+            >
+              {label}
+            </a>
+          );
+        })
+      }
+    </nav>
+
+    <a href="/nabory" class="hidden md:inline-flex btn-secondary text-xs px-4 py-2">
+      Zapisz dziecko
+    </a>
+
+    <button
+      type="button"
+      id="menu-toggle"
+      class="lg:hidden p-2 -mr-2 rounded-md text-white hover:bg-white/10"
+      aria-label="Otwórz menu"
+      aria-expanded="false"
+      aria-controls="mobile-menu"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" y1="7" x2="20" y2="7"></line>
+        <line x1="4" y1="12" x2="20" y2="12"></line>
+        <line x1="4" y1="17" x2="20" y2="17"></line>
+      </svg>
+    </button>
+  </div>
+
+  <div id="mobile-menu" class="lg:hidden hidden border-t border-white/10 bg-brand-ink">
+    <nav aria-label="Menu mobilne" class="container mx-auto py-3 flex flex-col">
+      {
+        NAV.map(({ label, href }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
+          return (
+            <a
+              href={href}
+              class:list={[
+                "px-2 py-3 text-base font-display uppercase tracking-wide border-b border-white/10",
+                active ? "text-brand-secondary" : "text-white/80",
+              ]}
+            >
+              {label}
+            </a>
+          );
+        })
+      }
+      <a href="/nabory" class="btn-secondary mt-4">Zapisz dziecko</a>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const btn = document.getElementById("menu-toggle");
+  const menu = document.getElementById("mobile-menu");
+  btn?.addEventListener("click", () => {
+    const open = menu?.classList.toggle("hidden") === false;
+    btn.setAttribute("aria-expanded", String(open));
+  });
+</script>

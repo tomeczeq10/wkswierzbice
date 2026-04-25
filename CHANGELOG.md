@@ -1,0 +1,539 @@
+# CHANGELOG
+
+Chronologiczny log istotnych zmian w projekcie WKS Wierzbice.
+
+Konwencja: nowy wpis po każdej większej sesji (nowa funkcjonalność, import
+treści, zmiana infrastruktury, decyzja architektoniczna, usunięcie zależności).
+Drobne poprawki stylu, literówki, jednorazowe tweaki CSS — pomijamy.
+
+Format wpisów: `## YYYY-MM-DD — krótki tytuł sesji`, potem nagłówki
+`### Added / Changed / Removed / Fixed / Open`.
+
+Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
+
+---
+
+## 2026-04-25 (trzecia tura) — Wybór Payload CMS + monorepo + roadmap 18 etapów
+
+### Decisions
+- **D1 (stack panelu admina)** RESOLVED: **Payload CMS 3** (TypeScript, MIT,
+  oparty na Next.js 15). Wybrany z 3 finalnych kandydatów porównanych w
+  [`docs/STACK-COMPARISON.md`](docs/STACK-COMPARISON.md). Uzasadnienie:
+  najlepszy stosunek czas-implementacji do kontroli dla scope WKS (60–80 h
+  pełen scope), TS end-to-end zgodne z obecnym Astro stack-iem, gotowy panel
+  React + RBAC + upload + REST/GraphQL out-of-the-box.
+- **D2 (struktura repo)** RESOLVED: **monorepo** w obecnym `wks_cms`:
+  `apps/web/` (obecny Astro frontend), `apps/cms/` (Payload+Next.js),
+  `packages/shared/` (typy generowane przez `payload generate:types`).
+  Uzasadnienie: jedno git, czysta separacja, type-safety bez ręcznego
+  kopiowania definicji.
+- **Granularność pracy:** drobne etapy 2–6 h każdy, ~18 etapów łącznie,
+  każdy kończy się działającym lokalnie test-case'em (decyzja Tomka
+  „testujmy małymi krokami").
+
+### Added
+- Nowy dokument [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md) —
+  operacyjny plan implementacji panelu admina:
+  - Mermaid diagram architektury docelowej (apps/web + apps/cms +
+    packages/shared, przepływ danych).
+  - Tabela decyzji RESOLVED (D1, D2, D9) + decyzji do podjęcia per etap
+    (D3 hosting, D4 db, D5 auth, D6 backup, D7 RBAC, D8 galeria, D10 migracja).
+  - **18 etapów w 6 fazach:**
+    - **Faza A (Etapy 1–3, ~10–16 h):** monorepo + Payload setup + News
+      collection.
+    - **Faza B (Etapy 4–5, ~6–10 h):** Astro fetch z CMS REST + migracja
+      24 newsów MD → Payload.
+    - **Faza C (Etapy 6–8, ~10–16 h):** Media collection + upload + sharp,
+      Teams + Players, migracja 5 drużyn.
+    - **Faza D (Etapy 9–12, ~12–20 h):** Gallery + siteConfig Global +
+      Board/Staff/Sponsors + HeroSlides/StaticPages.
+    - **Faza E (Etapy 13–16, ~14–20 h):** refactor sync-90minut na TS w CMS,
+      custom UI button „Odśwież teraz", cron daily, RBAC Wariant A
+      (admin/redaktor/trener).
+    - **Faza F (Etapy 17–18, ~12–20 h):** VPS deploy + migracja
+      SQLite→Postgres + Caddy/HTTPS, backup automatyczny pg_dump→Backblaze B2.
+  - 6 etapów opcjonalnych po MVP (RBAC Wariant B, galeria z albumami,
+    polskie tłumaczenie panelu, branding klubu, audit log, szkolenie redakcji).
+  - Każdy etap ma checkbox `[ ]` do odznaczania, sekcję „Co robimy",
+    konkretny test-case do sprawdzenia, decyzje do podjęcia przed startem.
+  - Mermaid graph kolejności i zależności między etapami.
+
+### Changed
+- [`docs/ADMIN-PANEL.md`](docs/ADMIN-PANEL.md):
+  - **D1 (stack)** zmieniona z „zawężone do 3 kandydatów" → **RESOLVED:
+    Payload CMS 3** + link do roadmap.
+  - **D2 (struktura repo)** zmieniona z otwartej decyzji → **RESOLVED:
+    monorepo** z opisem struktury folderów i uzasadnieniem.
+  - Dodana nowa sekcja **„Plan implementacji"** wskazująca
+    `PAYLOAD-ROADMAP.md` jako główny dokument operacyjny + skrótowy podział
+    18 etapów na 6 faz.
+- [`docs/STATE.md`](docs/STATE.md):
+  - Data ostatniej aktualizacji → 2026-04-25 (wybór Payload + monorepo).
+  - Sekcja „Wariant 2 / Panel admina" — dodane 3 RESOLVED (D1, D2, D9
+    skondensowane), usunięty rozwlekły opis scope (jest w ADMIN-PANEL.md
+    i PAYLOAD-ROADMAP.md), dodana lista decyzji rozstrzyganych per etap
+    z defaultami.
+  - „Otwarte pytania / decyzje" — D1 i D2 zmienione z 🔴 na 🟢 RESOLVED,
+    D7 RBAC zaktualizowany (rozstrzyga się w Etapie 16, default Wariant A).
+  - „Następne kroki / wariant 2" — link do `PAYLOAD-ROADMAP.md` jako
+    operacyjny plan, skrótowy podział na 6 faz zamiast porównania stacków.
+
+### Open (do podjęcia per etap roadmap)
+- **D3 (hosting):** Etap 17 — wstępnie Hetzner CX22 (~5 EUR/mies.).
+- **D4 (baza):** Etap 2 (SQLite dev) → Etap 17 (Postgres 16 prod).
+- **D5 (auth):** Etap 2 — wstępnie Payload built-in email + password.
+- **D6 (backup):** Etap 18 — wstępnie pg_dump cron + Backblaze B2,
+  retention 30 dni.
+- **D7 (RBAC):** Etap 16 — wstępnie Wariant A (3 sztywne role
+  admin/redaktor/trener), Wariant B jako opcjonalny etap 19.
+- **D8 (galeria):** Etap 9 — wstępnie Wariant 1 (płaska lista),
+  albumy jako opcjonalny etap 20.
+- **D10 (migracja MD→DB):** rozproszona na Etapy 5, 8, 10, 11 (skrypty
+  seed używające Payload Local API).
+
+### Następna sesja
+- **Etap 1: restrukturyzacja monorepo.** Przed startem Tomek odpowiada na
+  pytania: workspace manager (npm/pnpm/yarn?), wersja Node.js do
+  ustabilizowania (Payload 3 wymaga 20+).
+
+---
+
+## 2026-04-25 (druga tura) — Scope RESOLVED + zawężenie stacku do 3 kandydatów
+
+### Added
+- Nowy dokument [`docs/STACK-COMPARISON.md`](docs/STACK-COMPARISON.md) —
+  1-pager decyzyjny porównujący 3 finalnych kandydatów stacku panelu admina:
+  - TL;DR + rekomendacja (Payload CMS 3 jako balans czas/kontrola).
+  - Macierz decyzyjna: 14 kryteriów × 3 stacki (time-to-admin, estymata
+    dla pełnego scope, język, panel, RBAC, upload, hooki, hosting,
+    sposób czytania danych z Astro, vendor lock, future-proof).
+  - Per stack: czym jest, przykład kolekcji `news` w kodzie, jak Astro
+    frontend pobiera dane, opis panelu (z linkami do oficjalnych
+    screenshotów/demo), plusy dla WKS, minusy/ryzyka, estymata dla pełnego
+    scope rozbita na komponenty, kiedy wybrać.
+  - Sekcja „Decyzja — jak wybrać" z 5 kierunkowymi pytaniami.
+  - „Co dalej po wyborze" — jak wybór wpływa na D2 (repo), D3 (hosting),
+    D5 (auth), D7 (RBAC), D8 (galeria), D6 (backup).
+
+### Changed
+- **D9 (scope encji) RESOLVED.** Tomek zdecydował: pełen scope, wszystkie
+  encje z OFERTA.md Q5 + dzisiejsza wiadomość edytowalne z panelu, bez
+  fazowania. Konsekwencja: estymaty stacków przeliczone na pełen scope
+  (w STACK-COMPARISON.md).
+- **D1 (stack) — kandydaci zawężeni z 5 do 3:**
+  - Payload CMS 3 (60–80 h pełen scope, rekomendacja Claude'a),
+  - Directus (40–60 h, max-speed),
+  - Astro SSR + custom panel (130–180 h, max-control).
+  - **Pominięci:** Supabase (vendor lock + i tak własny panel),
+    Laravel + Filament (drugi język — PHP — obok obecnego TS).
+- [`docs/ADMIN-PANEL.md`](docs/ADMIN-PANEL.md):
+  - sekcja „Funkcje" przepisana — 11 grup encji jako potwierdzony scope,
+    bez sekcji „do potwierdzenia",
+  - CRUD matrix uzupełniona: `board`, `staff`, `sponsors`, `hero`,
+    `site-config`, `static-pages` jako pełnoprawne wpisy (nie opcjonalne),
+  - D1 przepisane: macierz 3 kandydatów + lista pominiętych z
+    uzasadnieniem + link do STACK-COMPARISON.md,
+  - D9 oznaczone jako RESOLVED z datą decyzji.
+- [`docs/STATE.md`](docs/STATE.md):
+  - sekcja „Wariant 2 / Panel admina" — scope (D9) oznaczony jako RESOLVED,
+  - „Otwarte pytania" pod D1 zaktualizowane: 3 kandydaci zamiast 5,
+    estymaty dla pełnego scope, link do STACK-COMPARISON.md,
+  - roadmap „Jeśli klub wybierze wariant 2" — lista 3 stacków zamiast 5
+    z notką o pominiętych.
+
+### Open
+- **D1 (stack) — Tomek wybiera po przeczytaniu STACK-COMPARISON.md.**
+  Wszystkie inne otwarte decyzje (D2 repo, D3 hosting, D5 auth, D6 backup,
+  D7 RBAC, D8 galeria, D10 migracja) najlepiej rozstrzygnąć po wyborze
+  stacku — rekomendacje per stack różnią się.
+
+### Note
+- Nadal bez zmian w kodzie. Tylko aktualizacja dokumentacji.
+
+---
+
+## 2026-04-25 — Decyzja kierunkowa: dodajemy panel admina (CMS)
+
+### Added
+- Nowy dokument planistyczny [`docs/ADMIN-PANEL.md`](docs/ADMIN-PANEL.md) —
+  główne źródło prawdy dla Wariantu 2 (CMS). Zawiera:
+  - listę funkcji panelu (logowanie, zarządzanie userami + uprawnienia,
+    CRUD aktualności / drużyny+zawodnicy / galeria, „odśwież" 90minut),
+  - tabelę CRUD matrix per encja per rola,
+  - 3 warianty modelu RBAC (sztywne role / role + override / pełny RBAC) —
+    rekomendacja Wariant B,
+  - 2 warianty modelu galerii (płaska lista / albumy) — rekomendacja
+    Wariant 1 z gotowością na migrację,
+  - 10 otwartych decyzji technicznych (D1–D10): stack, repo, hosting,
+    baza, auth, backup, RBAC, model galerii, scope encji, migracja.
+- Sekcja „Wariant 2 / Panel admina" w [`docs/STATE.md`](docs/STATE.md).
+- 3 nowe „Otwarte pytania / decyzje" w STATE.md: stack panelu (D1),
+  struktura repo (D2), model RBAC (D7).
+- Link do `ADMIN-PANEL.md` w roadmapie STATE.md („Jeśli klub wybierze
+  wariant 2") + lista 5 kandydatów stacku z estymatami.
+- Status w [`README.md`](README.md): „Wersja 2 (z panelem admina) — w
+  planowaniu" + sekcja „Roadmapa" rozbudowana.
+
+### Changed
+- Tomek 2026-04-25 wskazał, że uprawnienia mają być **elastyczne**
+  („admin nadaje poszczególne uprawnienia"). To odbiega od 3 sztywnych
+  ról z [`docs/OFERTA.md`](docs/OFERTA.md) Q6 (Admin/Redaktor/Trener).
+  Decyzja o modelu RBAC pozostaje otwarta (D7 w `ADMIN-PANEL.md`).
+- Scope CMS-a w wiadomości Tomka jest węższy niż w OFERTA.md Q5 —
+  brakuje `BOARD`, `STAFF`, `SPONSORS`, `HERO_SLIDES`, `site.ts`,
+  statycznych podstron. Do potwierdzenia w osobnej sesji.
+
+### Open
+- **🔴 D1 — wybór stacku panelu admina.** 5 kandydatów (Payload CMS 3,
+  Astro SSR + custom, Directus, Supabase + mini-panel, Laravel + Filament).
+  Tomek odłożył decyzję — bez niej nie ruszamy kodu.
+- **🔴 D2 — struktura repo.** Same / monorepo / osobne repo.
+  W OFERTA.md Q5 wstępnie „osobny folder" — do potwierdzenia.
+- **🟠 D7 — model RBAC.** Wariant A/B/C, rekomendacja B.
+- **🟡 D3–D6, D8–D10** — hosting, baza, auth, backup, model galerii,
+  scope encji, migracja Markdown→DB. Decydowane po D1.
+- **Ekonomia** z OFERTA.md Q14 (5–10k PLN za 120–200h) wciąż
+  niezbalansowana — wybór Payload/Directus skraca implementację 2–3×
+  i może przybliżyć projekt do realnego budżetu.
+
+### Note
+- Kod nie został zmieniony. Ta sesja to **wyłącznie aktualizacja
+  dokumentacji** — `package.json`, `astro.config.mjs`, `src/` bez ruchu.
+- [`CLAUDE.md`](CLAUDE.md) (architektura strony statycznej) bez zmian —
+  pozostaje aktualny dla obecnego frontendu. CMS dostanie własny
+  `CLAUDE.md` (lub sekcję) po wyborze stacku.
+
+---
+
+## 2026-04-22 — Review szablonów + krytyczny fix CSS
+
+(Wpis dodany 2026-04-20 wg systemu, ale numerowany jako kolejna sesja po
+2026-04-21 dla zachowania chronologii „najnowsze na górze".)
+
+### Fixed
+- **Krytyczny bug ukrywania nieaktywnych templates.** Reguły CSS w
+  `src/styles/global.css` (linie 167–181) ukrywały tylko parę `klasyk ↔ marka`
+  — selektory dla `magazyn`/`stadion` nie istniały. Skutek: na localhoście
+  wszystkie 4 warianty home renderowały się jednocześnie pod sobą, co wyglądało
+  jak całkowicie zepsuty layout (Tomek myślał, że „ruszałem klasyka" — w
+  rzeczywistości widział klasyka z naklejonymi pod nim resztami). Rozszerzono
+  blok do pełnej macierzy 4 × 4 (12 selektorów `display: none !important`).
+  Weryfikacja Browser MCP: `offsetHeight > 0` ma dokładnie 1 element po
+  reload dla każdego ustawienia `localStorage.wks-template`.
+
+### Open
+- Pełny raport z review w nowym pliku [`docs/REVIEW-2026-04-20.md`](docs/REVIEW-2026-04-20.md).
+- Kluczowe TODO przed pokazaniem zarządowi (sesja A, ~1–2h):
+  1. Header (i footer) nie reaguje na dark mode magazynu.
+  2. `/o-klubie` ma losowe nazwiska zarządu/trenerów zamiast realnych
+     (zdjęcia w `public/team/zarzad/` + `public/team/trenerzy/` są realne
+     i czekają nieużywane).
+  3. Stadion: niespójność pozycji 1 vs 2 między LED scoreboard a hero.
+- Reszta (countdown card responsywny w marka, kosmetyka magazyn/stadion,
+  sponsorzy placeholdery, kadra zawodników redesign) — szczegóły w REVIEW.
+
+---
+
+## 2026-04-21 — Propozycje 3 szat (Q1) + struktura prezentacji (Q13)
+
+### Changed
+- `docs/OFERTA.md` Q1 — domknięte wstępnie. Tomek podesłał 4 referencje
+  (Śląsk Wrocław, Lech Poznań, Legia Warszawa, Wisła Kraków). Claude
+  przeanalizował Lech/Legię/Wisłę (Śląsk — WebFetch timeout, do retry).
+  **Decyzja kolorystyczna:** zielony/biały/czerwony (od Śląska) zostaje
+  bez zmian. **Zmieniamy tylko strukturę/layout.**
+- Dodane 3 propozycje szat strukturalnych:
+  - **Szata A — „Klubowa klasyka"** (inspiracja Lech): hero = następny
+    mecz, news grid 3-kolumnowy, kafle drużyn, ok. 8h wdrożenia.
+  - **Szata B — „Magazyn klubowy"** (inspiracja Legia): hero = featured
+    news, news asymetryczny (1+4), drużyny jako pasy, ok. 12h.
+  - **Szata C — „Dumna marka"** (inspiracja Wisła + Lech): hero =
+    slider brandowy, CTA rekrutacyjny w hero, karty portretowe drużyn,
+    ok. 16h.
+- Obserwacja: Wisła jest e-commerce (Shopify-like), nie pasuje dla WKS
+  (brak sklepu); wzięliśmy tylko „duży herb + zwarty nav".
+- `docs/OFERTA.md` Q13 — struktura prezentacji rozpisana (11 slajdów,
+  HTML reveal.js lub PDF, bez animacji). Gotowa do wygenerowania po
+  akceptacji Tomka.
+- `docs/STATE.md` — zaktualizowany status Q1 i Q13. Roadmapa krótkoterminowa
+  rozszerzona o 2 nowe kroki (wybór szaty, retry Śląska, generowanie
+  prezentacji).
+
+### Context
+- Kolory zielony/biały/czerwony są dziedzictwem klubu (WKS = analogia do
+  WKS Śląsk Wrocław) — nie są negocjowalne.
+- Tomek zaakceptował brak animacji w prezentacji → format reveal.js lub
+  PDF w pełni statyczny.
+- Propozycje 3 szat są celowo różne „filozoficznie" (mecz vs. news vs.
+  marka), nie tylko kosmetycznie, żeby klub miał realny wybór na spotkaniu.
+
+---
+
+## 2026-04-21 — Runda 2 decyzji Tomka (Q13–Q16) + flaga ekonomiczna
+
+### Changed
+- `docs/OFERTA.md` — sekcja „Decyzje Tomka" rozszerzona o Q13–Q16:
+  - **Q13 (materiały):** prezentacja multimedialna + live demo + 3 szaty +
+    mockup CMS + PDF porównujący warianty + checklist dla klubu.
+  - **Q14a (cena wariant 1):** 2 000 – 4 000 PLN.
+  - **Q14b (cena wariant 2):** 5 000 – 10 000 PLN. **Flaga 🔴 w OFERTA.md:**
+    to ~50–83 PLN/godz. przy 120–200h pracy — realnie prezent rodzinny,
+    nie zlecenie komercyjne. Tomek musi świadomie zdecydować przed
+    spotkaniem (podnieść widełki / ściąć scope / zaakceptować jako prezent).
+  - **Q15 (deadline):** bez sztywnego deadline'u (relacja rodzinna).
+    Sugestia nieformalnego deadline'u w głowie, nie na papierze.
+  - **Q16 (negocjacje):** raty + symboliczny rabat, bez cięcia scope.
+    Uwaga: przy dolnej granicy Q14b już nie ma z czego ciąć.
+- Sekcja „Jeszcze do domknięcia" usunięta (wszystko zamknięte).
+- Sekcja TODO przepisana: priorytet na (a) decyzję „zlecenie vs. prezent",
+  (b) referencje do Q1, (c) strukturę prezentacji, (d) PDF i checklistę.
+- `docs/STATE.md` — flaga strategii zmieniona z 🟡 na 🟢, dodana osobna
+  flaga 🔴 „Ekonomia wariantu 2". Roadmapa krótkoterminowa przepisana.
+
+### Context
+- Prezentacja multimedialna jako główny materiał na spotkanie — Tomek bierze
+  laptopa, pokazuje live + slajdy z wizją wariantu 2.
+- Ekonomiczna dysproporcja w Q14b wyłapana przez Claude'a i zapisana jako
+  ostrzeżenie zamiast przemilczana. Decyzja po stronie Tomka, bez ciśnienia.
+
+---
+
+## 2026-04-21 — Runda 1 decyzji Tomka w OFERTA.md
+
+### Changed
+- `docs/OFERTA.md` — sekcja „Otwarte pytania" zastąpiona sekcją „Decyzje Tomka
+  (runda 1)". Zamknięte Q1–Q12:
+  - **Q1 (szaty):** decyzja po obejrzeniu linków referencyjnych, które Tomek
+    podeśle; Claude analizuje Browser MCP i proponuje 3 kierunki.
+  - **Q2 (co dostaje klub):** tylko dostęp do hostingu. Bez repo, bez zipa,
+    bez instrukcji. Ryzyko zapisane jako ostrzeżenie.
+  - **Q3 (demo):** klub dostarcza realne dane, Tomek podmienia w cenie.
+  - **Q4 (support wariantu 1):** dożywotnio, bo rodzina. Tomek kasuje tylko
+    za wdrożenie.
+  - **Q5 (encje CMS):** bardzo szeroki scope — news, teams, board, sponsors,
+    gallery, config, pages, matches. Pominięty tylko hero.
+  - **Q6 (role):** 3 role (admin / redaktor / trener z dostępem do swojej
+    drużyny).
+  - **Q7 (90minut):** hybryda — cron + przycisk „odśwież teraz".
+  - **Q8 (uploady):** na dysk. Auto-optymalizacja jako nice-to-have.
+  - **Q9 (backup):** automatyczny cron na zewnętrzny storage (B2/S3).
+  - **Q10 (hosting wariantu 2):** VPS, klub kupuje, Tomek setupuje.
+  - **Q11 (support wariantu 2):** tak samo jak Q4 — rodzinnie.
+  - **Q12 (wycena):** stała cena za każdy wariant.
+- Dodana sekcja „Jeszcze do domknięcia (runda 2)" z pytaniami Q13–Q16
+  (bez odpowiedzi w rundzie 1).
+- `docs/STATE.md` — sekcja „Otwarte pytania" zaktualizowana: flaga 🔴 zmieniona
+  na 🟡 (częściowo zamknięte). Roadmapa krótkoterminowa przepisana — priorytet
+  na Q14 (widełki cenowe — bez tego nie ma cennika) i linki referencyjne do Q1.
+
+### Context
+- Wariant 2 okazuje się dużym projektem (8 encji × 3 role × cron × VPS).
+  Realny estymat: 120–200h pracy, wymaga przemyślanej wyceny.
+- Relacja Tomek ↔ klub jest rodzinna (teść-prezes), co wpływa na decyzje
+  supportowe (dożywotnio vs. SLA) i cenowe (rodzinna taryfa). W OFERTA.md
+  zaznaczono ryzyka relacyjne — warto mieć granice spisane osobno.
+
+---
+
+## 2026-04-21 — Strategia dwutorowa oferty dla klubu (teoria)
+
+### Added
+- `docs/OFERTA.md` — dokument planistyczny przed spotkaniem z zarządem klubu
+  (21-22.04.2026). Zawiera: założenia Tomka (dwa warianty produktu — tani/drogi),
+  obserwacje i ostrzeżenia, 16 otwartych pytań pogrupowanych po wariantach,
+  TODO przed spotkaniem, miejsce na wpisanie decyzji po spotkaniu.
+
+### Changed
+- `docs/STATE.md`:
+  - Doprecyzowany opis hostingu produkcyjnego: tmielczarek.pl to **serwer domowy
+    Tomka**, nie shared hosting. Tymczasowy — klub kupi własny jeśli kupi stronę.
+  - Sekcja „Otwarte pytania" — dodana czerwona flaga „wariant 1 vs. wariant 2"
+    (odsyła do OFERTA.md).
+  - Sekcja „Następne kroki" — przepisana. Wyjęty stary plan migracji na
+    Sanity + Vercel (odrzucony przez Tomka — preferencja „własny CMS").
+    W zamian: rozdzielenie roadmapy wg decyzji klubu (wariant 1 / wariant 2 /
+    zwlekanie).
+
+### Context
+- Tomek preferuje **własny CMS** (nie SaaS) — motywacja: control, zero
+  zależności od zewnętrznej firmy.
+- Wstępnie rozważane stacki dla wariantu 2: Payload CMS (self-hosted),
+  Astro SSR + własny admin, Laravel + Filament + Astro.
+- Decyzja o stacku — dopiero po decyzji klubu. Tryb: **teoria, zero kodu**.
+
+---
+
+## 2026-04-21 — Decyzja: seniorzy pozostają z realnymi danymi
+
+### Changed
+- Potwierdzona decyzja — skład seniorów zostaje w obecnym kształcie (21 realnych
+  zawodników + kapitan Kacper Nowicki = 22). Nie przepisujemy na losowe dane,
+  mimo że pierwotna prośba o demo-fill mówiła „22 losowych w każdej drużynie".
+  Powód: dane seniorów są osadzone w aktualnościach (Alefe Lima, Kamiński,
+  Marciniszyn, Felipe itd.) — ich rozspójnienie z treścią byłoby kosztowne.
+- Zamknięte otwarte pytanie w `docs/STATE.md`.
+
+---
+
+## 2026-04-21 — Usunięcie katalogu `deploy/`
+
+### Removed
+- `deploy/docker-compose.yml`, `deploy/nginx.conf`, `deploy/README.md` oraz sam
+  katalog `deploy/`. Reliktowy setup z czasów demo na home-serwerze
+  (nginx + ngrok). Od migracji na tmielczarek.pl nieużywany, tylko mylił
+  potencjalnego nowego czytelnika projektu.
+
+### Changed
+- Zamknięte otwarte pytanie w `docs/STATE.md`.
+
+---
+
+## 2026-04-21 — Wypełnienie danych demo + konwencja dokumentacji
+
+### Added
+- `CHANGELOG.md` (ten plik) — chronologiczny log.
+- `docs/STATE.md` — aktualny snapshot stanu, otwarte pytania, next steps.
+- Seksja w `CLAUDE.md` o tym, gdzie szukać kontekstu przed pracą.
+- Nowe pełne składy drużyn młodzieżowych — po 22 zawodników (pozycje + numery
+  koszulek) w `juniorzy.md`, `trampkarze.md`, `orliki.md`, `zaki.md`. Dane
+  losowe — do podmiany przez klub.
+- Trenerzy + asystenci w 4 drużynach młodzieżowych (dane losowe).
+- Kapitan **Kacper Nowicki** dopisany do składu seniorów (z newsów FB) — rozwiązuje
+  brak obecnego w aktualnościach zawodnika. Seniorzy teraz liczą 22 osoby.
+
+### Changed
+- **`README.md`** — napisany od zera. Wyrzucone odniesienia do Decap CMS,
+  Formspree, laczynaspilka.pl, GitHub Actions + FTP, Docker/ngrok. Nowa wersja
+  opisuje realny stan: Astro 5, 90minut.pl sync, kolekcje Markdown, hosting
+  tmielczarek.pl, sekcja „Demo vs. dane realne", roadmapa (Sanity + Vercel).
+- `SPONSORS` w `src/config/site.ts` — 5 placeholderów typu „Sponsor główny A"
+  zamienione na wymyślone firmy regionalne (*ABM System*, *Zielona Dolina*,
+  *Piekarnia Wierzbicka*, *Autoserwis Dolny Śląsk*, *Cafe Tarnopolska*).
+  Gmina Kobierzyce pozostaje realna. Loga dalej są placeholderami SVG.
+
+### Open
+- Katalog `deploy/` (Docker + nginx + ngrok) jest nieużywany od migracji na
+  tmielczarek.pl — decyzja o skasowaniu czeka na potwierdzenie użytkownika.
+- Seniorzy: teoretycznie prośba była „22 losowych w każdej drużynie", ale
+  zdecydowałem zostawić realne dane (są w aktualnościach). Do ewentualnej rewizji.
+
+---
+
+## 2026-04-20 — Migracja na hosting tmielczarek.pl
+
+### Added
+- Strona opublikowana pod `https://wkswierzbice.pl` na współdzielonym hostingu
+  `tmielczarek.pl` (HTTPS via Let's Encrypt po stronie hostingu).
+
+### Changed
+- `<title>` w `BaseLayout.astro` — użyty `SITE.shortName` ("WKS Wierzbice")
+  zamiast długiej „Wiejski Klub Sportowy Wierzbice – Zielono-biało-czerwoni…".
+  Zakładki przeglądarki teraz krótkie i czytelne.
+
+### Removed
+- **Porzucony setup home-serwer + Docker + ngrok** — poprzedni mechanizm wystawienia
+  demo (kontener `nginx:alpine` + tunel ngrok). Zastąpiony zwykłym FTP/rsync na
+  hosting współdzielony.
+- (do decyzji) katalog `deploy/` z tamtego okresu nadal w repo.
+
+---
+
+## ~2026-04-19 — Import aktualności z fanpage Facebook
+
+### Added
+- 24 artykuły Markdown w `src/content/news/` zaciągnięte z fanpage
+  `facebook.com/WKSWIERZBICEOFFICIAL` (wiosna 2026, runda wiosenna).
+  - **8 pełnych** wpisów (`truncated: false`) — pełny tekst pobrany przez
+    Browser MCP z permalinków `mbasic.facebook.com`, własne zdjęcie w `public/news/`.
+  - **16 skróconych** wpisów (`truncated: true`) — pierwsza linijka + CTA
+    „Pełny wpis na Facebooku", cover = `/herb-wks.png`.
+- Rozszerzony schemat kolekcji `news` w `src/content/config.ts`:
+  - `facebookUrl` (URL do oryginalnego posta FB),
+  - `truncated` (flaga decydująca o treści CTA).
+- `NewsCard.astro`: pill „z Facebooka" (kolor FB) pokazywana gdy post ma `facebookUrl`.
+- `aktualnosci/[slug].astro`: CTA box „Zobacz na Facebooku" / „Pełna treść na Facebooku".
+- Skrypty jednorazowe w `scripts/`:
+  - `fetch-fb-meta.mjs` — scrap OG metadanych z `mbasic.facebook.com`
+  - `generate-news.mjs` — merge źródeł → Markdown
+  - `apply-news-covers.mjs` — podmiana `cover:` + `coverAlt:` po uzupełnieniu `public/news/`
+
+### Changed
+- **`NewsCard.astro`** — redesign z „magazine overlay" na klasyczny layout
+  (zdjęcie na górze, tekst pod). Obraz `object-contain` w kontenerze `aspect-[4/3]`
+  (nie ucina twarzy/elementów kompozycji) — reakcja na feedback użytkownika.
+- **`aktualnosci/[slug].astro`** — główne zdjęcie artykułu zmienione z
+  `aspect-[16/9] object-cover` na `max-h-[70vh] w-auto object-contain` — zdjęcie
+  pokazywane w pełni, bez ucinania, na szarym tle z cieniem.
+
+### Removed
+- 7 starych Markdown-ów aktualności (placeholdery wstawione przy inicjalnym
+  bootstrapie) — zastąpione prawdziwą treścią z FB.
+
+---
+
+## ~2026-04-15 — Integracja z 90minut.pl
+
+### Added
+- `scripts/sync-90minut.mjs` — scrap danych sezonu z trzech URL-i 90minut.pl
+  (profil klubu, tabela ligi, mecze drużyny). Zapisuje do `src/data/season.json`.
+- `src/data/season.json` — generowany JSON z terminarzem WKS, tabelą grupy
+  wrocławskiej Klasy okręgowej, osiągnięciami. Nie edytujemy ręcznie.
+- `prebuild` hook w `package.json` — `npm run sync:season` odpala się przed
+  `npm run build`.
+- Strona `/terminarz` przerobiona na dynamiczne renderowanie z `season.json`:
+  najbliższy mecz, ostatni wynik, pełen terminarz WKS, tabela ligi, osiągnięcia.
+- Komponenty `ScoreBanner.astro` i `MatchCountdown.astro` na stronie głównej.
+
+### Changed
+- Stara sekcja info-baru na `index.astro` zastąpiona `ScoreBanner` +
+  `MatchCountdown` (live odliczanie do najbliższego meczu, setInterval 1 s).
+- Liczby na stronie głównej („Najważniejsze liczby") napędzane `HIGHLIGHTS`
+  z `site.ts` + animowane przez `IntersectionObserver` (count-up).
+
+### Fixed
+- `parseStandings` w sync-90minut.mjs pierwotnie zwracał 32 drużyny zamiast 16 —
+  doprecyzowany filtr wierszy tabeli.
+- Wyniki meczów wyjazdowych w `season.json` były z perspektywy przeciwnika —
+  `buildWksOverview` przeformułowany: `scoreLabel` (my:oni) i osobny
+  `homeAwayLabel`.
+
+---
+
+## ~2026-04-10 — Rozbudowa strony i sekcje klubowe
+
+### Added
+- Sekcja **Zarząd** w `site.ts` (`BOARD`) + zdjęcia w `public/team/zarzad/`
+  (6 osób, skład powołany 08.07.2025 po śmierci śp. Bogdana Zdunka).
+- Sekcja **Sztab szkoleniowy** (`STAFF`) + zdjęcia w `public/team/trenerzy/`
+  (Dawid Pożarycki, Mateusz Rycombel).
+- Rozbudowana strona `/o-klubie`: historia, „Pamięci śp. Bogdana Zdunka",
+  linia czasu „Droga przez dekady", dynamiczne sekcje Sztab/Zarząd z `site.ts`.
+- Karuzela Hero z `HERO_SLIDES` (autoplay 5 s, prev/next, dots) — zamiast
+  statycznego banera.
+- Animacje count-up dla `.stat-number` na stronie głównej.
+- JSON-LD `SportsOrganization` w `BaseLayout.astro` (SEO).
+- OG/Twitter card meta tags.
+
+### Changed
+- `Header.astro` — `sticky top-0`, `bg-brand-ink`, aktywne linki z czerwonym
+  podkreśleniem.
+- `Footer.astro` — 4-kolumnowy layout (brand, nav, kontakt, Społeczność FB).
+
+---
+
+## ~2026-04 (początek) — Bootstrap projektu
+
+### Added
+- Świeży projekt Astro 5.18 + Tailwind 3.4 + TypeScript (strict) + aliasy `@/*`.
+- Fonty self-hosted: Inter Variable (body) + Barlow Condensed (display).
+- Content collections: `news` i `teams` z schematami Zod.
+- Strony: `/`, `/o-klubie`, `/druzyny`, `/druzyny/[slug]`, `/terminarz`,
+  `/aktualnosci`, `/aktualnosci/[slug]`, `/galeria`, `/kontakt`, `/nabory`,
+  `/sponsorzy`, `/polityka-prywatnosci`, `/404`.
+- Centralna konfiguracja `src/config/site.ts` z sekcjami SITE, CONTACT, SOCIAL,
+  STATS, NAV, STAFF, BOARD, HIGHLIGHTS, SPONSORS, HERO_SLIDES, GALLERY, FORMS.
+- Brandowe kolory w zmiennych CSS (green-800, red-600, brand-ink) działające
+  z Tailwindową składnią `/<alpha-value>`.
+- Herb klubu `public/herb-wks.jpg`, favicon, `public/og-default.svg`.
+- `sitemap.xml` przez `@astrojs/sitemap`.
+- `CLAUDE.md` — przewodnik architektoniczny dla AI.

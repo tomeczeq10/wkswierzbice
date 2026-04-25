@@ -1,0 +1,92 @@
+---
+import type { GetStaticPaths } from "astro";
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { formatDate } from "@/lib/format";
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const posts = await getCollection("news", ({ data }) => !data.draft);
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post },
+  }));
+};
+
+const { post } = Astro.props;
+const { Content } = await post.render();
+const { title, date, cover, coverAlt, tags, author, excerpt, facebookUrl, truncated } = post.data;
+---
+
+<BaseLayout title={title} description={excerpt} image={cover}>
+  <article>
+    <header class="bg-brand-ink text-white">
+      <div class="container mx-auto py-16 sm:py-20 max-w-4xl">
+        <a href="/aktualnosci" class="inline-flex items-center gap-1 text-sm text-brand-secondary hover:underline mb-4">
+          ← Wszystkie aktualności
+        </a>
+        <div class="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest text-slate-300 mb-4">
+          <time datetime={date.toISOString()}>{formatDate(date)}</time>
+          <span aria-hidden="true">&middot;</span>
+          <span>{author}</span>
+          {
+            tags.map((t) => (
+              <span class="px-2 py-0.5 rounded bg-brand-primary/80 text-white">{t}</span>
+            ))
+          }
+        </div>
+        <h1>{title}</h1>
+        <p class="mt-4 text-lg text-slate-200 max-w-2xl">{excerpt}</p>
+      </div>
+    </header>
+
+    {
+      cover && (
+        <div class="container mx-auto max-w-4xl -mt-8 relative z-10 px-4">
+          <figure class="rounded-xl shadow-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+            <img
+              src={cover}
+              alt={coverAlt ?? ""}
+              class="max-h-[70vh] w-auto max-w-full object-contain"
+            />
+          </figure>
+        </div>
+      )
+    }
+
+    <div class="section">
+      <div class="container mx-auto max-w-3xl">
+        <div class="prose-club">
+          <Content />
+        </div>
+
+        {
+          facebookUrl && (
+            <div class="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-6 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+              <div>
+                <p class="font-display text-lg uppercase text-brand-ink">
+                  {truncated ? "Pełna treść na Facebooku" : "Zobacz oryginalny wpis"}
+                </p>
+                <p class="text-sm text-slate-600 mt-1">
+                  {truncated
+                    ? "Ten wpis pochodzi z fanpage'a klubu – zdjęcia i pełny tekst dostępne są w oryginalnym poście."
+                    : "Wszystkie zdjęcia, komentarze i reakcje znajdziesz w oryginalnym poście na Facebooku."}
+                </p>
+              </div>
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 bg-[#1877F2] hover:bg-[#145dbf] text-white font-display uppercase text-sm px-5 py-3 rounded-lg transition-colors whitespace-nowrap"
+              >
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.51 1.49-3.9 3.78-3.9 1.1 0 2.24.2 2.24.2v2.47h-1.26c-1.24 0-1.63.77-1.63 1.57V12h2.77l-.44 2.89h-2.33v6.99A10 10 0 0 0 22 12Z" />
+                </svg>
+                Zobacz na Facebooku
+              </a>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  </article>
+</BaseLayout>

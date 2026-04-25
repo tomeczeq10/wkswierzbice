@@ -1,0 +1,279 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import { SITE, BOARD, STAFF } from "@/config/site";
+---
+
+<BaseLayout
+  title="O klubie"
+  description={`Historia, wartości, zarząd i sztab szkoleniowy ${SITE.name}.`}
+>
+  <PageHeader
+    kicker="O klubie"
+    title="Nasza historia"
+    description={`Od ${SITE.founded} roku piszemy historię piłki nożnej w Wierzbicach, a od ${SITE.reactivated} roku budujemy nowy rozdział klubu.`}
+  />
+
+  <!-- Historia -->
+  <section class="section">
+    <div class="container mx-auto grid lg:grid-cols-3 gap-12">
+      <div class="lg:col-span-2 space-y-4 text-lg leading-relaxed text-slate-700">
+        <p>
+          Wiejski Klub Sportowy Wierzbice został założony w <strong>{SITE.founded} roku</strong>
+          z inicjatywy grupy mieszkańców Wierzbic. Po prawie dwudziestoletniej przerwie klub
+          wrócił na piłkarską mapę w <strong>{SITE.reactivated} roku</strong> – wtedy właśnie
+          do zarządu dołączył śp. <strong>Bogdan Zdunek</strong>, najpierw jako kierownik drużyny,
+          a następnie wieloletni prezes klubu, którego osoba związana jest ze wszystkimi
+          największymi sukcesami WKS-u.
+        </p>
+        <p>
+          Przez dwie dekady zespół seniorów przeszedł drogę od najniższych klas wrocławskiego
+          podokręgu (klasa B i A), przez <strong>Klasę okręgową</strong>, aż do historycznego
+          awansu do <strong>IV ligi dolnośląskiej (grupa wschód) w sezonie 2021/2022</strong> –
+          największego sukcesu w historii klubu.
+        </p>
+        <p>
+          Dziś pierwsza drużyna pod wodzą duetu <strong>Dawid Pożarycki / Mateusz Rycombel</strong>
+          walczy we wrocławskiej okręgówce o powrót na wyższy szczebel – po rundzie jesiennej
+          zespół był czwarty, a wiosną 2026 wskoczył na pozycję <strong>wicelidera</strong>.
+        </p>
+        <p>
+          Równolegle rozwijamy sekcję młodzieżową. Od żaków (U8) przez orlików (U13) i trampkarzy
+          (U15) aż po juniorów, wychowujemy kolejne pokolenia piłkarzy dla zielono-biało-czerwonych
+          barw. Mecze rozgrywamy przy ul. Tarnopolskiej w Wierzbicach, na pełnowymiarowym boisku
+          100 × 65 m.
+        </p>
+      </div>
+      <aside class="space-y-4">
+        <div class="card p-6">
+          <div class="text-xs uppercase tracking-widest text-brand-primary font-display">Klub w liczbach</div>
+          <dl class="mt-4 space-y-3 text-sm">
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <dt>Rok założenia</dt><dd class="font-display text-lg">{SITE.founded}</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <dt>Reaktywacja</dt><dd class="font-display text-lg">{SITE.reactivated}</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <dt>Obecna liga</dt><dd class="font-display text-right text-xs leading-tight">Klasa okręgowa<br/>Wrocław</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <dt>Najwyższy szczebel</dt><dd class="font-display">IV liga</dd>
+            </div>
+            <div class="flex justify-between border-b border-slate-100 pb-2">
+              <dt>Barwy</dt><dd class="font-display text-xs">zielono-biało-czerwone</dd>
+            </div>
+            <div class="flex justify-between">
+              <dt>Stadion</dt><dd class="font-display text-xs">100 × 65 m</dd>
+            </div>
+          </dl>
+        </div>
+        <div class="card p-6">
+          <div class="text-xs uppercase tracking-widest text-brand-primary font-display">Droga przez ligi</div>
+          <ul class="mt-3 space-y-1 text-sm text-slate-600">
+            <li>2004–2010 – Klasa B (Wrocław V)</li>
+            <li>2011–2018 – Klasa A</li>
+            <li>2019–2021 – Klasa okręgowa</li>
+            <li class="font-semibold text-brand-primary">2021/22 – IV liga dolnośląska</li>
+            <li>2022–dziś – Klasa okręgowa Wrocław</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Timeline historii -->
+  <section class="section bg-slate-50">
+    <div class="container mx-auto">
+      <div class="text-center mb-12">
+        <span class="section-kicker">Historia</span>
+        <h2 class="section-title">Droga przez dekady</h2>
+      </div>
+      <div class="relative max-w-3xl mx-auto">
+        <!-- pionowa linia -->
+        <div class="absolute left-6 md:left-1/2 top-0 bottom-0 w-0.5 bg-brand-primary/20 -translate-x-1/2"></div>
+
+        {[
+          { year: "1985", label: "Założenie klubu", desc: "WKS Wierzbice powstaje z inicjatywy mieszkańców gminy Kobierzyce.", side: "right", accent: false },
+          { year: "2001", label: "Reaktywacja", desc: "Po prawie 20-letniej przerwie klub wraca na piłkarską mapę. Bogdan Zdunek zostaje kierownikiem drużyny.", side: "left", accent: false },
+          { year: "2011", label: "Klasa A", desc: "Drużyna awansuje z Klasy B do Klasy A Wrocław — regularny wzrost poziomu sportowego.", side: "right", accent: false },
+          { year: "2019", label: "Klasa okręgowa", desc: "Historyczny awans do Klasy okręgowej grupy Wrocław — nowy szczebel rozgrywek.", side: "left", accent: false },
+          { year: "2021/22", label: "IV liga dolnośląska", desc: "Największy sukces w historii klubu — awans do IV ligi dolnośląskiej (grupa wschód). Rekordowy sezon!", side: "right", accent: true },
+          { year: "2025", label: "Nowy rozdział", desc: "Odejście prezesa Bogdana Zdunka. Robert Sala przejmuje ster. Nowy sztab trenerski: Pożarycki & Rycombel.", side: "left", accent: false },
+          { year: "2026", label: "Wicelider okręgówki", desc: "Wiosna 2026 — 2. miejsce, 50 punktów, walka o baraże i powrót do IV ligi.", side: "right", accent: false },
+        ].map(({ year, label, desc, side, accent }) => (
+          <div class:list={["relative flex mb-10", side === "left" ? "md:flex-row-reverse" : "md:flex-row", "flex-row gap-0 md:gap-8"]}>
+            <!-- dot -->
+            <div class="absolute left-6 md:left-1/2 -translate-x-1/2 w-4 h-4 rounded-full border-2 border-brand-primary bg-white mt-1 z-10"
+              class:list={[accent && "!bg-brand-secondary !border-brand-secondary scale-125"]}
+            ></div>
+            <!-- spacer left -->
+            <div class="hidden md:block md:w-1/2"></div>
+            <!-- content -->
+            <div class:list={["pl-14 md:pl-0 md:w-1/2", side === "left" ? "md:pr-8 md:text-right" : "md:pl-8"]}>
+              <div class:list={[
+                "inline-block font-display text-sm uppercase tracking-widest mb-1 px-2 py-0.5 rounded",
+                accent ? "bg-brand-secondary text-white" : "bg-brand-primary/10 text-brand-primary",
+              ]}>
+                {year}
+              </div>
+              <h3 class:list={["text-xl mt-1", accent && "text-brand-secondary"]}>{label}</h3>
+              <p class="text-sm text-slate-600 mt-1 leading-relaxed">{desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Pamięci śp. Bogdana Zdunka -->
+  <section class="bg-brand-primary text-white py-12">
+    <div class="container mx-auto max-w-3xl text-center">
+      <div class="text-xs uppercase tracking-widest opacity-80">Pamięci</div>
+      <h2 class="font-display text-3xl sm:text-4xl mt-2">śp. Bogdan Zdunek</h2>
+      <p class="mt-4 text-base leading-relaxed opacity-95">
+        Wieloletni prezes klubu. Związany z WKS-em od 2001 roku – najpierw jako kierownik drużyny,
+        potem prezes. Człowiek, którego osoba pozostaje tożsama z największymi sukcesami klubu,
+        w tym z historycznym awansem do IV ligi. Odszedł 9 marca 2025 roku.
+        Dziękujemy za ponad 20 lat służby dla WKS-u. Cześć Jego pamięci.
+      </p>
+    </div>
+  </section>
+
+  <!-- Wartości -->
+  <section class="section bg-slate-50">
+    <div class="container mx-auto">
+      <div class="text-center mb-12">
+        <span class="section-kicker">Nasze wartości</span>
+        <h2 class="section-title">Kim jesteśmy na boisku i poza nim</h2>
+      </div>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="card p-6">
+          <div class="w-12 h-12 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+          </div>
+          <h3 class="text-xl">Fair play</h3>
+          <p class="mt-2 text-slate-600">Gramy z szacunkiem do rywala, sędziego i kibica. Herbu i barw WKS-u bronimy z klasą – zarówno w chwilach zwycięstwa, jak i porażki.</p>
+        </div>
+        <div class="card p-6">
+          <div class="w-12 h-12 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+          </div>
+          <h3 class="text-xl">Wspólnota</h3>
+          <p class="mt-2 text-slate-600">Wierzbice, Kobierzyce i cała okolica – klub tworzą kibice, rodziny i pokolenia wychowanków, którzy od lat chodzą na mecze i żyją barwami WKS-u.</p>
+        </div>
+        <div class="card p-6">
+          <div class="w-12 h-12 rounded-full bg-brand-primary/10 text-brand-primary flex items-center justify-center mb-4">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M5 5l14 14M19 5L5 19"/></svg>
+          </div>
+          <h3 class="text-xl">Ambicja</h3>
+          <p class="mt-2 text-slate-600">Po awansie do IV ligi w 2021/22 nie zwalniamy tempa – celujemy w powrót na wyższy szczebel i regularnie wzmacniamy kadrę pierwszego zespołu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sztab szkoleniowy -->
+  <section class="section">
+    <div class="container mx-auto">
+      <div class="text-center mb-12">
+        <span class="section-kicker">Sztab szkoleniowy</span>
+        <h2 class="section-title">Trenerzy pierwszej drużyny</h2>
+      </div>
+      <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        {
+          STAFF.map((person) => {
+            const initials = person.name
+              .split(" ")
+              .map((p) => p[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            return (
+              <div class="card p-6 text-center">
+                {person.photo ? (
+                  <img
+                    src={person.photo}
+                    alt={`${person.name} – ${person.role}`}
+                    width="112"
+                    height="112"
+                    loading="lazy"
+                    class="w-28 h-28 mx-auto rounded-full object-cover border-4 border-brand-primary/20 shadow-sm"
+                  />
+                ) : (
+                  <div class="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-brand-primary to-brand-primary-dark text-white flex items-center justify-center text-3xl font-display">
+                    {initials}
+                  </div>
+                )}
+                <h3 class="text-xl mt-4">{person.name}</h3>
+                <div class="text-xs uppercase tracking-widest text-brand-primary font-display mt-1">
+                  {person.role}
+                </div>
+                {person.bio && (
+                  <p class="mt-3 text-sm text-slate-600">{person.bio}</p>
+                )}
+              </div>
+            );
+          })
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- Zarząd -->
+  <section class="section bg-slate-50">
+    <div class="container mx-auto">
+      <div class="text-center mb-12">
+        <span class="section-kicker">Zarząd klubu</span>
+        <h2 class="section-title">Ludzie stojący za klubem</h2>
+      </div>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {
+          BOARD.map((person) => {
+            const initials = person.name
+              .split(" ")
+              .map((p) => p[0])
+              .join("")
+              .slice(0, 2)
+              .toUpperCase();
+            const hasPhoto =
+              person.photo && !person.photo.includes("placeholder");
+            return (
+              <div
+                class:list={[
+                  "card p-6 text-center",
+                  person.highlight && "ring-2 ring-brand-primary lg:scale-105",
+                ]}
+              >
+                {hasPhoto ? (
+                  <img
+                    src={person.photo}
+                    alt={`${person.name} – ${person.role}`}
+                    width="112"
+                    height="112"
+                    loading="lazy"
+                    class="w-28 h-28 mx-auto rounded-full object-cover border-4 border-brand-primary/20 shadow-sm"
+                  />
+                ) : (
+                  <div class="w-28 h-28 mx-auto rounded-full bg-gradient-to-br from-brand-primary to-brand-primary-dark text-white flex items-center justify-center text-3xl font-display">
+                    {initials}
+                  </div>
+                )}
+                <h3 class="text-xl mt-4">{person.name}</h3>
+                <div class="text-xs uppercase tracking-widest text-brand-primary font-display mt-1">
+                  {person.role}
+                </div>
+                {person.bio && (
+                  <p class="mt-3 text-sm text-slate-600">{person.bio}</p>
+                )}
+              </div>
+            );
+          })
+        }
+      </div>
+      <p class="mt-8 text-center text-sm text-slate-500">
+        Nowy zarząd klubu powołany 8 lipca 2025 r.
+      </p>
+    </div>
+  </section>
+</BaseLayout>

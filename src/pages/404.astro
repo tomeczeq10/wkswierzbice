@@ -1,0 +1,19 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+---
+
+<BaseLayout title="404 – Nie znaleziono" noIndex>
+  <section class="min-h-[60vh] flex items-center">
+    <div class="container mx-auto text-center py-20">
+      <div class="font-display text-[7rem] sm:text-[10rem] leading-none text-brand-primary">404</div>
+      <h1 class="mt-4">Ups! Gol w pustą bramkę nie wyszedł.</h1>
+      <p class="mt-4 max-w-xl mx-auto text-slate-600">
+        Strona, której szukasz, nie istnieje lub została przeniesiona.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3 justify-center">
+        <a href="/" class="btn-primary">Strona główna</a>
+        <a href="/aktualnosci" class="btn-outline text-brand-primary border-brand-primary">Aktualności</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

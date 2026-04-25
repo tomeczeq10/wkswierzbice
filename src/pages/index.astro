@@ -1,0 +1,584 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+import Hero from "@/components/Hero.astro";
+import NewsCard from "@/components/NewsCard.astro";
+import SponsorGrid from "@/components/SponsorGrid.astro";
+import ScoreBanner from "@/components/ScoreBanner.astro";
+import MatchCountdown from "@/components/MatchCountdown.astro";
+import MatchHero from "@/components/MatchHero.astro";
+import MarkaTicker from "@/components/MarkaTicker.astro";
+import WhyUs from "@/components/WhyUs.astro";
+import TeamCard from "@/components/TeamCard.astro";
+import MagazineHome from "@/components/home/MagazineHome.astro";
+import StadionHome from "@/components/home/StadionHome.astro";
+
+import { SITE, HIGHLIGHTS } from "@/config/site";
+import season from "@/data/season.json";
+
+const allNewsAll = (await getCollection("news", ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const newsTop3 = allNewsAll.slice(0, 3);
+const newsTop6 = allNewsAll.slice(0, 6);
+const newsTop11 = allNewsAll.slice(0, 11);
+
+const teams = (await getCollection("teams")).sort(
+  (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
+);
+
+const nextMatch = season.wks.upcoming[0] ?? null;
+const lastMatch = [...season.wks.played].reverse()[0] ?? null;
+const wksStanding = season.standings.find((s) => s.team === "WKS Wierzbice");
+const wksPosition = wksStanding?.position ?? null;
+const wksPoints = wksStanding?.points ?? null;
+
+const wins = wksStanding?.wins ?? 16;
+const draws = wksStanding?.draws ?? 2;
+const losses = wksStanding?.losses ?? 4;
+const played = wksStanding?.played ?? 22;
+const [goalsFor, goalsAgainst] = (wksStanding?.goals ?? "73-31").split("-").map(Number);
+const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.outcome ?? "draw");
+---
+
+<BaseLayout>
+
+  {/* ============================================================
+       SZABLON 1: KLASYK (default)
+       ============================================================ */}
+  <div data-template-only="klasyk">
+    <Hero />
+
+    <ScoreBanner
+      lastMatch={lastMatch}
+      nextMatch={nextMatch}
+      position={wksPosition}
+      points={wksPoints}
+    />
+
+    {nextMatch && <MatchCountdown match={nextMatch} />}
+
+    <!-- O klubie – skrót -->
+    <section class="section">
+      <div class="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <span class="section-kicker">O klubie</span>
+          <h2 class="section-title">Od {SITE.founded} roku piszemy historię piłki w Wierzbicach</h2>
+          <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+            {SITE.name} to zielono-biało-czerwona rodzina. Klub powstał w {SITE.founded} roku,
+            a po prawie 20-letniej przerwie został reaktywowany w {SITE.reactivated} roku.
+            Naszym największym osiągnięciem pozostaje historyczny awans do
+            <strong> IV ligi dolnośląskiej </strong> w sezonie 2021/2022.
+          </p>
+          <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Wicelider Klasy okręgowej Wrocław 2025/2026</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Pełnowymiarowe boisko trawiaste 100 × 65 m</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Szkolenie młodzieży z gminy Kobierzyce – od żaków po juniorów</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Regularne występy w Pucharze Polski – Dolnośląski ZPN</span>
+            </li>
+          </ul>
+          <div class="mt-8">
+            <a href="/o-klubie" class="btn-primary">Poznaj naszą historię</a>
+          </div>
+        </div>
+        <div class="relative">
+          <div class="rounded-xl shadow-lg w-full aspect-[4/3] bg-gradient-to-br from-brand-ink via-brand-primary to-brand-primary-dark flex items-center justify-center">
+            <img src="/herb-wks.png" alt="Herb WKS Wierzbice" class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl opacity-90" />
+          </div>
+          <div class="absolute -bottom-6 -left-6 bg-brand-ink text-white rounded-xl p-5 shadow-xl hidden sm:block">
+            <div class="text-5xl font-display leading-none">{new Date().getFullYear() - SITE.founded}</div>
+            <div class="text-xs uppercase tracking-widest mt-1 text-brand-secondary">lat tradycji</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Statystyki sezonu -->
+    <section class="section !pt-10 !pb-12 bg-slate-50">
+      <div class="container mx-auto">
+        <div class="text-center mb-8">
+          <span class="section-kicker">Sezon 2025/2026</span>
+          <h2 class="section-title">Statystyki drużyny</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Bilans meczów ({played} rozegranych)</div>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-emerald-700 font-display uppercase">Zwycięstwa</span>
+                  <span class="font-display text-lg text-emerald-700">{wins}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style={`width:${(wins/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-amber-700 font-display uppercase">Remisy</span>
+                  <span class="font-display text-lg text-amber-700">{draws}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-400 rounded-full" style={`width:${(draws/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-rose-700 font-display uppercase">Porażki</span>
+                  <span class="font-display text-lg text-rose-700">{losses}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-rose-500 rounded-full" style={`width:${(losses/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Bramki</div>
+            <div class="flex items-end gap-4 justify-center h-32">
+              <div class="flex flex-col items-center gap-2">
+                <span class="font-display text-3xl text-brand-primary">{goalsFor}</span>
+                <div class="w-16 bg-brand-primary rounded-t-md" style={`height:${Math.round(goalsFor / Math.max(goalsFor, goalsAgainst) * 96)}px`}></div>
+                <span class="text-xs uppercase tracking-widest text-slate-500">Strzelone</span>
+              </div>
+              <div class="flex flex-col items-center gap-2">
+                <span class="font-display text-3xl text-rose-600">{goalsAgainst}</span>
+                <div class="w-16 bg-rose-400 rounded-t-md" style={`height:${Math.round(goalsAgainst / Math.max(goalsFor, goalsAgainst) * 96)}px`}></div>
+                <span class="text-xs uppercase tracking-widest text-slate-500">Stracone</span>
+              </div>
+            </div>
+            <p class="mt-4 text-center text-xs text-slate-500">Różnica: <span class="font-display text-brand-primary text-base">+{goalsFor - goalsAgainst}</span></p>
+          </div>
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Forma (ostatnie 5 meczów)</div>
+            <div class="flex gap-2 justify-center mt-4">
+              {form.map((outcome) => (
+                <div class:list={[
+                  "w-12 h-12 rounded-lg flex items-center justify-center font-display text-xl font-bold text-white",
+                  outcome === "win" ? "bg-emerald-500" : outcome === "loss" ? "bg-rose-500" : "bg-amber-400",
+                ]}>
+                  {outcome === "win" ? "W" : outcome === "loss" ? "P" : "R"}
+                </div>
+              ))}
+            </div>
+            <p class="mt-6 text-center text-xs text-slate-500">W = zwycięstwo · R = remis · P = porażka</p>
+            <div class="mt-4 text-center">
+              <a href="/terminarz" class="text-xs font-display uppercase text-brand-primary hover:underline">
+                Pełny terminarz →
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Najważniejsze liczby z count-up -->
+    <section class="bg-brand-ink section-angle-bottom py-14" id="stats-section-klasyk">
+      <div class="container mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+        <div>
+          <div class="stat-number" data-target={wksPosition ?? 2} data-suffix=".">--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">miejsce (wiosna 2026)</div>
+        </div>
+        <div>
+          <div class="font-display text-4xl md:text-5xl text-brand-secondary">IV</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">liga (2021/2022)</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target={HIGHLIGHTS.topScorerGoals}>--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">goli Alefe Limy 2024/25</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target={new Date().getFullYear() - SITE.founded}>--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">lat klubu</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Aktualności -->
+    <section class="section bg-slate-50">
+      <div class="container mx-auto">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <span class="section-kicker">Aktualności</span>
+            <h2 class="section-title">Co się dzieje w klubie</h2>
+          </div>
+          <a href="/aktualnosci" class="text-brand-primary font-display uppercase text-sm hover:underline">
+            Wszystkie aktualności →
+          </a>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          {newsTop3.map((post) => (
+            <NewsCard
+              href={`/aktualnosci/${post.slug}`}
+              title={post.data.title}
+              date={post.data.date}
+              excerpt={post.data.excerpt}
+              cover={post.data.cover}
+              coverAlt={post.data.coverAlt}
+              tags={post.data.tags}
+              facebookUrl={post.data.facebookUrl}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Nabory -->
+    <section class="relative overflow-hidden bg-brand-ink">
+      <div class="absolute inset-0 bg-gradient-to-br from-brand-ink via-brand-primary-dark to-brand-ink opacity-90"></div>
+      <div class="relative container mx-auto py-20 text-white text-center">
+        <span class="section-kicker !text-brand-secondary">Zapisy</span>
+        <h2 class="section-title">Dołącz do naszej drużyny</h2>
+        <p class="max-w-2xl mx-auto mt-4 text-lg text-slate-200">
+          Prowadzimy otwarte nabory do wszystkich grup młodzieżowych – od żaków po juniorów starszych.
+          Pierwszy trening bez zobowiązań.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3 justify-center">
+          <a href="/nabory" class="btn-primary">Zapisz dziecko</a>
+          <a href="/kontakt" class="btn-outline text-white">Skontaktuj się z trenerem</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sponsorzy -->
+    <section class="section">
+      <div class="container mx-auto">
+        <div class="text-center mb-10">
+          <span class="section-kicker">Partnerzy</span>
+          <h2 class="section-title">Dziękujemy, że jesteście z nami</h2>
+        </div>
+        <SponsorGrid />
+        <div class="text-center mt-10">
+          <a href="/sponsorzy" class="btn-outline text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white">
+            Wszyscy partnerzy klubu
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {/* ============================================================
+       SZABLON 2: MARKA (alternatywny – do wyboru w switcherze)
+       ============================================================ */}
+  <div data-template-only="marka">
+    <MatchHero
+      nextMatch={nextMatch}
+      lastMatch={lastMatch}
+      position={wksPosition}
+      points={wksPoints}
+    />
+
+    <MarkaTicker />
+
+    <WhyUs />
+
+    <!-- Statystyki sezonu -->
+    <section class="section !pt-12 !pb-14 bg-slate-50">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-10">
+          <span class="section-kicker">Sezon 2025/2026</span>
+          <h2 class="section-title">Statystyki drużyny</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Bilans meczów ({played} rozegranych)</div>
+            <div class="space-y-3">
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-emerald-700 font-display uppercase">Zwycięstwa</span>
+                  <span class="font-display text-lg text-emerald-700">{wins}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-emerald-500 rounded-full" style={`width:${(wins/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-amber-700 font-display uppercase">Remisy</span>
+                  <span class="font-display text-lg text-amber-700">{draws}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-amber-400 rounded-full" style={`width:${(draws/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-rose-700 font-display uppercase">Porażki</span>
+                  <span class="font-display text-lg text-rose-700">{losses}</span>
+                </div>
+                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-rose-500 rounded-full" style={`width:${(losses/played*100).toFixed(1)}%`}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Bramki</div>
+            <div class="flex items-end gap-4 justify-center h-32">
+              <div class="flex flex-col items-center gap-2">
+                <span class="font-display text-3xl text-brand-primary">{goalsFor}</span>
+                <div class="w-16 bg-brand-primary rounded-t-md" style={`height:${Math.round(goalsFor / Math.max(goalsFor, goalsAgainst) * 96)}px`}></div>
+                <span class="text-xs uppercase tracking-widest text-slate-500">Strzelone</span>
+              </div>
+              <div class="flex flex-col items-center gap-2">
+                <span class="font-display text-3xl text-rose-600">{goalsAgainst}</span>
+                <div class="w-16 bg-rose-400 rounded-t-md" style={`height:${Math.round(goalsAgainst / Math.max(goalsFor, goalsAgainst) * 96)}px`}></div>
+                <span class="text-xs uppercase tracking-widest text-slate-500">Stracone</span>
+              </div>
+            </div>
+            <p class="mt-4 text-center text-xs text-slate-500">Różnica: <span class="font-display text-brand-primary text-base">+{goalsFor - goalsAgainst}</span></p>
+          </div>
+
+          <div class="card p-6">
+            <div class="text-xs uppercase tracking-widest text-brand-primary font-display mb-4">Forma (ostatnie 5 meczów)</div>
+            <div class="flex gap-2 justify-center mt-4">
+              {form.map((outcome) => (
+                <div class:list={[
+                  "w-12 h-12 rounded-lg flex items-center justify-center font-display text-xl font-bold text-white",
+                  outcome === "win" ? "bg-emerald-500" : outcome === "loss" ? "bg-rose-500" : "bg-amber-400",
+                ]}>
+                  {outcome === "win" ? "W" : outcome === "loss" ? "P" : "R"}
+                </div>
+              ))}
+            </div>
+            <p class="mt-6 text-center text-xs text-slate-500">W = zwycięstwo · R = remis · P = porażka</p>
+            <div class="mt-4 text-center">
+              <a href="/terminarz" class="text-xs font-display uppercase text-brand-primary hover:underline">
+                Pełny terminarz →
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Liczby z count-up -->
+    <section class="bg-brand-ink py-14" id="stats-section-marka">
+      <div class="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8 text-center text-white">
+        <div>
+          <div class="stat-number" data-target={wksPosition ?? 2} data-suffix=".">--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">miejsce (wiosna 2026)</div>
+        </div>
+        <div>
+          <div class="font-display text-4xl md:text-5xl text-brand-secondary">IV</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">liga (2021/2022)</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target={HIGHLIGHTS.topScorerGoals}>--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">goli Alefe Limy 2024/25</div>
+        </div>
+        <div>
+          <div class="stat-number" data-target={new Date().getFullYear() - SITE.founded}>--</div>
+          <div class="text-xs uppercase tracking-widest mt-2 text-white/60">lat klubu</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Nasze drużyny -->
+    <section class="section">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <span class="section-kicker">Akademia i seniorzy</span>
+            <h2 class="section-title">Nasze drużyny</h2>
+          </div>
+          <a href="/druzyny" class="text-brand-primary font-display uppercase text-sm hover:underline">
+            Wszystkie drużyny →
+          </a>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
+          {teams.map((team) => (
+            <TeamCard
+              href={`/druzyny/${team.slug}`}
+              name={team.data.name}
+              category={team.data.category}
+              league={team.data.league}
+              coach={team.data.coach}
+              photo={team.data.photo}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- Aktualności -->
+    <section class="section bg-slate-50">
+      <div class="container mx-auto px-4">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <span class="section-kicker">Aktualności</span>
+            <h2 class="section-title">Co się dzieje w klubie</h2>
+          </div>
+          <a href="/aktualnosci" class="text-brand-primary font-display uppercase text-sm hover:underline">
+            Wszystkie aktualności →
+          </a>
+        </div>
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {newsTop6.map((post) => (
+            <NewsCard
+              href={`/aktualnosci/${post.slug}`}
+              title={post.data.title}
+              date={post.data.date}
+              excerpt={post.data.excerpt}
+              cover={post.data.cover}
+              coverAlt={post.data.coverAlt}
+              tags={post.data.tags}
+              facebookUrl={post.data.facebookUrl}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <!-- O klubie – skrót -->
+    <section class="section">
+      <div class="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <span class="section-kicker">O klubie</span>
+          <h2 class="section-title">Od {SITE.founded} roku piszemy historię piłki w Wierzbicach</h2>
+          <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+            {SITE.name} to zielono-biało-czerwona rodzina. Klub powstał w {SITE.founded} roku,
+            a po prawie 20-letniej przerwie został reaktywowany w {SITE.reactivated} roku.
+            Naszym największym osiągnięciem pozostaje historyczny awans do
+            <strong> IV ligi dolnośląskiej </strong> w sezonie 2021/2022.
+          </p>
+          <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Wicelider Klasy okręgowej Wrocław 2025/2026</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Pełnowymiarowe boisko trawiaste 100 × 65 m</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Szkolenie młodzieży z gminy Kobierzyce – od żaków po juniorów</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Regularne występy w Pucharze Polski – Dolnośląski ZPN</span>
+            </li>
+          </ul>
+          <div class="mt-8">
+            <a href="/o-klubie" class="btn-primary">Poznaj naszą historię</a>
+          </div>
+        </div>
+        <div class="relative">
+          <div class="rounded-xl shadow-lg w-full aspect-[4/3] bg-gradient-to-br from-brand-ink via-brand-primary to-brand-primary-dark flex items-center justify-center">
+            <img src="/herb-wks.png" alt="Herb WKS Wierzbice" class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl opacity-90" />
+          </div>
+          <div class="absolute -bottom-6 -left-6 bg-brand-ink text-white rounded-xl p-5 shadow-xl hidden sm:block">
+            <div class="text-5xl font-display leading-none">{new Date().getFullYear() - SITE.founded}</div>
+            <div class="text-xs uppercase tracking-widest mt-1 text-brand-secondary">lat tradycji</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Nabory -->
+    <section class="relative overflow-hidden bg-brand-ink">
+      <div class="absolute inset-0 bg-gradient-to-br from-brand-ink via-brand-primary-dark to-brand-ink opacity-90"></div>
+      <div class="relative container mx-auto px-4 py-20 text-white text-center">
+        <span class="section-kicker !text-brand-secondary">Zapisy</span>
+        <h2 class="section-title">Dołącz do naszej drużyny</h2>
+        <p class="max-w-2xl mx-auto mt-4 text-lg text-slate-200">
+          Prowadzimy otwarte nabory do wszystkich grup młodzieżowych – od żaków po juniorów starszych.
+          Pierwszy trening bez zobowiązań.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3 justify-center">
+          <a href="/nabory" class="btn-primary">Zapisz dziecko</a>
+          <a href="/kontakt" class="btn-outline text-white">Skontaktuj się z trenerem</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sponsorzy -->
+    <section class="section">
+      <div class="container mx-auto px-4">
+        <div class="text-center mb-10">
+          <span class="section-kicker">Partnerzy</span>
+          <h2 class="section-title">Dziękujemy, że jesteście z nami</h2>
+        </div>
+        <SponsorGrid />
+        <div class="text-center mt-10">
+          <a href="/sponsorzy" class="btn-outline text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white">
+            Wszyscy partnerzy klubu
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  {/* ============================================================
+       SZABLON 3: MAGAZYN (legia.com inspiration)
+       ============================================================ */}
+  <div data-template-only="magazyn">
+    <MagazineHome
+      news={newsTop11}
+      nextMatch={nextMatch}
+      lastMatch={lastMatch}
+      position={wksPosition}
+      points={wksPoints}
+    />
+  </div>
+
+  {/* ============================================================
+       SZABLON 4: STADION (lechpoznan.pl + wislakrakow.com inspiration)
+       ============================================================ */}
+  <div data-template-only="stadion">
+    <StadionHome
+      news={newsTop6}
+      upcoming={season.wks.upcoming}
+      played={season.wks.played}
+      standings={season.standings}
+      position={wksPosition}
+      points={wksPoints}
+    />
+  </div>
+
+  <!-- count-up: jeden script obsługuje sekcje klasyk + marka -->
+  <script>
+    const statEls = document.querySelectorAll<HTMLElement>(".stat-number");
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const el = entry.target as HTMLElement;
+        const target = Number(el.dataset.target ?? 0);
+        const suffix = el.dataset.suffix ?? "";
+        const duration = 1200;
+        const start = performance.now();
+        el.classList.add("counting");
+        function frame(now: number) {
+          const progress = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - progress, 3);
+          el.textContent = Math.round(ease * target) + suffix;
+          if (progress < 1) requestAnimationFrame(frame);
+          else el.classList.remove("counting");
+        }
+        requestAnimationFrame(frame);
+        observer.unobserve(el);
+      });
+    }, { threshold: 0.4 });
+    statEls.forEach((el) => observer.observe(el));
+  </script>
+</BaseLayout>

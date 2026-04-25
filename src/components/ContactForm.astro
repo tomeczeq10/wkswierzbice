@@ -1,0 +1,104 @@
+---
+import { FORMS } from "@/config/site";
+
+interface Props {
+  endpoint?: string;
+  variant?: "contact" | "join";
+}
+
+const { endpoint, variant = "contact" } = Astro.props;
+const action = endpoint ?? (variant === "join" ? FORMS.joinEndpoint : FORMS.contactEndpoint);
+const configured = Boolean(action);
+---
+
+
+<form
+  method="POST"
+  action={action || "#"}
+  class="grid gap-4"
+  novalidate={!configured}
+>
+  {
+    variant === "join" ? (
+      <>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm font-medium">Imię i nazwisko dziecka *</span>
+            <input
+              required
+              type="text"
+              name="kid_name"
+              class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-primary focus:ring-brand-primary"
+            />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Rocznik *</span>
+            <input
+              required
+              type="number"
+              min="2005"
+              max={new Date().getFullYear()}
+              name="birth_year"
+              class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-primary focus:ring-brand-primary"
+            />
+          </label>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm font-medium">Imię i nazwisko rodzica *</span>
+            <input required type="text" name="parent_name" class="mt-1 block w-full rounded-md border-slate-300" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Telefon *</span>
+            <input required type="tel" name="phone" class="mt-1 block w-full rounded-md border-slate-300" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-sm font-medium">Email</span>
+          <input type="email" name="email" class="mt-1 block w-full rounded-md border-slate-300" />
+        </label>
+      </>
+    ) : (
+      <>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-sm font-medium">Imię i nazwisko *</span>
+            <input required type="text" name="name" class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-primary focus:ring-brand-primary" />
+          </label>
+          <label class="block">
+            <span class="text-sm font-medium">Email *</span>
+            <input required type="email" name="email" class="mt-1 block w-full rounded-md border-slate-300" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="text-sm font-medium">Temat</span>
+          <input type="text" name="subject" class="mt-1 block w-full rounded-md border-slate-300" />
+        </label>
+      </>
+    )
+  }
+
+  <label class="block">
+    <span class="text-sm font-medium">Wiadomość *</span>
+    <textarea
+      required
+      name="message"
+      rows="5"
+      class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-primary focus:ring-brand-primary"
+    ></textarea>
+  </label>
+
+  <label class="flex items-start gap-2 text-xs text-slate-600">
+    <input required type="checkbox" name="rodo" class="mt-1 rounded border-slate-300 text-brand-primary focus:ring-brand-primary" />
+    <span>
+      Wyrażam zgodę na przetwarzanie podanych danych w celu obsługi tego zgłoszenia,
+      zgodnie z <a href="/polityka-prywatnosci" class="underline">polityką prywatności</a>.
+    </span>
+  </label>
+
+  <div>
+    <button type="submit" class="btn-primary">
+      {variant === "join" ? "Wyślij zgłoszenie" : "Wyślij wiadomość"}
+    </button>
+  </div>
+</form>

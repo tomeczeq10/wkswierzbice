@@ -1,0 +1,26 @@
+---
+/**
+ * Inline script wstawiany w `<head>` (przed renderem `<body>`).
+ * Czyta wybrany szablon z localStorage i ustawia `data-template` na <html>,
+ * dzięki czemu CSS reagujący na `[data-template="..."]` działa od pierwszej
+ * klatki — bez mignięcia.
+ */
+import { DEFAULT_TEMPLATE, TEMPLATE_STORAGE_KEY, TEMPLATES } from "./registry";
+
+const validIds = TEMPLATES.map((t) => t.id);
+---
+
+<script
+  is:inline
+  define:vars={{ DEFAULT_TEMPLATE, TEMPLATE_STORAGE_KEY, validIds }}
+>
+  (function () {
+    try {
+      var saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+      var tpl = validIds.indexOf(saved) !== -1 ? saved : DEFAULT_TEMPLATE;
+      document.documentElement.setAttribute("data-template", tpl);
+    } catch (e) {
+      document.documentElement.setAttribute("data-template", DEFAULT_TEMPLATE);
+    }
+  })();
+</script>

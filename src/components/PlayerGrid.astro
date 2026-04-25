@@ -1,0 +1,85 @@
+---
+/**
+ * Grid zawodników pogrupowanych po pozycjach (Bramkarze / Obrońcy / Pomocnicy / Napastnicy).
+ * Wzorowane na layoutach Śląska Wrocław i Legii Warszawa.
+ */
+
+import PlayerCard from "@/components/PlayerCard.astro";
+
+interface RosterEntry {
+  name: string;
+  position?: string;
+  number?: number | string;
+  photo?: string;
+}
+
+interface Props {
+  roster: RosterEntry[];
+  /** Ukrywa nagłówki sekcji i renderuje jedną płaską siatkę (np. na home). */
+  flat?: boolean;
+  /** Maksymalna liczba kart (przydatne w trybie flat). */
+  limit?: number;
+}
+
+const { roster, flat = false, limit } = Astro.props;
+
+const GROUPS = ["Bramkarze", "Obrońcy", "Pomocnicy", "Napastnicy", "Inni"] as const;
+
+function groupFor(position: string | undefined): (typeof GROUPS)[number] {
+  if (!position) return "Inni";
+  const p = position.toLowerCase();
+  if (p.includes("bramkarz")) return "Bramkarze";
+  if (p.includes("obro")) return "Obrońcy";
+  if (p.includes("pomocnik") || p.includes("rozgr") || p.includes("skrzy")) return "Pomocnicy";
+  if (p.includes("napastnik")) return "Napastnicy";
+  return "Inni";
+}
+
+const grouped: Record<string, RosterEntry[]> = {};
+for (const player of roster) {
+  const g = groupFor(player.position);
+  if (!grouped[g]) grouped[g] = [];
+  grouped[g].push(player);
+}
+
+const flatList = limit ? roster.slice(0, limit) : roster;
+---
+
+{flat ? (
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    {flatList.map((player) => (
+      <PlayerCard
+        name={player.name}
+        position={player.position}
+        number={player.number}
+        photo={player.photo}
+      />
+    ))}
+  </div>
+) : (
+  <div class="space-y-12">
+    {GROUPS.filter((g) => grouped[g]?.length).map((group) => (
+      <div>
+        <div class="flex items-center gap-4 mb-6">
+          <h3 class="font-display text-2xl uppercase tracking-tight text-brand-ink m-0">
+            {group}
+          </h3>
+          <span class="inline-flex items-center justify-center min-w-8 h-6 px-2 rounded-full bg-brand-primary/10 text-brand-primary font-display text-xs">
+            {grouped[group].length}
+          </span>
+          <div class="flex-1 h-px bg-slate-200"></div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {grouped[group].map((player) => (
+            <PlayerCard
+              name={player.name}
+              position={player.position}
+              number={player.number}
+              photo={player.photo}
+            />
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+)}

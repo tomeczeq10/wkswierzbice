@@ -1,0 +1,174 @@
+---
+import { SITE, SOCIAL, HERO_SLIDES } from "@/config/site";
+
+interface Props {
+  image?: string;
+  kicker?: string;
+  title?: string;
+  subtitle?: string;
+  variant?: "home" | "page";
+}
+
+const {
+  image = "/hero/placeholder-hero.svg",
+  kicker = SITE.league,
+  title = SITE.name,
+  subtitle = SITE.tagline,
+  variant = "home",
+} = Astro.props;
+
+const heightClass = variant === "home" ? "min-h-[80vh]" : "min-h-[40vh]";
+const slides = variant === "home" ? HERO_SLIDES : [{ image, kicker, title, subtitle }];
+---
+
+<section
+  class:list={[
+    "relative flex items-center text-white overflow-hidden bg-brand-ink",
+    heightClass,
+  ]}
+  id="hero-section"
+>
+  {slides.map((slide, i) => (
+    <div
+      class:list={[
+        "hero-slide absolute inset-0 transition-opacity duration-1000",
+        i === 0 ? "opacity-100" : "opacity-0",
+      ]}
+      data-slide={i}
+      aria-hidden={i !== 0}
+    >
+      {slide.image && !slide.image.includes("placeholder") && (
+        <img
+          src={slide.image}
+          alt=""
+          aria-hidden="true"
+          class="absolute inset-0 w-full h-full object-cover opacity-40"
+        />
+      )}
+      <div class="absolute inset-0 bg-gradient-to-tr from-brand-ink via-brand-primary-dark/80 to-brand-ink/60"></div>
+
+      <div class="relative container mx-auto py-16 sm:py-24 lg:py-28 h-full grid lg:grid-cols-[auto,1fr] gap-10 lg:gap-14 items-center">
+        {variant === "home" && (
+          <div class="flex justify-center lg:justify-start">
+            <img
+              src="/herb-wks.png"
+              alt="Herb WKS Wierzbice"
+              width="224"
+              height="224"
+              class="w-44 h-44 sm:w-52 sm:h-52 lg:w-56 lg:h-56 object-contain drop-shadow-2xl"
+            />
+          </div>
+        )}
+        <div>
+          {slide.kicker && (
+            <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-brand-primary/90 text-xs uppercase tracking-widest font-display">
+              {slide.kicker}
+            </div>
+          )}
+          <h1 class="font-display uppercase tracking-tight max-w-4xl animate-fade-up">
+            {slide.title ?? title}
+          </h1>
+          {slide.subtitle && (
+            <p class="mt-4 max-w-2xl text-lg sm:text-xl text-slate-100/90 animate-fade-up">
+              {slide.subtitle}
+            </p>
+          )}
+          {variant === "home" && i === 0 && (
+            <div class="mt-8 flex flex-wrap gap-3 animate-fade-up">
+              <a href="/terminarz" class="btn-primary">Terminarz meczów</a>
+              <a href="/nabory" class="btn-secondary">Zapisz dziecko do klubu</a>
+              <a
+                href={SOCIAL.facebook}
+                target="_blank"
+                rel="noopener"
+                class="btn-outline text-white border-white hover:bg-white hover:text-brand-ink"
+              >
+                Facebook ({SOCIAL.facebookFollowers.toLocaleString("pl-PL")} obs.)
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  ))}
+
+  {variant === "home" && slides.length > 1 && (
+    <>
+      <button
+        id="hero-prev"
+        class="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur flex items-center justify-center transition-colors"
+        aria-label="Poprzedni slajd"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+      </button>
+      <button
+        id="hero-next"
+        class="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/25 backdrop-blur flex items-center justify-center transition-colors"
+        aria-label="Następny slajd"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+
+      <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2" id="hero-dots" role="tablist">
+        {slides.map((_, i) => (
+          <button
+            class:list={[
+              "hero-dot w-2.5 h-2.5 rounded-full transition-all duration-300",
+              i === 0 ? "bg-white scale-110" : "bg-white/40 hover:bg-white/70",
+            ]}
+            data-index={i}
+            aria-label={`Slajd ${i + 1}`}
+            role="tab"
+            aria-selected={i === 0}
+          />
+        ))}
+      </div>
+    </>
+  )}
+</section>
+
+{variant === "home" && slides.length > 1 && (
+  <script>
+    const slides = document.querySelectorAll<HTMLElement>(".hero-slide");
+    const dots = document.querySelectorAll<HTMLButtonElement>(".hero-dot");
+    let current = 0;
+    let timer: ReturnType<typeof setInterval>;
+
+    function goTo(index: number) {
+      slides[current].classList.replace("opacity-100", "opacity-0");
+      slides[current].setAttribute("aria-hidden", "true");
+      dots[current].classList.remove("bg-white", "scale-110");
+      dots[current].classList.add("bg-white/40");
+      dots[current].setAttribute("aria-selected", "false");
+
+      current = (index + slides.length) % slides.length;
+
+      slides[current].classList.replace("opacity-0", "opacity-100");
+      slides[current].setAttribute("aria-hidden", "false");
+      dots[current].classList.add("bg-white", "scale-110");
+      dots[current].classList.remove("bg-white/40");
+      dots[current].setAttribute("aria-selected", "true");
+    }
+
+    function startTimer() {
+      timer = setInterval(() => goTo(current + 1), 5000);
+    }
+
+    function resetTimer() {
+      clearInterval(timer);
+      startTimer();
+    }
+
+    document.getElementById("hero-prev")?.addEventListener("click", () => { goTo(current - 1); resetTimer(); });
+    document.getElementById("hero-next")?.addEventListener("click", () => { goTo(current + 1); resetTimer(); });
+    dots.forEach((dot) => {
+      dot.addEventListener("click", () => { goTo(Number(dot.dataset.index)); resetTimer(); });
+    });
+
+    startTimer();
+  </script>
+)}

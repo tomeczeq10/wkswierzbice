@@ -1,0 +1,29 @@
+---
+/**
+ * Marquee ticker dla szablonu MARKA — przewijający się pasek z hasłami klubu.
+ * Czysty CSS animation, bez JS.
+ */
+import { SITE, HIGHLIGHTS, SOCIAL } from "@/config/site";
+
+const yearsOfTradition = new Date().getFullYear() - SITE.founded;
+
+const items = [
+  `★ ${yearsOfTradition} lat tradycji`,
+  "★ Zielono-biało-czerwoni",
+  `★ ${HIGHLIGHTS.bestPromotion} ${HIGHLIGHTS.bestPromotionSeason}`,
+  `★ ${HIGHLIGHTS.topScorerName} – ${HIGHLIGHTS.topScorerGoals} goli ${HIGHLIGHTS.topScorerSeason}`,
+  "★ Akademia: żaki · orliki · trampkarze · juniorzy",
+  `★ ${SOCIAL.facebookFollowers.toLocaleString("pl-PL")}+ kibiców na Facebooku`,
+  "★ Stadion: Wierzbice, ul. Tarnopolska 21",
+];
+
+const fullList = [...items, ...items];
+---
+
+<div class="marka-ticker bg-brand-secondary text-white overflow-hidden border-y-2 border-black/20">
+  <div class="marka-ticker-track flex whitespace-nowrap py-3 font-display uppercase tracking-[0.2em] text-sm">
+    {fullList.map((it) => (
+      <span class="px-8 shrink-0">{it}</span>
+    ))}
+  </div>
+</div>

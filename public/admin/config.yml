@@ -1,0 +1,83 @@
+# Konfiguracja Decap CMS.
+# UWAGA: przed uruchomieniem uzupelnij backend (repo GitHub) i zdecyduj,
+# czy logowanie bedzie przez Netlify Identity (git-gateway), czy bezposrednio z GitHub.
+#
+# Wariant A - Netlify Identity (rekomendowany, prosty):
+#   backend:
+#     name: git-gateway
+#     branch: main
+#
+# Wariant B - bezposredni GitHub OAuth (wymaga wlasnego OAuth app):
+#   backend:
+#     name: github
+#     repo: twoj-user/twoje-repo
+#     branch: main
+
+backend:
+  name: git-gateway
+  branch: main
+
+locale: pl
+
+media_folder: "public/uploads"
+public_folder: "/uploads"
+
+site_url: https://wkswierzbice.pl
+display_url: https://wkswierzbice.pl
+logo_url: /favicon.svg
+
+collections:
+  - name: "news"
+    label: "Aktualnosci"
+    label_singular: "Aktualnosc"
+    folder: "src/content/news"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    editor:
+      preview: true
+    fields:
+      - { name: "title", label: "Tytul", widget: "string" }
+      - { name: "date", label: "Data publikacji", widget: "datetime" }
+      - { name: "excerpt", label: "Krotki opis (2-3 zdania)", widget: "text" }
+      - { name: "cover", label: "Zdjecie wiodace", widget: "image", required: false }
+      - { name: "coverAlt", label: "Opis zdjecia (dostepnosc)", widget: "string", required: false }
+      - name: "tags"
+        label: "Tagi"
+        widget: "list"
+        default: []
+        required: false
+      - { name: "author", label: "Autor", widget: "string", default: "Redakcja klubu" }
+      - { name: "draft", label: "Szkic (nie publikuj jeszcze)", widget: "boolean", default: false }
+      - { name: "body", label: "Tresc (Markdown)", widget: "markdown" }
+
+  - name: "teams"
+    label: "Druzyny"
+    label_singular: "Druzyna"
+    folder: "src/content/teams"
+    create: true
+    slug: "{{slug}}"
+    extension: "md"
+    format: "frontmatter"
+    fields:
+      - { name: "name", label: "Nazwa druzyny", widget: "string" }
+      - name: "category"
+        label: "Kategoria"
+        widget: "select"
+        options: ["seniorzy","rezerwy","juniorzy","trampkarze","orlik","zak","skrzat","kobiety","inna"]
+      - { name: "league", label: "Liga / rozgrywki", widget: "string", required: false }
+      - { name: "coach", label: "Trener", widget: "string" }
+      - { name: "assistantCoach", label: "Asystent trenera", widget: "string", required: false }
+      - { name: "trainingSchedule", label: "Harmonogram treningow", widget: "string", required: false }
+      - { name: "photo", label: "Zdjecie druzyny", widget: "image", required: false }
+      - { name: "order", label: "Kolejnosc wyswietlania (wyzsza = wyzej)", widget: "number", default: 0, value_type: "int" }
+      - name: "roster"
+        label: "Kadra"
+        widget: "list"
+        required: false
+        fields:
+          - { name: "name", label: "Imie i nazwisko", widget: "string" }
+          - { name: "number", label: "Numer", widget: "number", required: false }
+          - { name: "position", label: "Pozycja", widget: "string", required: false }
+      - { name: "body", label: "Opis druzyny (Markdown)", widget: "markdown" }

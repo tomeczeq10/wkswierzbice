@@ -1,0 +1,43 @@
+name: Build and Deploy (FTP)
+
+# Automatyczne budowanie strony i wgrywanie na wlasny hosting.
+# Przed uruchomieniem:
+#   1. Wrzuc repo na GitHub.
+#   2. W Settings -> Secrets and variables -> Actions dodaj sekrety:
+#        FTP_SERVER    np. ftp.mojadomena.pl
+#        FTP_USERNAME  login FTP
+#        FTP_PASSWORD  haslo FTP
+#        FTP_REMOTE_DIR np. /public_html/   (folder domeny na serwerze)
+#   3. Zapushuj zmiane na branch `main` - akcja uruchomi sie automatycznie.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ secrets.FTP_REMOTE_DIR }}
+          local-dir: ./dist/
+          dangerous-clean-slate: false

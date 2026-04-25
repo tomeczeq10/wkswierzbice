@@ -1,0 +1,254 @@
+---
+/**
+ * Strona główna w wariancie „Magazyn klubowy" (legia.com inspiration).
+ * DARK MODE + sticky compact match bar + editorial sidebar „Top stories"
+ * + full-bleed featured z drop cap + serif typography dla treści.
+ */
+import type { CollectionEntry } from "astro:content";
+import { SITE, SOCIAL, HIGHLIGHTS } from "@/config/site";
+
+interface Match {
+  round: number;
+  date: string | null;
+  time: string | null;
+  dateRaw: string | null;
+  venue: "home" | "away";
+  opponent: string;
+  result?: { outcome: "win" | "draw" | "loss"; scoreLabel: string } | null;
+}
+
+interface Props {
+  news: CollectionEntry<"news">[];
+  nextMatch: Match | null;
+  lastMatch: Match | null;
+  position: number | null;
+  points: number | null;
+}
+
+const { news, nextMatch, lastMatch, position, points } = Astro.props;
+
+const featured = news[0];
+const sidebarTop = news.slice(1, 6);
+const grid = news.slice(6, 14);
+
+const PL_MONTHS = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"];
+const formatDateBadge = (d: Date) => `${d.getDate()} ${PL_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+
+const matchDateShort = (m: Match | null) => {
+  if (!m?.date) return m?.dateRaw ?? "TBD";
+  const d = new Date(`${m.date}T${m.time ?? "12:00"}:00+02:00`);
+  if (Number.isNaN(d.getTime())) return m.dateRaw ?? m.date;
+  return `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}${m.time ? ` · ${m.time}` : ""}`;
+};
+
+const outcomeColor = {
+  win: "text-emerald-400",
+  draw: "text-amber-400",
+  loss: "text-rose-400",
+};
+---
+
+<div class="magazyn-root bg-slate-950 text-slate-100">
+
+  {/* ============== STICKY MATCH BAR ============== */}
+  <div class="sticky top-[72px] z-40 bg-black/95 backdrop-blur border-b border-white/10 text-[11px]">
+    <div class="container mx-auto px-4 flex flex-wrap items-center gap-x-6 gap-y-2 py-2.5">
+      <div class="flex items-center gap-2">
+        <span class="w-1.5 h-1.5 rounded-full bg-brand-secondary marka-pulse"></span>
+        <span class="uppercase tracking-[0.3em] text-white/40 font-display">Live</span>
+      </div>
+      <div class="flex items-center gap-2 text-white/80">
+        <span class="font-display text-brand-secondary">{position ?? "–"}.</span>
+        <span class="font-display uppercase">WKS Wierzbice</span>
+        <span class="text-white/40">· {points ?? 0} pkt</span>
+      </div>
+      {lastMatch && (
+        <div class="hidden md:flex items-center gap-2">
+          <span class="text-white/30 uppercase tracking-widest font-display">Ostatni</span>
+          <span class={`font-display ${outcomeColor[lastMatch.result?.outcome ?? "draw"]}`}>
+            {lastMatch.result?.scoreLabel ?? "-:-"}
+          </span>
+          <span class="text-white/60 truncate max-w-[12rem]">{lastMatch.opponent}</span>
+        </div>
+      )}
+      {nextMatch && (
+        <div class="flex items-center gap-2 ml-auto">
+          <span class="text-white/30 uppercase tracking-widest font-display">Następny</span>
+          <span class="text-white/80 truncate max-w-[14rem]">{nextMatch.opponent}</span>
+          <span class="text-white/40">· {matchDateShort(nextMatch)}</span>
+          <a href="/terminarz" class="ml-2 text-brand-secondary uppercase tracking-widest font-display hover:underline hidden sm:inline">
+            Terminarz →
+          </a>
+        </div>
+      )}
+    </div>
+  </div>
+
+  {/* ============== HERO — full-bleed featured ============== */}
+  {featured && (
+    <a href={`/aktualnosci/${featured.slug}`} class="group block relative h-[78vh] min-h-[560px] overflow-hidden">
+
+      {featured.data.cover ? (
+        <img
+          src={featured.data.cover}
+          alt={featured.data.coverAlt ?? featured.data.title}
+          class="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-[1.5s]"
+        />
+      ) : (
+        <div class="absolute inset-0 bg-gradient-to-br from-brand-ink via-brand-primary-dark to-black"></div>
+      )}
+
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-slate-950/40"></div>
+      <div class="absolute inset-0 bg-gradient-to-r from-slate-950/70 via-transparent to-transparent"></div>
+
+      <div class="relative h-full container mx-auto px-4 flex flex-col justify-end pb-12 lg:pb-20">
+        <div class="max-w-4xl">
+          <div class="flex flex-wrap items-center gap-3 mb-5">
+            <span class="bg-brand-secondary text-white text-[10px] uppercase tracking-[0.3em] font-display px-3 py-1.5">
+              ★ Top story
+            </span>
+            {featured.data.tags && featured.data.tags.slice(0, 2).map((tag) => (
+              <span class="text-[10px] uppercase tracking-[0.3em] font-display text-white/60 border border-white/20 px-2 py-1">
+                {tag}
+              </span>
+            ))}
+            <span class="text-[10px] uppercase tracking-[0.3em] font-display text-white/40">
+              {formatDateBadge(featured.data.date)}
+            </span>
+          </div>
+          <h1 class="font-display uppercase tracking-[-0.01em] text-4xl sm:text-6xl lg:text-7xl xl:text-8xl leading-[0.95] text-white">
+            {featured.data.title}
+          </h1>
+          <p class="magazyn-lead mt-6 max-w-2xl text-lg lg:text-xl text-white/80 leading-relaxed line-clamp-3">
+            {featured.data.excerpt}
+          </p>
+          <div class="mt-7 inline-flex items-center gap-3 text-brand-secondary font-display uppercase text-sm tracking-[0.3em]">
+            Czytaj artykuł
+            <span class="w-12 h-px bg-brand-secondary group-hover:w-20 transition-all"></span>
+          </div>
+        </div>
+      </div>
+    </a>
+  )}
+
+  {/* ============== EDITORIAL: main + sidebar Top Stories ============== */}
+  <section class="bg-slate-950 py-16 lg:py-24">
+    <div class="container mx-auto px-4 grid lg:grid-cols-[1fr,22rem] xl:grid-cols-[1fr,26rem] gap-12 lg:gap-16">
+
+      {/* Main grid — duże redakcyjne karty */}
+      <div>
+        <div class="flex items-end justify-between mb-8 border-b border-white/10 pb-4">
+          <div>
+            <span class="text-[10px] uppercase tracking-[0.4em] font-display text-brand-secondary">Z życia klubu</span>
+            <h2 class="font-display uppercase text-3xl mt-2 text-white">Najnowsze artykuły</h2>
+          </div>
+          <a href="/aktualnosci" class="text-brand-secondary font-display uppercase text-xs tracking-widest hover:underline">
+            Wszystkie →
+          </a>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-x-8 gap-y-12">
+          {grid.map((post) => (
+            <a href={`/aktualnosci/${post.slug}`} class="group block">
+              <div class="aspect-[4/3] bg-slate-800 overflow-hidden mb-4">
+                {post.data.cover ? (
+                  <img
+                    src={post.data.cover}
+                    alt={post.data.coverAlt ?? post.data.title}
+                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-brand-primary-dark to-slate-900"></div>
+                )}
+              </div>
+              <div class="text-[10px] uppercase tracking-[0.3em] text-white/40 font-display mb-2">
+                {formatDateBadge(post.data.date)}
+                {post.data.tags?.[0] && (
+                  <span class="text-brand-secondary ml-3">{post.data.tags[0]}</span>
+                )}
+              </div>
+              <h3 class="font-display uppercase text-xl leading-tight text-white group-hover:text-brand-secondary transition-colors">
+                {post.data.title}
+              </h3>
+              <p class="magazyn-body mt-2 text-sm text-white/60 line-clamp-2">{post.data.excerpt}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Sidebar — Top Stories numbered 1..5 */}
+      <aside class="lg:sticky lg:top-[140px] lg:self-start">
+        <div class="border-l-2 border-brand-secondary pl-5">
+          <span class="text-[10px] uppercase tracking-[0.4em] font-display text-brand-secondary block">
+            Top stories
+          </span>
+          <h3 class="font-display uppercase text-2xl mt-2 mb-6 text-white">Najczęściej czytane</h3>
+        </div>
+
+        <ol class="space-y-5">
+          {sidebarTop.map((post, idx) => (
+            <li>
+              <a href={`/aktualnosci/${post.slug}`} class="group flex gap-4 items-start">
+                <span class="font-display text-5xl leading-none text-white/15 group-hover:text-brand-secondary transition-colors w-12 shrink-0">
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <div class="min-w-0 pt-1">
+                  <div class="text-[9px] uppercase tracking-[0.3em] text-white/40 font-display mb-1">
+                    {formatDateBadge(post.data.date)}
+                  </div>
+                  <h4 class="font-display uppercase text-base leading-snug text-white group-hover:text-brand-secondary transition-colors line-clamp-3">
+                    {post.data.title}
+                  </h4>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ol>
+
+        <div class="mt-10 pt-8 border-t border-white/10">
+          <div class="text-[10px] uppercase tracking-[0.4em] font-display text-brand-secondary mb-4">Klub w liczbach</div>
+          <dl class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <dt class="text-white/40 text-xs uppercase tracking-widest font-display">W tabeli</dt>
+              <dd class="font-display text-3xl text-white mt-1">{position ?? "–"}<span class="text-base text-white/40">.</span></dd>
+            </div>
+            <div>
+              <dt class="text-white/40 text-xs uppercase tracking-widest font-display">Punkty</dt>
+              <dd class="font-display text-3xl text-white mt-1">{points ?? "–"}</dd>
+            </div>
+            <div>
+              <dt class="text-white/40 text-xs uppercase tracking-widest font-display">Król strzelców</dt>
+              <dd class="font-display text-2xl text-brand-secondary mt-1">{HIGHLIGHTS.topScorerGoals}</dd>
+              <dd class="text-xs text-white/50 mt-0.5">{HIGHLIGHTS.topScorerName}</dd>
+            </div>
+            <div>
+              <dt class="text-white/40 text-xs uppercase tracking-widest font-display">Lat klubu</dt>
+              <dd class="font-display text-3xl text-white mt-1">{new Date().getFullYear() - SITE.founded}</dd>
+            </div>
+          </dl>
+        </div>
+      </aside>
+
+    </div>
+  </section>
+
+  {/* ============== Newsletter / FB CTA ============== */}
+  <section class="border-y border-white/10 bg-black">
+    <div class="container mx-auto px-4 py-14 grid md:grid-cols-[1fr,auto] items-center gap-6">
+      <div>
+        <span class="text-[10px] uppercase tracking-[0.4em] font-display text-brand-secondary">Bądź na bieżąco</span>
+        <h2 class="font-display uppercase text-3xl mt-2 text-white">Śledź klub w social media</h2>
+        <p class="text-white/60 mt-2 max-w-xl">
+          Pełne wyniki, kulisy szatni, zapowiedzi meczów — najszybciej na naszym fanpage'u.
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-3">
+        <a href={SOCIAL.facebook} target="_blank" rel="noopener" class="btn-primary">
+          Facebook ({SOCIAL.facebookFollowers.toLocaleString("pl-PL")})
+        </a>
+        <a href="/nabory" class="btn-outline text-white border-white/30 hover:bg-white/10">Zapisz dziecko</a>
+      </div>
+    </div>
+  </section>
+
+</div>

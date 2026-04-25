@@ -1,0 +1,38 @@
+---
+import { SPONSORS } from "@/config/site";
+
+interface Props {
+  variant?: "compact" | "full";
+}
+
+const { variant = "compact" } = Astro.props;
+const items = variant === "compact" ? SPONSORS.slice(0, 6) : SPONSORS;
+---
+
+<div
+  class:list={[
+    "grid gap-6 items-center",
+    variant === "compact"
+      ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-6"
+      : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4",
+  ]}
+>
+  {
+    items.map((s) => (
+      <a
+        href={s.url}
+        target="_blank"
+        rel="noopener"
+        title={s.name}
+        class="group flex items-center justify-center bg-white rounded-lg border border-slate-200 p-4 h-24 hover:border-brand-primary transition-colors"
+      >
+        <img
+          src={s.logo}
+          alt={s.name}
+          loading="lazy"
+          class="max-h-16 max-w-full object-contain grayscale group-hover:grayscale-0 transition duration-300"
+        />
+      </a>
+    ))
+  }
+</div>

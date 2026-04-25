@@ -1,0 +1,38 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import TeamCard from "@/components/TeamCard.astro";
+
+const teams = (await getCollection("teams")).sort(
+  (a, b) => b.data.order - a.data.order,
+);
+---
+
+<BaseLayout
+  title="Drużyny"
+  description="Wszystkie drużyny klubu WKS Wierzbice – od żaków do seniorów. Sprawdź trenera, terminarz treningów i skład."
+>
+  <PageHeader
+    kicker="Drużyny"
+    title="Wszystkie nasze zespoły"
+    description="W klubie trenują seniorzy, juniorzy, trampkarze, orliki oraz żaki. Zapraszamy na treningi i mecze."
+  />
+
+  <section class="section">
+    <div class="container mx-auto grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {
+        teams.map((team) => (
+          <TeamCard
+            href={`/druzyny/${team.slug}`}
+            name={team.data.name}
+            category={team.data.category}
+            league={team.data.league}
+            coach={team.data.coach}
+            photo={team.data.photo}
+          />
+        ))
+      }
+    </div>
+  </section>
+</BaseLayout>
