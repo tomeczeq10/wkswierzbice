@@ -13,6 +13,125 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-25 (szósta tura) — Etap 3 DONE: kolekcje `News` + `Tags` w Payload
+
+Wykonany Etap 3 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md):
+schema News 1:1 z istniejącym Zod, plus osobna kolekcja Tags z relacją
+hasMany (zamiast initially planowanego `select hasMany`). Test 16/16
+zaliczony przez REST API.
+
+### Added
+
+- **`apps/cms/src/collections/News.ts`** — kolekcja aktualności klubowych:
+  - Pola 1:1 z Zod (`apps/web/src/content/config.ts`): `title`, `date`,
+    `excerpt`, `cover`, `coverAlt`, `tags`, `author` (default "Redakcja klubu"),
+    `draft` (default false), `facebookUrl`, `truncated`.
+  - Nowe pola dla CMS: `slug` (text unique, auto z `title`, możliwy override),
+    `body` (richText Lexical — w Astro było to wszystko po `---`).
+  - `tags` — `relationship` hasMany do kolekcji Tags (decyzja Tomka — patrz
+    Tags poniżej).
+  - `facebookUrl` — custom validator z polskimi komunikatami błędów
+    ("Niepoprawny URL.", "URL musi zaczynać się od http:// lub https://").
+  - Polskie etykiety (`labels.singular.pl`, `labels.plural.pl`, `label.pl`
+    na każdym polu) — przygotowanie pod Etap 21 (i18n panelu).
+  - `admin.useAsTitle: 'title'`, `defaultColumns: [title, date, draft, updatedAt]`,
+    `defaultSort: '-date'` (najnowsze na górze listy w panelu).
+  - Pola pogrupowane przez `admin.position: 'sidebar'` (data, draft, slug, tags,
+    author w sidebarze; title, excerpt, body, cover/coverAlt, facebookUrl,
+    truncated w głównej kolumnie).
+- **`apps/cms/src/collections/Tags.ts`** — **rozszerzenie poza pierwotny plan**:
+  zamiast `select hasMany` z 14 hardcoded opcjami zrobiliśmy osobną kolekcję
+  z relacją (decyzja: redaktor sam dodaje nowy tag bez czekania na admina/push
+  do gita). Pola: `name` (unique, indexed), `slug` (auto z `name`, override
+  możliwy). Polskie etykiety, `useAsTitle: 'name'`.
+- **`apps/cms/src/utils/slugify.ts`** — zero-dep slugify obsługujący polskie
+  znaki (`ł→l`, NFD dla diakrytyków `ą→a`, `ę→e`, `ó→o`, `ż→z`, `ć→c`, `ś→s`,
+  `ń→n`, `ź→z`) + emoji + limit 100 znaków. Test inline: `"Zwycięska seria
+  trwa! 🫡"` → `"zwycieska-seria-trwa"`.
+- **Wygenerowane typy TS:** `apps/cms/src/payload-types.ts` (454 linie) —
+  interfaces `News`, `Tag`, `User`, `Media` + `*Select` typy do query selecting
+  fields. Generowane przez `npm run generate:types`. W Etapach 4-5 będziemy
+  je re-exportować z `packages/shared` żeby `apps/web` mogło ich używać.
+
+### Changed
+
+- **`apps/cms/src/payload.config.ts`** — `collections: [Users, Media, News, Tags]`
+  (z `[Users, Media]`).
+
+### Test Results (16/16 ✅) — REST API smoke test
+
+CRUD przez `curl` + JWT auth (bez interakcji w przeglądarce, decyzja Tomka):
+1-2. ✅ `GET /api/news` i `GET /api/tags` → HTTP 200, kolekcje zarejestrowane.
+3-4. ✅ `POST /api/tags` z polskimi znakami: `seniorzy` → slug `seniorzy`,
+     `zwycięstwo` → slug `zwyciestwo` (slugify obsługuje diakrytyki PL).
+5.   ✅ `POST /api/news` z 11 polami + 2 tagami w relacji + Lexical body →
+     HTTP 200, slug auto = `zwycieska-seria-trwa` (z tytułu z polskim znakiem
+     + emoji 🫡 prawidłowo zignorowane).
+6.   ✅ `PATCH /api/news/1 {slug, draft: true}` — slug nadpisany, draft toggle.
+7.   ✅ `POST /api/news` z `facebookUrl: "not-a-url"` → HTTP 400, polski
+     komunikat `"Niepoprawny URL."` na ścieżce `facebookUrl`.
+8.   ✅ `GET /api/news/1?depth=2` — tags populated z pełnymi obiektami.
+9-10. ✅ `GET /api/news?where[draft][equals]=true|false` — filter działa
+     po stronie SQLite (`totalDocs: 1` i `0` odpowiednio).
+11.  ✅ `DELETE /api/news/1` → HTTP 200, `"Deleted successfully."`.
+12.  ✅ `GET /api/news` po delete → `totalDocs: 0`.
+13.  ✅ `GET /api/tags` po delete news → `totalDocs: 2` (tagi przeżyły,
+     relacja hasMany **nie kaskaduje delete**).
+14.  ✅ `sqlite3 cms.db .tables` → tabele: `news`, `news_rels` (junction
+     dla relacji), `tags`, `media`, `users`, `users_sessions`, plus systemowe
+     Payload (`payload_kv`, `payload_locked_documents`, `_rels`,
+     `payload_migrations`, `payload_preferences`, `_rels`).
+15.  ✅ `npm run generate:types` → 454 linie z interfaces News/Tag/User/Media.
+16.  ✅ Linter: 0 błędów w News.ts, Tags.ts, slugify.ts, payload.config.ts.
+
+### Decisions resolved during this stage
+
+- **Tags strategy (zaproponowane 3 warianty):** Wariant C — osobna kolekcja
+  `Tags` z relacją hasMany. Zamiast initially planowanego (Wariant A — `select
+  hasMany` z 14 hardcoded opcjami) lub free-text (Wariant B). Powód: redaktor
+  może sam dodać nowy tag bez czekania na admina/push do gita.
+- **Slug strategy:** Wariant A (najpopularniejszy) — auto z `title` przez hook
+  `beforeValidate` z możliwością ręcznego override. Walka z literówkami nie jest
+  tu istotna bo to tylko URL.
+- **Body editor:** Lexical RichText (default Payload) — WYSIWYG dla redakcji
+  bez znajomości markdown. Migracja istniejących .md → Lexical przez serializer
+  w Etapie 5.
+- **Scope Etap 3:** sam schema + smoke test przez API (decyzja Tomka). Bez
+  interakcji w przeglądarce — to przyjdzie w Etapach 4-5 jak będzie front-end
+  do CMS-a.
+
+### Fixed
+
+- **Payload push mode + zmiana schema = `SQLITE_ERROR: index ... already
+  exists`.** Po dodaniu collections (News, Tags) Payload przy każdym restarcie
+  próbuje re-applikować DDL i kolizja z systemowym indexem
+  `payload_locked_documents_rels_order_idx`. **Fix:** clean slate dev DB
+  (`rm -f apps/cms/cms.db cms.db-journal cms.db-shm cms.db-wal`) + ponowny
+  first-user signup (i tak był DEV-only). **W Etapie 17** (deploy production)
+  przejdziemy na proper migrations (drizzle-kit migrate generate/run) zamiast
+  push mode.
+- **Stale dev server po killu** — Next 16 zostawia detached `next-server`
+  proces który blokuje port 3000 nawet po `kill <pid_npm>`. **Workaround:**
+  zawsze sprawdzać `pgrep -lf "next dev"` przed restartem i killować ALL
+  pid-y które jeszcze żyją.
+
+### Open / w kolejnym etapie
+
+- **Etap 4** — Astro odpytuje Payload REST. Zamiast `getCollection('news')`
+  z plików .md → `fetch('${PAYLOAD_URL}/api/news?where[draft][equals]=false&sort=-date')`.
+  Helper `apps/web/src/lib/cms.ts` z typowanym wrapperem. Test: news dodany
+  przez panel widać na localhost:4321/aktualnosci.
+- **Etap 5** — migracja 24 istniejących `apps/web/src/content/news/*.md` do
+  Payload przez Local API + serializer markdown → Lexical.
+- **packages/shared re-export typów** — w Etapie 4 zaczniemy importować typy
+  News/Tag z `apps/cms/src/payload-types.ts` przez re-export w
+  `packages/shared/index.ts`.
+- **i18n panelu (Etap 21)** — wszystkie nowe kolekcje już mają polskie
+  etykiety przygotowane (`labels.pl`, `label.pl`). Etap 21 doda tylko Polski
+  jako default locale w panelu zamiast English.
+
+---
+
 ## 2026-04-25 (piąta tura) — Etap 2 DONE: Payload CMS uruchomiony lokalnie
 
 Wykonany Etap 2 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md):

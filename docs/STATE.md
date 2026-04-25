@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-25 (Etap 2 DONE — Payload zainstalowany, /admin działa, first-user signup OK)
+> **Ostatnia aktualizacja:** 2026-04-25 (Etap 3 DONE — kolekcje News + Tags z relacją, slugify PL, Lexical body, walidacje PL, full CRUD przez API)
 
 ## Produkcja
 
@@ -106,8 +106,24 @@ Implementacja:
   zmieniamy na właściwe credentials produkcyjne). Login zwraca JWT token,
   sesja zapisywana w `apps/cms/cms.db`. Frontend Astro nietknięty: build
   40 stron w 1.58s. Sekret 32 random bytes hex w `apps/cms/.env` (gitignored).
-- ⏳ **Etapy 3–18** — nie rozpoczęte. Następny: Etap 3 (pierwsza encja
-  `News` w Payload — kolekcja 1:1 z istniejącym Zod schema z `apps/web/src/content/config.ts`).
+- ✅ **Etap 3 (2026-04-25)** — kolekcje `News` + `Tags` w Payload.
+  Schema News 1:1 z Zod (`apps/web/src/content/config.ts`) + 2 nowe pola: `slug`
+  (auto z `title` przez `slugify` obsługujący polskie znaki, możliwy ręczny
+  override) i `body` (Lexical RichText, w Astro było to wszystko po `---`).
+  **Tags jako osobna kolekcja** z relacją hasMany (decyzja: redaktor sam dodaje
+  nowy tag bez czekania na admina/push do gita) zamiast initially planowanego
+  `select hasMany` z hardcoded opcjami. Custom validator `facebookUrl` z polskimi
+  komunikatami błędów. Polskie etykiety (`labels.pl`, `label.pl`) — przygotowanie
+  pod Etap 21 (i18n). Pola pogrupowane przez `admin.position: 'sidebar'` dla
+  lepszego UX. Test: 16/16 zaliczonych przez REST API (CRUD News, CRUD Tags,
+  filter `where[draft][equals]`, depth=2 populate relacji, walidacje, polskie
+  znaki w slugach: `zwycięstwo` → `zwyciestwo`). Wygenerowane typy TS w
+  `apps/cms/src/payload-types.ts` (454 linie). Pułapka: Payload push mode w SQLite
+  rzucał `SQLITE_ERROR: index already exists` po dodaniu collections — fix przez
+  clean slate dev DB (w Etapie 17 przejdziemy na proper migrations drizzle-kit).
+- ⏳ **Etapy 4–18** — nie rozpoczęte. Następny: Etap 4 (Astro odpytuje Payload
+  REST API — zamiast `getCollection('news')` z plików .md → fetch z
+  `${PAYLOAD_URL}/api/news?where[draft][equals]=false&sort=-date`).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

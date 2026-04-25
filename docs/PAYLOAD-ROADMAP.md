@@ -158,20 +158,50 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 3. Pierwsza encja `News` w Payload
 
-**Status:** [ ] not started
+**Status:** [x] **DONE (2026-04-25)**
 
-**Co robimy:**
-- `apps/cms/src/collections/News.ts` — collection config skopiowany 1:1 z Zod schema w `apps/web/src/content/config.ts`.
-- Pola: `title` (text, required), `date` (date, required), `excerpt` (textarea), `cover` (text na razie, w Etapie 6 zmienimy na upload), `coverAlt` (text), `tags` (select hasMany z opcjami z istniejącego schema), `body` (richText Lexical), `draft` (checkbox), `facebookUrl` (text), `truncated` (checkbox).
-- `slug` autogenerowany z `title` (hook `beforeChange`).
-- Rejestracja w `payload.config.ts`.
+**Co zrobiliśmy:**
+- `apps/cms/src/collections/News.ts` — schema 1:1 z Zod (`apps/web/src/content/config.ts`) + 2 nowe pola wymagane dla CMS:
+  - `slug` (text, unique, indexed) — auto-generowany z `title` przez hook `beforeValidate` z możliwością ręcznego override (decyzja Etap 3).
+  - `body` (richText Lexical) — w Astro było to "wszystko po `---`", w Payload musi być explicit field.
+- `apps/cms/src/collections/Tags.ts` — **nowość poza pierwotnym planem**: zamiast `select hasMany` z hardcoded opcjami zrobiliśmy osobną kolekcję `Tags` z relacją `hasMany` (decyzja Tomka — redaktor może sam dodać nowy tag bez czekania na admina/push do gita).
+- `apps/cms/src/utils/slugify.ts` — zero-dep slugify obsługujący polskie znaki (`ł→l`, NFD dla diakrytyków `ą→a`, `ę→e`, `ó→o`, `ż→z`...) + emoji + limit 100 znaków.
+- Rejestracja w `payload.config.ts`: `collections: [Users, Media, News, Tags]`.
+- Polskie etykiety w panelu (`labels.singular.pl`, `labels.plural.pl`, `label.pl` na każdym polu) — przygotowanie pod Etap 21 (i18n).
+- Pola pogrupowane przez `admin.position: 'sidebar'` (sidebar: data, draft, slug, tags, author / main: title, excerpt, body, cover, coverAlt, facebookUrl, truncated).
+- `defaultSort: '-date'` — najnowsze na górze listy w panelu.
+- Walidacja `facebookUrl` — custom `validate` z polskimi komunikatami błędów ("Niepoprawny URL.", "URL musi zaczynać się od http:// lub https://").
+- `npm run generate:types` — wygenerowano `apps/cms/src/payload-types.ts` (454 linie z `User`, `Media`, `News`, `Tag` interfaces + `*Select` typy do query selecting).
 
-**Test:**
-- W panelu pojawia się sekcja „News" w sidebarze.
-- Mogę dodać nowy artykuł, wypełnić wszystkie pola, zapisać → widzę go na liście.
-- Edycja istniejącego → zapis działa.
-- Usunięcie → znika z listy.
-- `payload.db` zawiera tabelę `news` z dodanymi rekordami (sprawdzam SQLite browser-em).
+**Decyzje rozstrzygnięte (zadane userowi przed startem):**
+- **Tags strategy:** osobna kolekcja `Tags` z relacją (Wariant C z 3 zaproponowanych) — zamiast initially planowanego `select hasMany` z 14 hardcoded opcjami.
+- **Slug strategy:** auto z możliwością ręcznego override (Wariant A — najpopularniejszy w 95% projektów Payload).
+- **Body editor:** Lexical RichText (default Payload) — WYSIWYG dla redakcji bez znajomości markdown. Migracja .md → Lexical przez serializer w Etapie 5.
+- **Scope:** sam schema + smoke test przez API (bez ręcznego klikania w przeglądarce).
+
+**Test (16/16 ✅) — full CRUD + walidacje przez REST API:**
+1. ✅ `GET /api/news` → HTTP 200, `totalDocs: 0` (puste, kolekcja zarejestrowana).
+2. ✅ `GET /api/tags` → HTTP 200, `totalDocs: 0` (kolekcja zarejestrowana).
+3. ✅ `POST /api/tags {name: "seniorzy"}` → HTTP 200, slug auto = `seniorzy`.
+4. ✅ `POST /api/tags {name: "zwycięstwo"}` → HTTP 200, slug auto = `zwyciestwo` (polskie znaki obsłużone).
+5. ✅ `POST /api/news` z 11 polami + 2 tagami w relacji + Lexical body → HTTP 200, news id=1, slug auto = `zwycieska-seria-trwa` (z tytułu z polskim znakiem + emoji 🫡).
+6. ✅ `PATCH /api/news/1 {slug: "seniorzy-marszowice-2-0", draft: true}` → slug poprawnie nadpisany, draft toggle.
+7. ✅ `POST /api/news` z `facebookUrl: "not-a-url"` → HTTP 400, `{"label":"Facebook post URL","message":"Niepoprawny URL.","path":"facebookUrl"}` — walidacja działa po polsku.
+8. ✅ `GET /api/news/1?depth=2` → tags populated z pełnymi obiektami (`[{id, name, slug, ...}]`).
+9. ✅ `GET /api/news?where[draft][equals]=true` → `totalDocs: 1` (filter działa).
+10. ✅ `GET /api/news?where[draft][equals]=false` → `totalDocs: 0` (filter działa po stronie SQLite).
+11. ✅ `DELETE /api/news/1` → HTTP 200, `"Deleted successfully."`.
+12. ✅ `GET /api/news` (po delete) → `totalDocs: 0`.
+13. ✅ `GET /api/tags` (po delete news) → `totalDocs: 2` (tagi przeżyły usunięcie newsa, relacja hasMany nie kaskaduje delete).
+14. ✅ `sqlite3 cms.db .tables` → tabele `news`, `news_rels` (junction), `tags`, `media`, `users`, `users_sessions`, plus systemowe Payload (`payload_kv`, `payload_locked_documents`, `payload_locked_documents_rels`, `payload_migrations`, `payload_preferences`, `payload_preferences_rels`).
+15. ✅ `npm run generate:types` → wygenerowano `payload-types.ts` z `News`, `Tag`, `User`, `Media` interfaces.
+16. ✅ Linter: 0 błędów w News.ts, Tags.ts, slugify.ts, payload.config.ts.
+
+**Pułapki które trzeba było obejść:**
+- **Push mode + zmiana schema =** `SQLITE_ERROR: index ... already exists`. Payload przy każdym restarcie próbuje re-applikować DDL i kolizja z indexami systemowymi. **Fix:** clean slate dev DB (`rm -f cms.db cms.db-journal cms.db-shm cms.db-wal`) + ponowny first-user signup. **W Etapie 17** przejdziemy na proper migrations (drizzle-kit migrate).
+- **Stale dev server po killu** — Next 16 zostawia detached process który blokuje port 3000. **Fix:** zawsze `pgrep -lf "next dev"` przed restartem.
+
+**Konto admin (DEV ONLY) odtworzone:** `admin@wks-wierzbice.pl` / `WKSadmin2026!`.
 
 ---
 
@@ -490,8 +520,9 @@ Po każdym etapie aktualizujemy:
 - Wpis do [`STATE.md`](STATE.md) w sekcji „Wariant 2 / Panel admina".
 - Wpis do [`CHANGELOG.md`](CHANGELOG.md) z datą sesji.
 
-**Stan na 2026-04-25 (po sesji 2 — czwarta tura):**
+**Stan na 2026-04-25 (po sesji 3 — szósta tura):**
 - ✅ Etap 1 DONE (monorepo + git init).
 - ✅ Etap 2 DONE (Payload zainstalowany, /admin działa, first-user signup OK).
-- ⏳ Etapy 3–18 nie rozpoczęte.
-- **Następny:** Etap 3 — pierwsza encja `News` w Payload (kolekcja 1:1 z istniejącym Zod schema).
+- ✅ Etap 3 DONE (kolekcje News + Tags z relacją hasMany, slugify PL, Lexical body, walidacje PL, full CRUD przez API).
+- ⏳ Etapy 4–18 nie rozpoczęte.
+- **Następny:** Etap 4 — Astro odpytuje Payload REST (zamiast `getCollection('news')` z plików .md → fetch z `/api/news?where[draft][equals]=false&sort=-date`).

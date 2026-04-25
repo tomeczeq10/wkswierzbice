@@ -69,6 +69,8 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    news: News;
+    tags: Tag;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,6 +80,8 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    news: NewsSelect<false> | NewsSelect<true>;
+    tags: TagsSelect<false> | TagsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -162,6 +166,80 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Wpisy widoczne na /aktualnosci. Pole "Szkic" ukrywa news przed publikacją.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news".
+ */
+export interface News {
+  id: number;
+  title: string;
+  /**
+   * Część adresu po /aktualnosci/. Wypełniane auto z tytułu, można nadpisać.
+   */
+  slug?: string | null;
+  date: string;
+  /**
+   * Zaznacz żeby ukryć przed publikacją na stronie.
+   */
+  draft?: boolean | null;
+  /**
+   * Wybierz istniejące tagi lub dodaj nowy ("Create new").
+   */
+  tags?: (number | Tag)[] | null;
+  author?: string | null;
+  /**
+   * Krótki opis widoczny na liście newsów (max 2-3 zdania).
+   */
+  excerpt: string;
+  /**
+   * Tymczasowo ścieżka tekstowa (np. /news/seniorzy-orzel.jpeg). W Etapie 6 zmienimy na upload.
+   */
+  cover?: string | null;
+  coverAlt?: string | null;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  /**
+   * Opcjonalnie. Pełny URL do posta na fanpage (https://www.facebook.com/...).
+   */
+  facebookUrl?: string | null;
+  /**
+   * Zaznacz jeśli treść z Facebooka została skrócona (na froncie pokażemy "Czytaj całość na FB").
+   */
+  truncated?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Tagi pomagają grupować newsy (np. wszystkie newsy o seniorach albo wszystkie o turniejach).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags".
+ */
+export interface Tag {
+  id: number;
+  name: string;
+  /**
+   * Wypełniane automatycznie z pola "Nazwa". Można nadpisać ręcznie (np. dla SEO).
+   */
+  slug?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -192,6 +270,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'media';
         value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'news';
+        value: number | News;
+      } | null)
+    | ({
+        relationTo: 'tags';
+        value: number | Tag;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -274,6 +360,36 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "news_select".
+ */
+export interface NewsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  date?: T;
+  draft?: T;
+  tags?: T;
+  author?: T;
+  excerpt?: T;
+  cover?: T;
+  coverAlt?: T;
+  body?: T;
+  facebookUrl?: T;
+  truncated?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tags_select".
+ */
+export interface TagsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
