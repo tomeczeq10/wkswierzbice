@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-25 (Etap 1 DONE — monorepo + git init)
+> **Ostatnia aktualizacja:** 2026-04-25 (Etap 2 DONE — Payload zainstalowany, /admin działa, first-user signup OK)
 
 ## Produkcja
 
@@ -98,7 +98,16 @@ Implementacja:
   (dev/build/sync działają tak samo jak wcześniej, tylko z prefiksem
   `--workspace=web`). Git zinicjalizowany (commit baseline + commit
   restrukturyzacji). Node 20.18.0 LTS w `.nvmrc`.
-- ⏳ **Etapy 2–18** — nie rozpoczęte. Następny: Etap 2 (Payload setup w `apps/cms/`).
+- ✅ **Etap 2 (2026-04-25)** — Payload CMS zainstalowany w `apps/cms/`.
+  Stack: Payload 3.84.1 + Next.js 16.2.3 + React 19.2.4 + `@payloadcms/db-sqlite`.
+  Dev server startuje na `http://localhost:3000` w 268ms (Turbopack), `/admin`
+  zwraca formularz "Create First User" (HTTP 200). Pierwszy admin utworzony
+  przez API: `admin@wks-wierzbice.pl` / `WKSadmin2026!` (TYLKO DEV — w Etapie 17
+  zmieniamy na właściwe credentials produkcyjne). Login zwraca JWT token,
+  sesja zapisywana w `apps/cms/cms.db`. Frontend Astro nietknięty: build
+  40 stron w 1.58s. Sekret 32 random bytes hex w `apps/cms/.env` (gitignored).
+- ⏳ **Etapy 3–18** — nie rozpoczęte. Następny: Etap 3 (pierwsza encja
+  `News` w Payload — kolekcja 1:1 z istniejącym Zod schema z `apps/web/src/content/config.ts`).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

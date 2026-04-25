@@ -13,6 +13,109 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-25 (piąta tura) — Etap 2 DONE: Payload CMS uruchomiony lokalnie
+
+Wykonany Etap 2 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md):
+Payload CMS 3 zainstalowany w `apps/cms/`, panel admina działa, pierwszy
+admin założony przez API, wszystkie test-case'y zaliczone.
+
+### Added
+
+- **`apps/cms/`** — pełna instalacja Payload przez `npx create-payload-app@latest -n cms -t blank --use-npm --no-agent`:
+  - `payload@3.84.1`, `@payloadcms/db-sqlite@3.84.1`, `@payloadcms/next@3.84.1`,
+    `@payloadcms/richtext-lexical@3.84.1`, `@payloadcms/ui@3.84.1`,
+    `next@16.2.3`, `react@19.2.4`, `sharp@0.34.2`, `graphql@16.8.1`.
+  - `src/payload.config.ts` — główny config (Users + Media collections,
+    SQLite adapter, Lexical editor).
+  - `src/collections/Users.ts` + `Media.ts` — built-in (Media wykorzystamy
+    dopiero w Etapie 6).
+  - `src/app/(payload)/admin/[[...segments]]/page.tsx` — routing panelu
+    `/admin`.
+  - `src/app/(payload)/api/[...slug]/route.ts` — REST API (`/api/users/*`,
+    `/api/media/*`, itp.).
+  - `src/app/(payload)/api/graphql/route.ts` — GraphQL endpoint.
+  - `Dockerfile`, `docker-compose.yml` — od dewelopera Payload, do
+    wykorzystania w Etapie 17.
+  - `playwright.config.ts`, `vitest.config.mts`, `vitest.setup.ts`, `tests/` —
+    defaultowe testy z templatu (na razie zostają, w razie kolizji w Etapie 16
+    przeglądniemy).
+- **`apps/cms/.env`** (gitignored) — `DATABASE_URL=file:./cms.db`,
+  `PAYLOAD_SECRET=<32 random hex bytes z openssl rand>`.
+- **`apps/cms/.env.example`** — zaktualizowany z domyślnego MongoDB connection
+  na nasze SQLite (`DATABASE_URL=file:./cms.db`).
+- **Root `.npmrc`** — `legacy-peer-deps=true` (Payload + Next 16 + React 19
+  generują nieszkodliwe peer-dep warningi na npm).
+- **Root `package.json`** — nowe skrypty proxy: `dev:cms`, `build:cms`,
+  `payload`, `generate:types`, `generate:importmap`.
+- **Konto admin (DEV ONLY):** `admin@wks-wierzbice.pl` / `WKSadmin2026!` —
+  utworzony przez `POST /api/users/first-register`. Zmienić w Etapie 17.
+
+### Changed
+
+- **`apps/cms/next.config.ts`** — dodane:
+  - `outputFileTracingRoot: path.resolve(dirname, '../..')` (root monorepo).
+  - `turbopack.root: path.resolve(dirname, '../..')` (musi być spójne z
+    powyższym, inaczej Next 16 rzuca warning).
+  - Bez tych pól Next 16 z Turbopack wywala błąd "couldn't find
+    next/package.json" w monorepo (gdzie `next` jest hoisted do root
+    `node_modules`).
+- **Root `.gitignore`** — rozszerzony o `apps/cms/*.db`, `apps/cms/*.db-journal`,
+  `apps/cms/uploads/`, `apps/cms/.next/`. Zachowane stare wpisy `.env*` (sekret
+  bezpiecznie ignorowany).
+- **Lokalny Node.js** — `nvm install 20.18.0 && nvm use 20.18.0` (domyślny
+  alias). Wcześniejsza v25.9.0 była eksperymentalna, Payload 3 oficjalnie
+  wspiera Node 20.9+.
+
+### Removed
+
+- **`apps/cms/node_modules/`** (po lokalnej instalacji z `create-payload-app`) —
+  usunięte żeby `npm install` z root mógł poprawnie zhostować deps przez
+  workspaces. Po `npm install` z root został tylko `apps/cms/node_modules/`
+  z 4 pakietami specyficznymi dla cms (`@img`, `@types`, `sharp`, `typescript`).
+
+### Fixed
+
+- **Turbopack w monorepo** — błąd "couldn't find next/package.json" rozwiązany
+  przez ustawienie `outputFileTracingRoot` + `turbopack.root` na root monorepo
+  (oba muszą mieć identyczną wartość).
+
+### Test Results (5/5 ✅)
+
+1. ✅ `npm run dev:cms` → Next.js Turbopack ready in 268ms na
+   `http://localhost:3000`, 0 errors, 0 warnings (po fixie root paths).
+2. ✅ `curl http://localhost:3000/admin` → HTTP 200, 55 KB HTML, formularz
+   `create-first-user` (email + password + register).
+3. ✅ `POST /api/users/first-register` → HTTP 200, message "Successfully
+   registered first user.", JWT token, user `id: 1`.
+4. ✅ `POST /api/users/login` → HTTP 200, message "Authentication Passed",
+   JWT token, sesja zapisana w `cms.db` (160 KB).
+5. ✅ `npm run build` (web) → 40 stron Astro built in 1.58s — frontend z
+   Etapu 1 nietknięty, monorepo działa zgodnie z planem.
+
+### Decisions resolved during this stage
+
+- **DB nazwa pliku:** `cms.db` (default z create-payload-app), nie `payload.db`
+  — mniej tarcia, jeden plik mniej do skonfigurowania w roadmap.
+- **Auth provider:** Payload built-in email + password (D5 default), bez OAuth.
+- **Port:** `3000` (default Next.js + Payload, bez kolizji z Astro :4321).
+
+### Open / w kolejnym etapie
+
+- **Etap 3** — pierwsza encja domeny: `News` collection 1:1 z istniejącym Zod
+  schema z `apps/web/src/content/config.ts`. Test-case: dodanie/edycja/usunięcie
+  newsa przez panel + weryfikacja w SQLite.
+- **Polskie tłumaczenie panelu** — Payload ma built-in i18n PL ale defaultowo
+  używa angielskiego. Przegląd kluczy w Etapie 21 (opcjonalnie wcześniej, jak
+  uciąży).
+- **Email adapter** — Payload pisze ostrzeżenie `WARN: No email adapter
+  provided. Email will be written to console.` Adapter (Resend / SMTP)
+  konfigurujemy w Etapie 17 (production).
+- **Audit npm** — `14 moderate severity vulnerabilities` (z transitive deps
+  Payload). Zostawiamy do przeglądu; Payload regularnie wypuszcza patche, w
+  Etapie 17 zrobimy `npm audit fix` przed deployem.
+
+---
+
 ## 2026-04-25 (czwarta tura) — Etap 1 DONE: restrukturyzacja monorepo
 
 ### Done

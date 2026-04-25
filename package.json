@@ -9,9 +9,14 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=web",
+    "dev:cms": "npm run dev --workspace=cms",
     "build": "npm run build --workspace=web",
+    "build:cms": "npm run build --workspace=cms",
     "preview": "npm run preview --workspace=web",
-    "sync:season": "npm run sync:season --workspace=web"
+    "sync:season": "npm run sync:season --workspace=web",
+    "payload": "npm run payload --workspace=cms",
+    "generate:types": "npm run generate:types --workspace=cms",
+    "generate:importmap": "npm run generate:importmap --workspace=cms"
   },
   "engines": {
     "node": ">=20.0.0"

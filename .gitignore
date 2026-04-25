@@ -21,9 +21,12 @@ pnpm-debug.log*
 .env.production
 
 # Payload (od Etapu 2)
-payload.db
-payload.db-journal
+# create-payload-app domyślnie nazywa SQLite plik `cms.db`, ale przewidujemy
+# możliwość zmiany — ignorujemy wszystkie pliki .db/.db-journal w apps/cms/.
+apps/cms/*.db
+apps/cms/*.db-journal
 apps/cms/uploads/
+apps/cms/.next/
 
 # macOS
 .DS_Store

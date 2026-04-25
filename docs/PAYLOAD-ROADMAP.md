@@ -123,22 +123,38 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 2. Setup Payload CMS w `apps/cms/`
 
-**Status:** [ ] not started
+**Status:** [x] **DONE (2026-04-25)**
 
-**Co robimy:**
-- `cd apps/cms && npx create-payload-app@latest .` z template Next.js + adapter SQLite (`@payloadcms/db-sqlite`).
-- Konfiguracja `apps/cms/payload.config.ts`: nazwa kolekcji `users` z auth (email + password), URL `http://localhost:3000`.
-- Plik `.env.local` z `PAYLOAD_SECRET` (random 32 bytes), `DATABASE_URI=file:./payload.db`.
-- Skrypt `npm run dev --workspace=cms` w root `package.json`.
+**Co zrobiliśmy:**
+- `nvm install 20.18.0 && nvm use 20.18.0` (default alias) — Payload 3 oficjalnie wspiera Node 20.9+; nasza poprzednia wersja v25 była eksperymentalna.
+- `npx create-payload-app@latest -n cms -t blank --use-npm --no-agent` w `apps/` (interaktywnie wybrane: SQLite, default connection string `file:./cms.db`).
+- Wynik: `apps/cms/` z Payload 3.84.1, Next.js 16.2.3, React 19.2.4, `@payloadcms/db-sqlite` 3.84.1, dodatkowo Playwright + Vitest (defaultowe testy z templatu).
+- Struktura: `src/payload.config.ts` (główny config), `src/collections/Users.ts` + `Media.ts` (built-in collections), `src/app/(payload)/admin/[[...segments]]/page.tsx` (routing panelu), `src/app/(payload)/api/[...slug]/route.ts` (REST), `src/app/(payload)/api/graphql/route.ts`.
+- `apps/cms/.env`: `DATABASE_URL=file:./cms.db`, `PAYLOAD_SECRET=<32 random bytes hex z openssl rand>` — plik w `.gitignore`.
+- `apps/cms/.env.example` zaktualizowany — z domyślnego MongoDB connection na nasze `file:./cms.db`.
+- Root `.npmrc` — `legacy-peer-deps=true` (Payload 3 + Next 16 + React 19 mają nieszkodliwe peer-dep konflikty na npm).
+- Root `package.json` rozszerzony o skrypty: `dev:cms`, `build:cms`, `payload`, `generate:types`, `generate:importmap` (proxy `--workspace=cms`).
+- `apps/cms/next.config.ts`: ustawione `outputFileTracingRoot` + `turbopack.root` na root monorepo (`apps/cms/../..`) — bez tego Next 16 / Turbopack rzuca błąd "couldn't find next/package.json" w monorepo.
+- Root `.gitignore` rozszerzony o `apps/cms/*.db`, `apps/cms/*.db-journal`, `apps/cms/uploads/`, `apps/cms/.next/`.
 
-**Test:**
-- `npm run dev --workspace=cms` → Next.js startuje na localhost:3000.
-- Wejście na `localhost:3000/admin` → first-user signup (email + hasło).
-- Po signup → automatyczne logowanie → widok dashboardu Payload.
-- Wylogowanie + logowanie z powrotem → działa.
+**Decyzje rozstrzygnięte:**
+- DB nazwa pliku: `cms.db` (default z create-payload-app — zostawiamy zamiast forsować `payload.db`, mniej tarcia).
+- Auth: email + password, brak OAuth (default Payload, zgodnie z D5).
+- Port: 3000 (default Next, zgodnie z roadmap).
 
-**Decyzje przed startem:**
-- D5 default OK? (email + password, bez OAuth na start).
+**Test (wszystkie przeszły):**
+- ✅ `npm run dev:cms` → Next.js Turbopack ready in 268ms na `http://localhost:3000` (0 errors, 0 warnings po fixie root paths).
+- ✅ `curl http://localhost:3000/admin` → HTTP 200, HTML 55 KB z formularzem `create-first-user` (email + password + register).
+- ✅ `curl -X POST /api/users/first-register {email,password,passwordConfirm}` → HTTP 200, `"Successfully registered first user"`, JWT token, `id: 1`.
+- ✅ `curl -X POST /api/users/login {email,password}` → HTTP 200, `"Authentication Passed"`, JWT token, sesja zapisana w `cms.db`.
+- ✅ `apps/cms/cms.db` (160 KB) wygenerowany z poprawnym schema + 1 user + 2 sesje.
+- ✅ `npm run build` (web) → 40 stron Astro built in 1.58s — frontend z Etapu 1 nietknięty.
+- ✅ `git status --ignored` potwierdza: `apps/cms/.env` i `apps/cms/cms.db` są ignored (sekret nie idzie do gita).
+
+**Konto admin (dev):**
+- email: `admin@wks-wierzbice.pl`
+- hasło: `WKSadmin2026!` (TYLKO DEV — w Etapie 17 zmieniamy na właściwe production credentials)
+- panel: http://localhost:3000/admin (kiedy `npm run dev:cms` jest uruchomiony)
 
 #### Etap 3. Pierwsza encja `News` w Payload
 
@@ -474,7 +490,8 @@ Po każdym etapie aktualizujemy:
 - Wpis do [`STATE.md`](STATE.md) w sekcji „Wariant 2 / Panel admina".
 - Wpis do [`CHANGELOG.md`](CHANGELOG.md) z datą sesji.
 
-**Stan na 2026-04-25:**
+**Stan na 2026-04-25 (po sesji 2 — czwarta tura):**
 - ✅ Etap 1 DONE (monorepo + git init).
-- ⏳ Etapy 2–18 nie rozpoczęte.
-- **Następny:** Etap 2 — `create-payload-app` w `apps/cms/`.
+- ✅ Etap 2 DONE (Payload zainstalowany, /admin działa, first-user signup OK).
+- ⏳ Etapy 3–18 nie rozpoczęte.
+- **Następny:** Etap 3 — pierwsza encja `News` w Payload (kolekcja 1:1 z istniejącym Zod schema).
