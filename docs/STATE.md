@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-25 (Etap 3 DONE — kolekcje News + Tags z relacją, slugify PL, Lexical body, walidacje PL, full CRUD przez API)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etap 4 DONE — Astro odpytuje Payload REST z graceful fallbackiem do .md, Lexical → HTML async, `/aktualnosci/*` w pełni przepięte na CMS)
 
 ## Produkcja
 
@@ -121,9 +121,29 @@ Implementacja:
   `apps/cms/src/payload-types.ts` (454 linie). Pułapka: Payload push mode w SQLite
   rzucał `SQLITE_ERROR: index already exists` po dodaniu collections — fix przez
   clean slate dev DB (w Etapie 17 przejdziemy na proper migrations drizzle-kit).
-- ⏳ **Etapy 4–18** — nie rozpoczęte. Następny: Etap 4 (Astro odpytuje Payload
-  REST API — zamiast `getCollection('news')` z plików .md → fetch z
-  `${PAYLOAD_URL}/api/news?where[draft][equals]=false&sort=-date`).
+- ✅ **Etap 4 (2026-04-26)** — Astro frontend odpytuje Payload REST API zamiast
+  `getCollection('news')`. Strony `/aktualnosci/` (lista) i `/aktualnosci/[slug]`
+  (single news) używają `fetchNewsList()` z `apps/web/src/lib/cms.ts` zamiast
+  Astro Content Collections. **Strategia fallback (decyzja Tomka):** jeśli CMS
+  niedostępny (timeout 5s, ECONNREFUSED, HTTP != 2xx), build/dev gracefully
+  fallbackuje na pliki `apps/web/src/content/news/*.md` z czytelnym warningiem
+  `[cms] Niedostępne (...): ... — fallback do .md`. Build NIGDY nie wywala się
+  z powodu CMS-a. Lexical RichText body renderowane przez
+  `@payloadcms/richtext-lexical/html-async` (`convertLexicalToHTMLAsync`) →
+  `<Fragment set:html={...}>`. Typy współdzielone przez nowy workspace
+  package `@wks/shared` (re-export `News, Tag, Media, User` z
+  `apps/cms/src/payload-types.ts`). **Zakres ograniczony** do `/aktualnosci/*` —
+  homepage `pages/index.astro` zostaje na `getCollection('news')` aż do
+  Etap 4b (osobny mini-stage). Dodano `apps/cms/scripts/seed-test-news.ts` —
+  idempotentny seed używający Payload Local API (omija auth), tworzy 1 tag +
+  1 news z Lexical body do testowania integracji. Pułapki: dotenv musi się
+  ładować PRZED importem `payload.config.ts` (dynamic import-fix); case-mismatch
+  w `find({ name: { equals: ... } })` może powodować ValidationError unique
+  slug przy idempotentnym seed-zie (workaround: lowercase wszędzie). Test E2E:
+  CMS UP → 1 news z CMS na liście (md zignorowane); CMS DOWN → 24 newsy z .md,
+  build success w 1.62s.
+- ⏳ **Etapy 4b–18** — nie rozpoczęte. Następny: **Etap 4b** (homepage na CMS) →
+  potem **Etap 5** (migracja 24 .md → Payload przez `gray-matter` + Local API).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

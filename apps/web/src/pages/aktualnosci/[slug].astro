@@ -1,20 +1,31 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { formatDate } from "@/lib/format";
+import { fetchNewsList, type NewsItem } from "@/lib/cms";
+import { lexicalToHtml } from "@/lib/lexical";
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const posts = await getCollection("news", ({ data }) => !data.draft);
+  const posts = await fetchNewsList();
   return posts.map((post) => ({
     params: { slug: post.slug },
     props: { post },
   }));
 };
 
+interface Props { post: NewsItem }
 const { post } = Astro.props;
-const { Content } = await post.render();
 const { title, date, cover, coverAlt, tags, author, excerpt, facebookUrl, truncated } = post.data;
+
+let bodyHtml: string | null = null;
+let MdContent: Awaited<ReturnType<Extract<NewsItem["body"], { type: "md" }>["entry"]["render"]>>["Content"] | null = null;
+
+if (post.body.type === "lexical") {
+  bodyHtml = await lexicalToHtml(post.body.value);
+} else if (post.body.type === "md") {
+  const rendered = await post.body.entry.render();
+  MdContent = rendered.Content;
+}
 ---
 
 <BaseLayout title={title} description={excerpt} image={cover}>
@@ -56,7 +67,7 @@ const { title, date, cover, coverAlt, tags, author, excerpt, facebookUrl, trunca
     <div class="section">
       <div class="container mx-auto max-w-3xl">
         <div class="prose-club">
-          <Content />
+          {MdContent ? <MdContent /> : bodyHtml ? <Fragment set:html={bodyHtml} /> : null}
         </div>
 
         {

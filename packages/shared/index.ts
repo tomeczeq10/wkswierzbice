@@ -1,4 +1,11 @@
-// Placeholder — typy generowane przez `payload generate:types` w Etapie 4 PAYLOAD-ROADMAP.
-// Po Etapie 4 ten plik będzie re-exportował generated types z apps/cms.
+// Typy współdzielone między apps/web a apps/cms.
+// Źródło prawdy: apps/cms/src/payload-types.ts (generowane przez `npm run generate:types`).
+//
+// Re-eksportujemy tylko to, czego front realnie używa, żeby nie ciągnąć całego Payload Config
+// (UserAuthOperations, SupportedTimezones itp.) do bundla Astro.
+//
+// UWAGA: po zmianie schemy Payload (np. dodaniu pola w News) trzeba uruchomić:
+//   npm run generate:types
+// w monorepo root (lub `npm run generate:types --workspace=cms`).
 
-export {};
+export type { News, Tag, Media, User } from '../../apps/cms/src/payload-types';

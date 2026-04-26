@@ -13,6 +13,122 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-26 — Etap 4 DONE: Astro odpytuje Payload REST (z graceful fallbackiem)
+
+Wykonany Etap 4 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Strony
+`/aktualnosci/*` zostały przepięte z Astro Content Collections na fetch z
+Payload REST API. Najważniejszy element to **graceful fallback** — gdy CMS jest
+niedostępny, build/dev używa istniejących plików `.md` jako safety net.
+
+### Decyzje (potwierdzone przed kodowaniem)
+
+- **CMS down → fallback do `.md`** (zamiast fail hard). Build nigdy się nie
+  wywali, ostrzeżenie idzie na konsolę. Po Etapie 5 (gdy 24 .md trafią do CMS)
+  fallback nadal pełni rolę safety net.
+- **Pliki `.md` zostają** do Etapu 5 (wtedy migracja → CMS, dopiero wtedy
+  delete). Są też live backupem na czas tego etapu.
+- **Lexical → HTML async serializer** (`@payloadcms/richtext-lexical/html-async`),
+  HTML wstrzykiwany w Astro przez `<Fragment set:html={...}>` z
+  `disableContainer: true`.
+- **Zakres tylko `/aktualnosci/*`** (lista + single news). Homepage
+  `pages/index.astro` zostaje na `getCollection('news')` do osobnego Etap 4b
+  (mniejszy commit = łatwiejszy rollback).
+- **Shared types przez `@wks/shared`** (workspace package), re-export
+  `News, Tag, Media, User` z `apps/cms/src/payload-types.ts` (frontend nie
+  kopiuje typów, tylko re-exportuje).
+
+### Added
+
+- **`packages/shared/index.ts`** — re-export typów z
+  `apps/cms/src/payload-types.ts` (`News, Tag, Media, User`). Wpięte przez
+  `tsconfig.paths` w `apps/web/tsconfig.json` (`@wks/shared` →
+  `../../packages/shared/index.ts`) oraz npm workspaces (root
+  `node_modules/@wks/shared` jako symlink do `packages/shared`).
+- **`apps/web/src/lib/cms.ts`** — fetcher REST z fallbackiem:
+  - `fetchNewsList()` — `GET /api/news?depth=2&limit=500&sort=-date&where[draft][equals]=false`
+    z timeout 5s (`AbortSignal.timeout`).
+  - Adapter `adaptCmsNews()` mapuje `News` (Payload) → unified `NewsItem`:
+    Date z ISO string, `tags: Tag[]` → `string[]` (po nazwach z relacji
+    depth=2). Adapter `adaptMdEntry()` analogicznie dla
+    `CollectionEntry<'news'>`.
+  - Try/catch + sprawdzanie `res.ok` → fallback na `getCollection('news')`
+    z konsolowym warningiem `[cms] Niedostępne (...): ... — fallback do .md`.
+    Build się NIE wywala.
+  - Body w `NewsItem` to dyskryminator: `{type:'lexical', value}` lub
+    `{type:'md', entry}` lub `{type:'empty'}` — strona renderuje per-case.
+- **`apps/web/src/lib/lexical.ts`** — `lexicalToHtml(body)` używający
+  `convertLexicalToHTMLAsync({ data, disableContainer: true })`. Pakiet
+  `@payloadcms/richtext-lexical@3.84.1` dodany do `apps/web/package.json`
+  (peer-dep `lexical` jest transitive).
+- **`apps/web/.env`** (gitignored) + **`apps/web/.env.example`** —
+  `CMS_URL=http://localhost:3000`. Komentarze tłumaczą strategię fallback.
+- **`apps/cms/scripts/seed-test-news.ts`** — idempotentny seed używający
+  Payload Local API (`getPayload({ config }).create(...)`), omija auth.
+  Tworzy 1 tag (`seniorzy`, idempotentnie) + 1 news z Lexical body
+  (heading H2 + paragraph z bold + bullet list z italic). Repeatable
+  narzędzie do dev (np. po `rm cms.db*` można szybko odtworzyć dane testowe).
+  Uruchomienie: `npx tsx apps/cms/scripts/seed-test-news.ts`.
+
+### Changed
+
+- **`apps/web/src/pages/aktualnosci/index.astro`** — `getCollection('news')`
+  → `fetchNewsList()`. Identyczna prezentacja, zero zmian w
+  `NewsCard.astro` (był już agnostyczny wobec źródła danych — przyjmuje
+  proste typy: `title`, `date`, `excerpt`, `tags: string[]`...).
+- **`apps/web/src/pages/aktualnosci/[slug].astro`** — `getStaticPaths`
+  używa `fetchNewsList()`, body renderowane warunkowo:
+  - źródło `md` → `<MdContent />` (Astro `entry.render()`),
+  - źródło `cms` → `<Fragment set:html={bodyHtml} />` (Lexical → HTML),
+  - źródło `empty` → nic.
+- **`apps/web/package.json`** — dodane dependencje:
+  - `"@wks/shared": "*"` (workspace link),
+  - `"@payloadcms/richtext-lexical": "3.84.1"` (Lexical serializer).
+- **`apps/web/tsconfig.json`** — `paths` zawiera `@wks/shared` →
+  `../../packages/shared/index.ts` (dla edytora i type-checking).
+- **`packages/shared/package.json`** — `description` zaktualizowany (typy są
+  już używane, nie placeholder).
+
+### Test
+
+- ✅ **CMS UP** (z 1 newsem `testowy-news-z-cms` z seed scriptu):
+  - `curl http://localhost:4321/aktualnosci/` → tylko 1 news (`Testowy news z CMS`),
+    pliki .md zignorowane (bo CMS odpowiedział).
+  - `curl http://localhost:4321/aktualnosci/testowy-news-z-cms/`:
+    - `<h2>Pierwszy news z CMS</h2>` ✓
+    - `<p>...<strong>/aktualnosci</strong>, integracja działa.</p>` ✓
+    - `<ul class="list-bullet"><li>Lista działa</li><li><em>Italic też</em></li></ul>` ✓
+    - Header: autor "Seed script" + tag "seniorzy" (z relacji depth=2) ✓
+- ✅ **CMS DOWN** (`kill <pid>` na :3000):
+  - `npx astro build` w `apps/web/` → exit 0, `[build] 40 page(s) built in 1.62s`.
+  - 2 warningi `[cms] Niedostępne (http://localhost:3000): fetch failed — fallback do .md`.
+  - `dist/aktualnosci/` zawiera 24 strony z `.md` + `index.html`. Brak
+    `testowy-news-z-cms` (bo CMS down, fallback go nie zna).
+
+### Fixed
+
+- **`PAYLOAD_SECRET undefined` w seed scripcie** — `payload.config.ts` czyta
+  `process.env.PAYLOAD_SECRET` na top-levelu, a hoisting ESM importów
+  powodował, że `dotenvConfig()` ładował env PO importu konfigu. Fix przez
+  dynamic import: `dotenvConfig({ path })` najpierw, potem
+  `await import('payload')` i `await import('../src/payload.config')`.
+- **Tag `Seniorzy` → ValidationError unique slug** w seed scripcie — case
+  mismatch z istniejącym `seniorzy` (lowercase) z testów Etap 3. Slugify
+  obu daje to samo `'seniorzy'` → kolizja na `unique: true`. Fix:
+  `TAG_NAME = 'seniorzy'` (lowercase) → idempotentny lookup znajduje
+  istniejący tag.
+
+### Open
+
+- **Etap 4b (homepage)** — `apps/web/src/pages/index.astro` wciąż używa
+  `getCollection('news')`. Trzeba przepisać na `fetchNewsList()` przed
+  Etapem 5 (migracja .md → CMS), żeby cały frontend był spójnie wpięty
+  w jeden source of truth.
+- **Etap 5** — migracja 24 plików `apps/web/src/content/news/*.md` →
+  Payload przez `gray-matter` + Local API. Dopiero po Etap 5 możemy
+  rozważyć usunięcie .md.
+
+---
+
 ## 2026-04-25 (szósta tura) — Etap 3 DONE: kolekcje `News` + `Tags` w Payload
 
 Wykonany Etap 3 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md):
