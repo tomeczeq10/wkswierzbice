@@ -73,6 +73,7 @@ export interface Config {
     tags: Tag;
     teams: Team;
     players: Player;
+    gallery: Gallery;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -86,6 +87,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     players: PlayersSelect<false> | PlayersSelect<true>;
+    gallery: GallerySelect<false> | GallerySelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -345,6 +347,29 @@ export interface Player {
   createdAt: string;
 }
 /**
+ * Zdjęcia na /galeria. Kolejność = pole „Kolejność” (niższe = wcześniej).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery".
+ */
+export interface Gallery {
+  id: number;
+  image: number | Media;
+  alt: string;
+  caption?: string | null;
+  /**
+   * Sort rosnąco: 0, 1, 2…
+   */
+  order?: number | null;
+  category?: string | null;
+  /**
+   * Rezerwa pod przyszłe albumy — na razie puste.
+   */
+  albumId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -391,6 +416,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'players';
         value: number | Player;
+      } | null)
+    | ({
+        relationTo: 'gallery';
+        value: number | Gallery;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -566,6 +595,20 @@ export interface PlayersSelect<T extends boolean = true> {
   position?: T;
   team?: T;
   photo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery_select".
+ */
+export interface GallerySelect<T extends boolean = true> {
+  image?: T;
+  alt?: T;
+  caption?: T;
+  order?: T;
+  category?: T;
+  albumId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etap 6b DONE — migracja 13 plików `apps/web/public/news/*` + `herb-wks.png` do kolekcji Media + linkowanie do 24 newsów. `migrate-news-covers.ts` (idempotentny, 2-krokowy). Wszystkie 24 newsy mają `cover` jako relację do Media (12 unique + `herb-wks` shared dla 11 newsów + `orzel-na-horyzoncie` z 6a). Build CMS UP: 100 % covers z `<CMS_URL>/api/media/file/...webp` warianty hero/card. Build CMS DOWN: fallback do legacy `/news/*.jpg` nadal działa.)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etapy **7–9** DONE: `Teams` + `Players`, migracja 5 drużyn + roster, front `/druzyny` + lista + home z CMS + enrichment `photo` z `.md` gdy brak Media; `migrate-team-photos.ts` dla rastrów; kolekcja **`gallery`** + `fetchGalleryList()` + `/galeria` z fallbackiem do `GALLERY` w `site.ts` gdy CMS pusty. Skrypty: `npm run migrate:teams`, `npm run migrate:team-photos` (root). Następny krok w roadmapie: **Etap 10** — globals `siteConfig`.)
 
 ## Produkcja
 
@@ -197,9 +197,18 @@ Implementacja:
   współdzielących `herb-wks` (każdy ma swój alt). Drobny pitfall (sentinel
   `0` w dry-run łapany przez `if (!mediaId)`) naprawiony zanim doszło do
   live runa.
-- ⏳ **Etapy 7–18** — nie rozpoczęte. Następny: **Etap 7** (collections
-  `Teams` + `Players` z relacją `players.team → teams`, edycja
-  `apps/web/src/pages/druzyny/[slug].astro` na fetch przez Payload).
+- ✅ **Etap 7 (2026-04-26)** — kolekcje `Teams` + `Players` (relacja
+  `players.team → teams`), `fetchTeamsList()` w `apps/web/src/lib/cms-teams.ts`,
+  strony `druzyny/[slug].astro`, `druzyny/index.astro`, sekcja drużyn na
+  `index.astro`. SQLite `file:./cms.db` resolve względem katalogu `apps/cms/`
+  (fix złej ścieżki względem `src/`).
+- ✅ **Etap 8 (2026-04-26)** — `migrate-teams.ts` (5 drużyn + 110 zawodników),
+  `migrate-team-photos.ts` (upload rastrów → Media + `Teams.photo`; SVG
+  pomijane — placeholdery z YAML nadal przez enrichment w `cms-teams.ts`).
+- ✅ **Etap 9 (2026-04-26)** — kolekcja `gallery` + `cms-gallery.ts` +
+  `galeria.astro`: CMS jeśli `docs.length > 0`, inaczej `GALLERY` z `site.ts`.
+- ⏳ **Etapy 10–18** — następny: **Etap 10** (`Globals siteConfig` + stopniowe
+  przenoszenie stałych z `site.ts`).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

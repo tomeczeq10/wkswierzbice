@@ -8,8 +8,9 @@
  * - Roster: każdy wpis YAML `roster[]` tworzy/aktualizuje rekord w `players` z relacją `team`.
  * - Idempotentne (re-run bez duplikatów). Team upsert po slug, Player upsert po (team, name).
  *
- * UWAGA: `photo` z Markdown (string path) jest pomijane — w CMS to relacja upload do Media.
- * Migrujemy zdjęcia w osobnym kroku (analogicznie do news coverów).
+ * UWAGA: `photo` z Markdown (string path) nie trafia do Payload przy create —
+ * w CMS to relacja `upload`. Rastry migruje `migrate-team-photos.ts`; SVG
+ * zostają na froncie przez `cms-teams.ts` (ścieżka z `.md` gdy brak Media).
  *
  * Tryby:
  *   --dry-run   tylko loguje plan, zero side effects

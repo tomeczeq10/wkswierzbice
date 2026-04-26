@@ -15,7 +15,9 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
     "test": "pnpm run test:int && pnpm run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" playwright test --config=playwright.config.ts",
-    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "migrate:teams": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/migrate-teams.ts",
+    "migrate:team-photos": "cross-env NODE_OPTIONS=--no-deprecation tsx scripts/migrate-team-photos.ts"
   },
   "dependencies": {
     "@payloadcms/db-sqlite": "3.84.1",

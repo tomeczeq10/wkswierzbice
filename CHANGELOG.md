@@ -13,6 +13,37 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-26 (Etapy 8–9 + domknięcie 7) — Drużyny: zdjęcia; Galeria w Payload
+
+### Added
+
+- **`apps/cms/scripts/migrate-team-photos.ts`** — upload JPEG/PNG/WebP/GIF z
+  `photo:` w `content/teams/*.md` → `Media` + update `Teams.photo` (idempotentnie
+  po `filename`). SVG pomijane (Sharp); placeholdery SVG z `.md` nadal na
+  froncie przez dopięcie ścieżki w `fetchTeamsList()` gdy CMS nie ma `photo`.
+- **`apps/cms/src/collections/Gallery.ts`** — płaska galeria: `image` (upload),
+  `alt`, `caption`, `order`, `category`, `albumId`.
+- **`apps/web/src/lib/cms-gallery.ts`** — `fetchGalleryList()`: jeśli CMS ma
+  ≥1 rekord `gallery`, źródło prawdy = CMS (URL z Media + `CMS_URL`); inaczej
+  `GALLERY` z `site.ts`.
+- **Skrypty npm:** root + workspace `cms`: `migrate:teams`, `migrate:team-photos`.
+
+### Changed
+
+- **`apps/web/src/lib/cms-teams.ts`** — po załadowaniu drużyn z CMS: dla każdej
+  bez `photo` dopinamy `photo` z legacy Markdown (slug 1:1).
+- **`apps/web/src/pages/galeria.astro`** — dane z `fetchGalleryList()`;
+  lightbox: `data-caption` + podpis z `caption` lub `alt`.
+- **`docs/PAYLOAD-ROADMAP.md`**, **`docs/STATE.md`** — status Etapów 7–9.
+
+### Open
+
+- **Etap 10** — `Globals siteConfig` i migracja fragmentów `site.ts`.
+- Po restarcie CMS z nową kolekcją `gallery` Drizzle utworzy tabelę (dev SQLite
+  push). Dopóki w CMS brak rekordów galerii, strona wygląda jak dotąd (fallback).
+
+---
+
 ## 2026-04-26 (Etap 6b) — Migracja istniejących coverów do Media + linkowanie do News
 
 Domknięty Etap 6b z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Po

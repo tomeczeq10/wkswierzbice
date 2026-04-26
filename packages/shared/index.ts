@@ -8,4 +8,4 @@
 //   npm run generate:types
 // w monorepo root (lub `npm run generate:types --workspace=cms`).
 
-export type { News, Tag, Media, User, Team, Player } from '../../apps/cms/src/payload-types';
+export type { News, Tag, Media, User, Team, Player, Gallery } from '../../apps/cms/src/payload-types';

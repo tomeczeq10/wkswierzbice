@@ -393,7 +393,7 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 7. Collections `Teams` + `Players`
 
-**Status:** [ ] not started
+**Status:** [x] DONE — 2026-04-26 (implementacja + front `/druzyny`, lista, home)
 
 **Co robimy:**
 - `apps/cms/src/collections/Teams.ts` — pola z `teams` schema w `apps/web/src/content/config.ts`: `name`, `category` (select enum), `league`, `coach`, `assistantCoach`, `trainingSchedule`, `photo` (upload), `order`, `description` (richText).
@@ -409,18 +409,17 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 8. Migracja 5 drużyn MD → Payload
 
-**Status:** [ ] not started
+**Status:** [x] DONE — 2026-04-26 (treść + roster + tooling; zdjęcia rastrowe opcjonalnie)
 
-**Co robimy:**
-- `apps/cms/scripts/migrate-teams.ts` — analogicznie do Etapu 5, parsuje `apps/web/src/content/teams/*.md`.
-- Dla każdej drużyny: tworzy rekord `teams`, potem iteruje po `roster[]` z YAML-a, tworzy rekordy `players` z relacją.
-- Migracja zdjęć drużyn z `apps/web/public/team/` → kolekcja `Media`.
+**Co zrobiliśmy:**
+- `apps/cms/scripts/migrate-teams.ts` — parsuje `apps/web/src/content/teams/*.md`, upsert `teams` + `players` (idempotentnie po slug / parze team+name).
+- `apps/cms/scripts/migrate-team-photos.ts` — upload plików **rastrowych** (JPEG/PNG/WebP/GIF) z `photo:` w YAML → `Media`, potem `Teams.photo`. **SVG pomijane** (Sharp / `imageSizes`); placeholdery SVG nadal działają dzięki `apps/web/src/lib/cms-teams.ts`: gdy w CMS brak `photo`, dopinamy ścieżkę z legacy `.md`.
+- Skrypty npm: root `migrate:teams`, `migrate:team-photos`; workspace `cms` — `npm run migrate:teams` / `migrate:team-photos`.
 
 **Test:**
-- `npm run migrate:teams --workspace=cms` → 5 drużyn + ich zawodnicy w bazie.
-- /druzyny pokazuje 5 drużyn w kolejności `order`.
-- Każda drużyna ma poprawny skład (np. seniorzy = 22 zawodników).
-- Trenerzy + assistantCoach poprawni.
+- `npx tsx apps/cms/scripts/migrate-teams.ts` → 5 drużyn + 110 zawodników.
+- `npx tsx apps/cms/scripts/migrate-team-photos.ts` — przy obecnych placeholderach SVG: same „pomijam”, bez błędów; po wgraniu JPG do `public/` i ustawieniu `photo:` w YAML — upload + link.
+- /druzyny + karty drużyn: kolejność i dane zgodne z planem.
 
 ---
 
@@ -428,18 +427,17 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 9. Collection `Gallery`
 
-**Status:** [ ] not started
+**Status:** [x] DONE — 2026-04-26
 
-**Co robimy:**
-- `apps/cms/src/collections/Gallery.ts` — pola: `image` (upload), `alt`, `caption`, `order`, `category` (opcjonalne, na przyszłość).
-- Decyzja: Wariant 1 (płaska lista). `albumId` zostawiamy jako pole opcjonalne, w przyszłości można dodać kolekcję `Albums` bez breaking change.
-- Modyfikacja `apps/web/src/pages/galeria.astro` — fetch z Payload zamiast `GALLERY[]` z `site.ts`.
+**Co zrobiliśmy:**
+- `apps/cms/src/collections/Gallery.ts` — slug `gallery`: `image` (upload→`media`, required), `alt`, `caption`, `order`, `category`, `albumId` (rezerwa).
+- `apps/web/src/lib/cms-gallery.ts` — `fetchGalleryList()`: jeśli `/api/gallery` zwraca ≥1 rekord, używamy wyłącznie CMS (URL z wariantu `card` / fallback `thumbnail` / oryginał, absolutyzacja `CMS_URL`); w przeciwnym razie **`GALLERY` z `site.ts`** (placeholdery SVG bez zmian).
+- `apps/web/src/pages/galeria.astro` — `fetchGalleryList()`, lightbox: `data-caption` + podpis z caption lub alt.
 
 **Test:**
-- Upload 3 zdjęć w panelu.
-- /galeria pokazuje 3 zdjęcia.
-- Lightbox modal działa (klawiatura, prev/next).
-- Migracja istniejących placeholder SVG nie jest konieczna (to placeholdery, klub doda prawdziwe).
+- CMS bez rekordów galerii → /galeria jak wcześniej (8 placeholderów z `site.ts`).
+- Po dodaniu w panelu ≥1 pozycji z obrazkiem rastrowym → /galeria z CMS (tylko te rekordy).
+- Lightbox (Escape, strzałki) bez zmian w logice nawigacji.
 
 #### Etap 10. Globals `siteConfig`
 

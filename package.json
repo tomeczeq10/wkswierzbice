@@ -16,7 +16,9 @@
     "sync:season": "npm run sync:season --workspace=web",
     "payload": "npm run payload --workspace=cms",
     "generate:types": "npm run generate:types --workspace=cms",
-    "generate:importmap": "npm run generate:importmap --workspace=cms"
+    "generate:importmap": "npm run generate:importmap --workspace=cms",
+    "migrate:teams": "npx tsx apps/cms/scripts/migrate-teams.ts",
+    "migrate:team-photos": "npx tsx apps/cms/scripts/migrate-team-photos.ts"
   },
   "engines": {
     "node": ">=20.0.0"

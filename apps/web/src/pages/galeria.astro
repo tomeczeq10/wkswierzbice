@@ -1,7 +1,9 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
-import { GALLERY } from "@/config/site";
+import { fetchGalleryList } from "@/lib/cms-gallery";
+
+const gallery = await fetchGalleryList();
 ---
 
 <BaseLayout
@@ -18,13 +20,14 @@ import { GALLERY } from "@/config/site";
     <div class="container mx-auto">
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {
-          GALLERY.map((item, i) => (
+          gallery.map((item, i) => (
             <button
               type="button"
               class="gallery-item group relative aspect-square overflow-hidden rounded-lg bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
               data-index={i}
               data-src={item.src}
               data-alt={item.alt}
+              data-caption={item.caption ?? ""}
               aria-label={`Otwórz: ${item.alt}`}
             >
               <img
@@ -85,7 +88,7 @@ import { GALLERY } from "@/config/site";
         const el = items[index];
         img.src = el.dataset.src;
         img.alt = el.dataset.alt || "";
-        cap.textContent = el.dataset.alt || "";
+        cap.textContent = el.dataset.caption || el.dataset.alt || "";
         lb.classList.remove("hidden");
         lb.classList.add("flex");
         document.body.style.overflow = "hidden";

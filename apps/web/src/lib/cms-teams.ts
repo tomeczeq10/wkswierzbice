@@ -174,6 +174,21 @@ export async function fetchTeamsList(): Promise<TeamItem[]> {
     item.data.roster = cmsPlayers ? adaptCmsPlayers(cmsPlayers) : []
     result.push(item)
   }
+
+  // Etap 8: jeśli w CMS nie ma jeszcze `photo` (upload), a w legacy .md jest
+  // ścieżka (np. placeholdery SVG z /gallery/…), pokazujemy ją na froncie —
+  // dopóki redakcja nie wgra pliku rastrowego do Media i nie podlinkuje.
+  const mdEntries = await getCollection('teams')
+  const mdPhotoBySlug = new Map(
+    mdEntries.map((e) => [e.slug, e.data.photo] as const),
+  )
+  for (const item of result) {
+    if (!item.data.photo) {
+      const legacy = mdPhotoBySlug.get(item.slug)
+      if (typeof legacy === 'string' && legacy.length > 0) item.data.photo = legacy
+    }
+  }
+
   return result
 }
 

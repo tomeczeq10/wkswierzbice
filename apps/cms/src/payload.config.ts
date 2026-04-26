@@ -11,6 +11,7 @@ import { News } from './collections/News'
 import { Tags } from './collections/Tags'
 import { Teams } from './collections/Teams'
 import { Players } from './collections/Players'
+import { Gallery } from './collections/Gallery'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -36,7 +37,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, News, Tags, Teams, Players],
+  collections: [Users, Media, News, Tags, Teams, Players, Gallery],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
