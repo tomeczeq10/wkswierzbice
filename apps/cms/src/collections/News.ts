@@ -11,10 +11,9 @@ import { slugify } from '../utils/slugify'
  *   - `body` — Lexical richText (Astro miał to jako "wszystko po `---`",
  *     w Payload musi być explicit field).
  *
- * Pole `cover` — na razie text path (zgodne z istniejącymi 24 newsami w
- * apps/web/src/content/news/*.md). W Etapie 6 (Media uploads) zmienimy
- * na `upload` relationship + przeniesiemy istniejące pliki z
- * apps/web/public/news/ do Payload Media.
+ * Pole `cover` — od Etapu 6a relacja `upload(relationTo: 'media')`. Migracja
+ * istniejących cover-stringów (text path) odbywa się w Etapie 6b
+ * (`apps/cms/scripts/migrate-news-covers.ts`).
  */
 export const News: CollectionConfig = {
   slug: 'news',
@@ -144,13 +143,15 @@ export const News: CollectionConfig = {
     },
     {
       name: 'cover',
-      type: 'text',
+      type: 'upload',
+      relationTo: 'media',
       label: {
-        pl: 'Cover (ścieżka pliku)',
-        en: 'Cover image (path)',
+        pl: 'Cover (zdjęcie nagłówkowe)',
+        en: 'Cover image',
       },
       admin: {
-        description: 'Tymczasowo ścieżka tekstowa (np. /news/seniorzy-orzel.jpeg). W Etapie 6 zmienimy na upload.',
+        description:
+          'Wgraj plik (JPEG/PNG/WebP/GIF). Serwis automatycznie wygeneruje warianty thumbnail / card / hero w WebP.',
       },
     },
     {
@@ -159,6 +160,10 @@ export const News: CollectionConfig = {
       label: {
         pl: 'Cover ALT (opis dla niewidomych / SEO)',
         en: 'Cover ALT',
+      },
+      admin: {
+        description:
+          'Opcjonalnie nadpisuje `alt` z pliku Media w kontekście tego newsa. Jeśli puste — używamy `alt` z Media.',
       },
     },
     {

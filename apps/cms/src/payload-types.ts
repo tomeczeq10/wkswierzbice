@@ -152,7 +152,10 @@ export interface User {
  */
 export interface Media {
   id: number;
-  alt: string;
+  /**
+   * Krótki opis obrazka (np. „Herb WKS Wierzbice"). Może być nadpisany na poziomie newsa polem „Cover ALT".
+   */
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -164,6 +167,32 @@ export interface Media {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    card?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    hero?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
 }
 /**
  * Wpisy widoczne na /aktualnosci. Pole "Szkic" ukrywa news przed publikacją.
@@ -193,9 +222,12 @@ export interface News {
    */
   excerpt: string;
   /**
-   * Tymczasowo ścieżka tekstowa (np. /news/seniorzy-orzel.jpeg). W Etapie 6 zmienimy na upload.
+   * Wgraj plik (JPEG/PNG/WebP/GIF). Serwis automatycznie wygeneruje warianty thumbnail / card / hero w WebP.
    */
-  cover?: string | null;
+  cover?: (number | null) | Media;
+  /**
+   * Opcjonalnie nadpisuje `alt` z pliku Media w kontekście tego newsa. Jeśli puste — używamy `alt` z Media.
+   */
   coverAlt?: string | null;
   body?: {
     root: {
@@ -360,6 +392,40 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        card?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        hero?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

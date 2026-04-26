@@ -1,7 +1,33 @@
 import type { CollectionConfig } from 'payload'
 
+/**
+ * Kolekcja Media — uploads w Payload (Etap 6a).
+ *
+ * Storage: local FS (default Payload — `apps/cms/media/`). W produkcji to samo
+ * na VPS (Etap 17).
+ *
+ * Image sizes (Wariant A — decyzja Tomka 2026-04-26):
+ *   - thumbnail: 320 px szer., zachowuje proporcje
+ *   - card:      640 px szer., zachowuje proporcje (główne użycie: NewsCard, lista)
+ *   - hero:      1200×630 (ratio 1.91:1, og:image friendly), crop center (single news header)
+ *
+ * Wszystkie warianty generowane w WebP (lepsza kompresja). Oryginał zachowany w
+ * formacie wgranym (JPEG/PNG/WebP/GIF) — edytor widzi w panelu to, co wgrał.
+ *
+ * Pole `alt` jest **opcjonalne** — bo ten sam plik (np. `herb-wks.png`) jest
+ * używany przez wiele newsów z różnymi alt-textami; alt per-context trzymamy w
+ * `News.coverAlt`. Frontend: `news.coverAlt ?? media.alt ?? ''`.
+ */
 export const Media: CollectionConfig = {
   slug: 'media',
+  labels: {
+    singular: { pl: 'Plik media' },
+    plural: { pl: 'Media' },
+  },
+  admin: {
+    useAsTitle: 'filename',
+    defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
+  },
   access: {
     read: () => true,
   },
@@ -9,8 +35,36 @@ export const Media: CollectionConfig = {
     {
       name: 'alt',
       type: 'text',
-      required: true,
+      label: { pl: 'Alt (opis dla niewidomych / SEO)' },
+      admin: {
+        description:
+          'Krótki opis obrazka (np. „Herb WKS Wierzbice"). Może być nadpisany na poziomie newsa polem „Cover ALT".',
+      },
     },
   ],
-  upload: true,
+  upload: {
+    staticDir: 'media',
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    imageSizes: [
+      {
+        name: 'thumbnail',
+        width: 320,
+        height: undefined,
+        formatOptions: { format: 'webp', options: { quality: 80 } },
+      },
+      {
+        name: 'card',
+        width: 640,
+        height: undefined,
+        formatOptions: { format: 'webp', options: { quality: 82 } },
+      },
+      {
+        name: 'hero',
+        width: 1200,
+        height: 630,
+        position: 'center',
+        formatOptions: { format: 'webp', options: { quality: 85 } },
+      },
+    ],
+  },
 }

@@ -5,6 +5,7 @@
  * split layout: main content + sticky tabela ligi po prawej.
  */
 import type { NewsItem } from "@/lib/cms";
+import { pickCoverUrl, resolveCoverAlt } from "@/lib/cms";
 import NewsCard from "@/components/NewsCard.astro";
 import SponsorGrid from "@/components/SponsorGrid.astro";
 import { SITE, HIGHLIGHTS } from "@/config/site";
@@ -276,8 +277,8 @@ const marqueeFull = [...upcomingMarquee, ...upcomingMarquee];
                 title={post.data.title}
                 date={post.data.date}
                 excerpt={post.data.excerpt}
-                cover={post.data.cover}
-                coverAlt={post.data.coverAlt}
+                cover={pickCoverUrl(post.data.cover, "card")}
+                coverAlt={resolveCoverAlt(post)}
                 tags={post.data.tags}
                 facebookUrl={post.data.facebookUrl}
               />

@@ -304,22 +304,68 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 ### Faza C — media + drużyny (Etapy 6–8, ~10–16 h)
 
-#### Etap 6. Collection `Media` + upload obrazków
+#### Etap 6a. Collection `Media` (config) + `News.cover` jako upload + frontend ogarnia warianty
+**Status:** [x] DONE 2026-04-26
+
+**Co zrobione:**
+- `apps/cms/src/collections/Media.ts` — `mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']`, storage local FS (`apps/cms/media/`), pole `alt` opcjonalne (Decyzja: alt per-context trzymamy w `News.coverAlt`; Media.alt jest fallbackiem dla plików używanych w wielu kontekstach).
+- **imageSizes Wariant A** (decyzja Tomka):
+  - `thumbnail` 320 px szer., WebP q=80
+  - `card`      640 px szer., WebP q=82 (główne użycie: NewsCard, lista)
+  - `hero`      1200×630 px crop center, WebP q=85 (single news + og:image)
+  - Oryginał zachowany w formacie wgranym (JPEG/PNG/WebP/GIF) — edytor widzi w panelu to, co wgrał.
+- `News.cover` zmienione z `type: 'text'` na `type: 'upload', relationTo: 'media'`. Komentarz pola wyjaśnia auto-warianty.
+- **Reset dev DB** — Payload SQLite push mode wymaga reset przy zmianie typu kolumny (text → FK relation; pełne explanation w pitfall poniżej). Stworzony idempotentny skrypt `apps/cms/scripts/seed-admin.ts` (`ADMIN_EMAIL`/`ADMIN_PASSWORD` z `.env`, defaulty `admin@wks-wierzbice.pl` / `dev-pass-2026!`) — po reset bazy wystarczy 1 polecenie żeby odtworzyć admina.
+- `apps/cms/scripts/migrate-news.ts` zaktualizowany: pomija `cover` (nowy typ wymaga upload, nie string). 24 newsy zmigrowane bez coverów. Etap 6b będzie odpowiedzialny za upload + linkowanie.
+- `apps/cms/scripts/upload-test-cover.ts` — one-shot skrypt sanity-check (upload `orzel-na-horyzoncie.jpg` + link jako cover newsa). Idempotentny po `filename` w Media.
+- `packages/shared/index.ts` — `Media` już re-eksportowane (od Etap 4); regen types po schema change → `News.cover: number | Media | null`, `Media.sizes.{thumbnail,card,hero}`.
+- `apps/web/src/lib/cms.ts`:
+  - Nowy typ `NewsCover` (discriminated union `'cms' | 'md'`): CMS = `{url, alt, sizes: {thumbnail?, card?, hero?}}`, MD = `{url, alt}` (legacy ścieżka stringowa).
+  - Helper `pickCoverUrl(cover, variant)` — wybiera wariant z CMS, dla MD zwraca jedyne URL.
+  - Helper `resolveCoverAlt(item)` — `News.coverAlt ?? Media.alt ?? ''` (per-context override z `News.coverAlt` ma pierwszeństwo).
+  - `absolutizeCmsUrl()` — Payload zwraca relative `/api/media/file/...`, dla SSG potrzebny absolutny URL; doklejam `CMS_URL`.
+- Templates zaktualizowane (callsite-only, NewsCard nadal accept `cover: string`):
+  - `apps/web/src/pages/aktualnosci/index.astro` → `pickCoverUrl(post.data.cover, 'card')` + `resolveCoverAlt(post)`.
+  - `apps/web/src/pages/aktualnosci/[slug].astro` → wariant `'hero'`.
+  - `apps/web/src/pages/index.astro` (homepage klasyk) → `'card'` × 2 callsites (newsTop3, newsTop6).
+  - `apps/web/src/components/home/MagazineHome.astro` → featured `'hero'`, grid `'card'`.
+  - `apps/web/src/components/home/StadionHome.astro` → `'card'`.
+
+**Test (wykonany):**
+- Manual upload przez Local API: `orzel-na-horyzoncie.jpg` (1080×1350) → Media id=1. Sharp wygenerował wszystkie 3 warianty: `thumbnail 320×400.webp` (24 KB), `card 640×800.webp` (68 KB), `hero 1200×630.webp` (96 KB, crop center). ✅
+- API spot-check `GET /api/media/1?depth=0` → JSON z `sizes.{thumbnail,card,hero}.url`. ✅
+- Build CMS UP (24 newsy, 1 z coverem, 23 bez):
+  - 40 stron (24 newsy + 1 lista + 15 static). ✅
+  - `dist/aktualnosci/orzel-na-horyzoncie/index.html` → `src="http://localhost:3000/api/media/file/orzel-na-horyzoncie-1200x630.webp"` + `alt="Zdjęcie z wpisu: ORZEŁ NA HORYZONCIE! 🔥…"` (z `News.coverAlt`). ✅
+  - `dist/index.html` (homepage) → `src="…orzel-na-horyzoncie-640x800.webp"` (card variant). ✅
+  - `dist/aktualnosci/index.html` (lista) → `src="…orzel-na-horyzoncie-640x800.webp"`. ✅
+  - 23 newsy bez coveru → fallback gradient `from-brand-primary` w NewsCard (nie crashuje). ✅
+- Build CMS DOWN (`pkill next-server`):
+  - 40 stron, `[cms] Niedostępne (...): fetch failed — fallback do .md` × 3. ✅
+  - `dist/aktualnosci/orzel-na-horyzoncie/index.html` → `src="/news/orzel-na-horyzoncie.jpg"` (legacy z `.md`). ✅
+  - 11 newsów na homepage z `/news/*.jpg` (legacy). ✅
+
+**Pitfalle złapane:**
+- **Drizzle SQLite push mode + zmiana typu kolumny = interactive prompt.** Kiedy zmieniam `News.cover` z `text` na `upload(relationTo: 'media')`, Drizzle widzi że `cover` (TEXT) znika a `cover_id` (INTEGER FK) pojawia się — zadaje pytanie "Is cover_id column created or renamed from another column?". To pytanie wymaga TTY na stdin; `expect` w `nohup` nie działa (zabija child process), `prompts` lib (z `prompts` npm pkg) sprawdza isatty i nie czyta z pipe. Próba ręcznego ALTER TABLE w SQLite też zawodzi — Drizzle wciąż pyta przy następnych zmianach indeksów.
+  - **Fix przyjęty:** reset bazy lokalnie (`rm cms.db`) + skrypt `seed-admin.ts` żeby odtworzyć admina jednym poleceniem. Jest to **świadoma akceptacja** że dev SQLite push mode nie radzi sobie z type changes; w produkcji (Etap 17) i tak będziemy używać `drizzle-kit migrate` (versioned migrations) na Postgres, który nie ma tego problemu.
+  - Workflow po reset: `pkill next-server && rm apps/cms/cms.db* && start dev:cms && tsx scripts/seed-admin.ts && tsx scripts/migrate-news.ts`. Ok ~30s.
+
+**Zostawione w polu (świadomie):**
+- 23 newsy bez coverów — Etap 6b będzie skryptem migracyjnym czytającym `apps/web/public/news/*` i linkującym do Media + News.
+- `apps/web/public/news/*.jpg` zostaje w repo do safety net dla CMS DOWN fallback (ten sam co `.md`).
+
+#### Etap 6b. Migracja 13 plików `apps/web/public/news/*` → Media + linkowanie do News
 
 **Status:** [ ] not started
 
 **Co robimy:**
-- `apps/cms/src/collections/Media.ts` — built-in Payload upload collection.
-- Konfiguracja sharp: resize do max 1600 px, konwersja do WebP, thumbnaile (320, 640, 1024).
-- Storage: `apps/cms/uploads/` (lokalnie), w produkcji to samo na VPS (Etap 17).
-- Pole `cover` w `News` zmienione z `text` na `upload` z `relationTo: 'media'`.
-- Skrypt `migrate-news-covers.ts` — pobiera istniejące pliki z `apps/web/public/news/*` i tworzy rekordy Media + linkuje do odpowiednich newsów.
+- `apps/cms/scripts/migrate-news-covers.ts` — czyta `apps/web/src/content/news/*.md`, wyciąga `cover` z YAML, znajduje plik w `apps/web/public/...`, uploaduje do Media (idempotentnie po filename), linkuje `News.cover = mediaId` po slug.
+- Manual edge cases: niektóre newsy mają `cover: /herb-wks.png` (default klubowy) — czy dla nich uploadować herb jako Media raz (id=1) i linkować z wielu newsów, czy zostawić pole puste? Decyzja: **uploadować raz (idempotentnie po filename), wszystkie 11 herb-newsów linkują tę samą Media id**.
 
 **Test:**
-- W panelu: dodaję nowy news, klikam „upload cover", wybieram plik z dysku → zdjęcie się ładuje, preview widać w panelu.
-- /aktualnosci wyświetla cover (już z Payload, nie z `public/news/`).
-- Sprawdzam wymiary uploadowanego zdjęcia w `apps/cms/uploads/` — są resized do 1600 px max + WebP.
-- Wszystkie 24 zmigrowane newsy mają poprawne covery.
+- `npx tsx apps/cms/scripts/migrate-news-covers.ts` → ~12 plików w Media (`herb-wks.png` + 11 unikalnych `/news/*` + cofnięcie test-uploadu z 6a, jeśli był).
+- Wszystkie 24 newsy mają `cover` (relacja do Media).
+- Build CMS UP: 100 % covers z `<CMS_URL>/api/media/file/<filename>-WIDTHxHEIGHT.webp`.
 
 #### Etap 7. Collections `Teams` + `Players`
 

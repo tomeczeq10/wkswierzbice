@@ -150,12 +150,16 @@ async function main() {
 
     const lexicalBody = markdownToLexical(f.body);
 
+    // UWAGA: pole `cover` od Etapu 6a to relacja `upload(relationTo: 'media')`,
+    // a nie text path. Tutaj NIE ustawiamy cover — covery są migrowane osobno
+    // w Etapie 6b (`migrate-news-covers.ts`), z faktycznym uploadem plików do
+    // kolekcji Media. `coverAlt` zachowujemy (per-context override, patrz
+    // News.coverAlt komentarz).
     const data = {
       title: fm.title,
       slug: f.slug,
       date: new Date(fm.date).toISOString(),
       excerpt: fm.excerpt,
-      cover: fm.cover ?? null,
       coverAlt: fm.coverAlt ?? null,
       tags: tagIds.length > 0 ? tagIds : null,
       author: fm.author ?? 'Redakcja klubu',

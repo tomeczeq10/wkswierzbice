@@ -16,7 +16,7 @@ import StadionHome from "@/components/home/StadionHome.astro";
 
 import { SITE, HIGHLIGHTS } from "@/config/site";
 import season from "@/data/season.json";
-import { fetchNewsList } from "@/lib/cms";
+import { fetchNewsList, pickCoverUrl, resolveCoverAlt } from "@/lib/cms";
 
 const allNewsAll = await fetchNewsList();
 const newsTop3 = allNewsAll.slice(0, 3);
@@ -228,8 +228,8 @@ const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.o
               title={post.data.title}
               date={post.data.date}
               excerpt={post.data.excerpt}
-              cover={post.data.cover}
-              coverAlt={post.data.coverAlt}
+              cover={pickCoverUrl(post.data.cover, "card")}
+              coverAlt={resolveCoverAlt(post)}
               tags={post.data.tags}
               facebookUrl={post.data.facebookUrl}
             />
@@ -438,8 +438,8 @@ const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.o
               title={post.data.title}
               date={post.data.date}
               excerpt={post.data.excerpt}
-              cover={post.data.cover}
-              coverAlt={post.data.coverAlt}
+              cover={pickCoverUrl(post.data.cover, "card")}
+              coverAlt={resolveCoverAlt(post)}
               tags={post.data.tags}
               facebookUrl={post.data.facebookUrl}
             />

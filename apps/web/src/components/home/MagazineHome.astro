@@ -5,6 +5,7 @@
  * + full-bleed featured z drop cap + serif typography dla treści.
  */
 import type { NewsItem } from "@/lib/cms";
+import { pickCoverUrl, resolveCoverAlt } from "@/lib/cms";
 import { SITE, SOCIAL, HIGHLIGHTS } from "@/config/site";
 
 interface Match {
@@ -88,10 +89,10 @@ const outcomeColor = {
   {featured && (
     <a href={`/aktualnosci/${featured.slug}`} class="group block relative h-[78vh] min-h-[560px] overflow-hidden">
 
-      {featured.data.cover ? (
+      {pickCoverUrl(featured.data.cover, "hero") ? (
         <img
-          src={featured.data.cover}
-          alt={featured.data.coverAlt ?? featured.data.title}
+          src={pickCoverUrl(featured.data.cover, "hero")}
+          alt={resolveCoverAlt(featured) || featured.data.title}
           class="absolute inset-0 w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-[1.5s]"
         />
       ) : (
@@ -151,10 +152,10 @@ const outcomeColor = {
           {grid.map((post) => (
             <a href={`/aktualnosci/${post.slug}`} class="group block">
               <div class="aspect-[4/3] bg-slate-800 overflow-hidden mb-4">
-                {post.data.cover ? (
+                {pickCoverUrl(post.data.cover, "card") ? (
                   <img
-                    src={post.data.cover}
-                    alt={post.data.coverAlt ?? post.data.title}
+                    src={pickCoverUrl(post.data.cover, "card")}
+                    alt={resolveCoverAlt(post) || post.data.title}
                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 ) : (

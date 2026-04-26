@@ -13,7 +13,7 @@
  */
 import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
-import type { News, Tag } from '@wks/shared';
+import type { News, Tag, Media } from '@wks/shared';
 
 const CMS_URL: string =
   import.meta.env.CMS_URL ||
@@ -29,6 +29,29 @@ const FETCH_TIMEOUT_MS = 5_000;
  */
 export type LexicalBody = NonNullable<News['body']>;
 
+export type CoverVariant = 'thumbnail' | 'card' | 'hero';
+
+/**
+ * Cover obrazka — abstrakcja na 2 źródła:
+ *   - CMS: faktyczny upload z relacji `News.cover -> Media`. URL-e absolute,
+ *     warianty thumbnail/card/hero (Etap 6a).
+ *   - MD:  legacy ścieżka stringowa z YAML frontmatter (np. `/news/foo.jpg`).
+ *     Brak wariantów rozmiarów — `url` używamy w każdym kontekście.
+ */
+export type NewsCover =
+  | {
+      source: 'cms';
+      url: string;
+      alt: string | undefined;
+      sizes: Partial<Record<CoverVariant, string>>;
+    }
+  | {
+      source: 'md';
+      url: string;
+      alt: string | undefined;
+    }
+  | null;
+
 /**
  * Unified shape na który mapujemy zarówno źródło CMS, jak i .md.
  * Strony Astro powinny używać WYŁĄCZNIE tego typu — wtedy są agnostyczne wobec źródła danych.
@@ -41,7 +64,7 @@ export type NewsItem = {
     title: string;
     date: Date;
     excerpt: string;
-    cover?: string;
+    cover: NewsCover;
     coverAlt?: string;
     tags: string[];
     author: string;
@@ -54,6 +77,57 @@ export type NewsItem = {
     | { type: 'md'; entry: CollectionEntry<'news'> }
     | { type: 'empty' };
 };
+
+/**
+ * Doklejamy `CMS_URL` jeśli URL z Payload jest relatywny (`/api/media/file/...`).
+ * Astro buduje SSG i renderuje obrazki w HTML przed deployem — przeglądarka
+ * końcowego użytkownika musi mieć absolutny URL, bo CMS żyje na innym hoście.
+ */
+function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
+  if (!maybeUrl) return undefined;
+  if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
+  return new URL(maybeUrl, CMS_URL).toString();
+}
+
+function adaptCmsCover(media: Media | null | number | undefined): NewsCover {
+  if (!media || typeof media === 'number') return null;
+  const baseUrl = absolutizeCmsUrl(media.url);
+  if (!baseUrl) return null;
+  const sizes: Partial<Record<CoverVariant, string>> = {};
+  for (const variant of ['thumbnail', 'card', 'hero'] as const) {
+    const u = absolutizeCmsUrl(media.sizes?.[variant]?.url);
+    if (u) sizes[variant] = u;
+  }
+  return {
+    source: 'cms',
+    url: baseUrl,
+    alt: media.alt ?? undefined,
+    sizes,
+  };
+}
+
+function adaptMdCover(coverPath: string | undefined, alt: string | undefined): NewsCover {
+  if (!coverPath) return null;
+  return { source: 'md', url: coverPath, alt };
+}
+
+/**
+ * Wybiera URL właściwego wariantu coveru (z CMS) lub fallback na url głównym.
+ * Dla .md ignoruje variant (zwraca jedyny dostępny string).
+ */
+export function pickCoverUrl(cover: NewsCover, variant: CoverVariant): string | undefined {
+  if (!cover) return undefined;
+  if (cover.source === 'md') return cover.url;
+  return cover.sizes[variant] ?? cover.url;
+}
+
+/**
+ * Łączy alt z `News.coverAlt` (per-context) z `Media.alt` (per-file).
+ * Pierwszeństwo: News.coverAlt → Media.alt → ''.
+ */
+export function resolveCoverAlt(item: NewsItem): string {
+  return item.data.coverAlt ?? item.data.cover?.alt ?? '';
+}
 
 function adaptCmsNews(item: News): NewsItem {
   const tags: string[] = (item.tags ?? [])
@@ -68,7 +142,7 @@ function adaptCmsNews(item: News): NewsItem {
       title: item.title,
       date: new Date(item.date),
       excerpt: item.excerpt,
-      cover: item.cover ?? undefined,
+      cover: adaptCmsCover(item.cover),
       coverAlt: item.coverAlt ?? undefined,
       tags,
       author: item.author ?? 'Redakcja klubu',
@@ -89,7 +163,7 @@ function adaptMdEntry(entry: CollectionEntry<'news'>): NewsItem {
       title: entry.data.title,
       date: entry.data.date,
       excerpt: entry.data.excerpt,
-      cover: entry.data.cover,
+      cover: adaptMdCover(entry.data.cover, entry.data.coverAlt),
       coverAlt: entry.data.coverAlt,
       tags: entry.data.tags,
       author: entry.data.author,

@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etap 5 DONE — 24 newsy zmigrowane z `.md` do Payload przez idempotentny skrypt + custom md→Lexical parser. API zwraca 25 newsów (24 + 1 testowy z Etapu 3), build CMS UP daje 25 stron `/aktualnosci/<slug>`.)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etap 6a DONE — `Media` collection z imageSizes Wariant A (thumbnail 320 / card 640 / hero 1200×630, WebP), `News.cover` jako upload-relacja, frontend wybiera wariant przez `pickCoverUrl`. Test manualny: 1 cover uploaded → build pokazuje hero/card warianty z absolute URL. CMS DOWN fallback do `.md` nadal działa.)
 
 ## Produkcja
 
@@ -165,8 +165,25 @@ Implementacja:
   pitfall: 1-stopniowy regex parser kradł literały markdown wewnątrz italic
   obejmującego link → fix dwukrokowy. `cover` zostaje stringiem (do Etapu 6).
   Pliki .md w repo zostają jako safety net dla fallbacku.
-- ⏳ **Etapy 6–18** — nie rozpoczęte. Następny: **Etap 6** (collection `Media` +
-  upload, podmiana `cover: text` na relację, migracja plików z `apps/web/public/news/`).
+- ✅ **Etap 6a (2026-04-26)** — collection `Media` z imageSizes Wariant A:
+  thumbnail 320, card 640, hero 1200×630 (WebP, oryginał zachowany).
+  `News.cover` zmieniony z `text` na `upload(relationTo: 'media')`. Schema push
+  w SQLite dev mode wymagał reset bazy (interactive Drizzle prompt na rename
+  text → FK nie działał z `expect`/pipe stdin), więc dodany skrypt
+  `seed-admin.ts` (creds z `.env`, defaulty dev) — workflow reset+restore w 30 s.
+  Frontend (`apps/web/src/lib/cms.ts`): nowy typ `NewsCover` (discriminated
+  union CMS/MD), helpery `pickCoverUrl(cover, variant)` i
+  `resolveCoverAlt(item)` (`News.coverAlt ?? Media.alt ?? ''`); URL-e
+  absolutyzowane do `CMS_URL` (Payload zwraca relative paths). Templates
+  (single news → `hero`, lista/homepage/grid → `card`) — minimalne zmiany
+  callsite, NewsCard bez modyfikacji. Test manualny: upload
+  `orzel-na-horyzoncie.jpg` przez `upload-test-cover.ts`, sharp wygenerował
+  3 warianty WebP (24/68/96 KB), build CMS UP daje 40 stron z poprawnymi
+  URL-ami z `<CMS_URL>/api/media/file/`; build CMS DOWN — fallback do
+  `/news/*.jpg` z `.md` nadal działa.
+- ⏳ **Etapy 6b–18** — nie rozpoczęte. Następny: **Etap 6b** (skrypt
+  `migrate-news-covers.ts` — upload 13 plików `apps/web/public/news/*` +
+  `herb-wks.png` do Media i linkowanie do 24 newsów po slug).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

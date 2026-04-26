@@ -2,7 +2,12 @@
 import type { GetStaticPaths } from "astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { formatDate } from "@/lib/format";
-import { fetchNewsList, type NewsItem } from "@/lib/cms";
+import {
+  fetchNewsList,
+  pickCoverUrl,
+  resolveCoverAlt,
+  type NewsItem,
+} from "@/lib/cms";
 import { lexicalToHtml } from "@/lib/lexical";
 
 export const getStaticPaths: GetStaticPaths = async () => {
@@ -15,7 +20,9 @@ export const getStaticPaths: GetStaticPaths = async () => {
 
 interface Props { post: NewsItem }
 const { post } = Astro.props;
-const { title, date, cover, coverAlt, tags, author, excerpt, facebookUrl, truncated } = post.data;
+const { title, date, tags, author, excerpt, facebookUrl, truncated } = post.data;
+const coverUrl = pickCoverUrl(post.data.cover, "hero");
+const coverAlt = resolveCoverAlt(post);
 
 let bodyHtml: string | null = null;
 let MdContent: Awaited<ReturnType<Extract<NewsItem["body"], { type: "md" }>["entry"]["render"]>>["Content"] | null = null;
@@ -28,7 +35,7 @@ if (post.body.type === "lexical") {
 }
 ---
 
-<BaseLayout title={title} description={excerpt} image={cover}>
+<BaseLayout title={title} description={excerpt} image={coverUrl}>
   <article>
     <header class="bg-brand-ink text-white">
       <div class="container mx-auto py-16 sm:py-20 max-w-4xl">
@@ -51,12 +58,12 @@ if (post.body.type === "lexical") {
     </header>
 
     {
-      cover && (
+      coverUrl && (
         <div class="container mx-auto max-w-4xl -mt-8 relative z-10 px-4">
           <figure class="rounded-xl shadow-xl bg-slate-100 overflow-hidden flex items-center justify-center">
             <img
-              src={cover}
-              alt={coverAlt ?? ""}
+              src={coverUrl}
+              alt={coverAlt}
               class="max-h-[70vh] w-auto max-w-full object-contain"
             />
           </figure>
