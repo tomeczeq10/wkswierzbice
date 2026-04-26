@@ -13,6 +13,103 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-26 (Etap 6b) — Migracja istniejących coverów do Media + linkowanie do News
+
+Domknięty Etap 6b z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Po
+Etapie 6a infrastruktura była gotowa (Media collection z imageSizes, News.cover
+jako upload-relacja, frontend z `pickCoverUrl/resolveCoverAlt`), ale w bazie był
+tylko 1 testowy plik (`orzel-na-horyzoncie.jpg`). Etap 6b uzupełnia bazę:
+uploaduje wszystkie 13 historycznych plików z `apps/web/public/` do Media
+i linkuje do 24 newsów po slug — żeby na produkcji nie było wstydu.
+
+### Decyzje (potwierdzone z planu)
+
+- **`herb-wks.png` współdzielony** — uploadowany RAZ (idempotentnie po
+  `filename`), 11 herb-newsów linkuje tę samą Media id. Per-news alt jest w
+  `News.coverAlt`, więc nie ma konfliktu — każdy news ma unikalny opis dla
+  niewidomych mimo że obraz jest ten sam.
+- **`Media.alt` puste (`null`)** dla wszystkich migrowanych plików — alt
+  per-context z YAML `coverAlt` trafia do `News.coverAlt`, helper
+  `resolveCoverAlt` z `apps/web/src/lib/cms.ts` realizuje fallback chain
+  zgodnie z decyzją z Etapu 6a.
+- **Idempotencja po `filename`** — orzel-na-horyzoncie.jpg z Etapu 6a
+  (Media id=1) zachowane. Re-run skryptu = 0 side effects.
+- **Skrypt 2-krokowy zamiast jednoprzebiegowego** — najpierw upload UNIKALNYCH
+  plików, potem linkowanie po slug. Lepsze logi i czytelniejsze warning'i.
+
+### Added
+
+- **`apps/cms/scripts/migrate-news-covers.ts`** (~210 linii) — idempotentny
+  migrator coverów:
+  - Krok 1 — Media uploads: `gray-matter` parse 24 .md → unikalne `cover`
+    paths (13 sztuk) → `payload.find({ where: filename })` → jeśli brak,
+    `payload.create({ collection: 'media', file: { data, mimetype, name, size } })`.
+    `Media.alt` ustawiany na `null` (per decyzja powyżej).
+  - Krok 2 — News.cover linking: dla każdego z 24 newsów `payload.find({
+    where: slug })`, sprawdza czy `cover` już = wymagany Media id (porównuje
+    przez `typeof cover === 'number' || cover.id`), jeśli nie —
+    `payload.update({ data: { cover: mediaId } })`.
+  - CLI flag `--dry-run` (loguje plan, zero side effects) — zalecane przed
+    live runem.
+  - Walidacja: missing files (warning + skip), nieobsługiwane MIME (warning +
+    skip), brak rekordu News (warning + skip — z hintem `uruchom najpierw
+    migrate-news.ts`).
+
+### Changed
+
+- `apps/cms/src/collections/News.ts` — bez zmian schemy, ale Media id=2 (herb)
+  współdzielone przez 11 rekordów. Stan końcowy bazy: 13 Media + 24 News
+  z `cover` ≠ null.
+- `docs/PAYLOAD-ROADMAP.md` — Etap 6b status `[x] DONE`, pełen opis
+  implementacji + testy.
+- `docs/STATE.md` — sekcja Wariant 2/CMS, entry o Etapie 6b.
+
+### Fixed
+
+- Drobny bug w pierwszej wersji skryptu: `if (!mediaId)` w kroku 2 łapało
+  sentinel `0` z dry-run jako "brak Media id" (false negative). Fix:
+  `if (mediaId === undefined)`. Naprawione przed live runem.
+
+### Test (manualny, wykonany)
+
+1. `npx tsx apps/cms/scripts/migrate-news-covers.ts --dry-run` →
+   `Media: utworzonych: 12, pominiętych (już są): 1`,
+   `News.cover: zaktualizowanych: 23, pominiętych: 1`. Plan zgodny z
+   oczekiwaniami (1 = orzel z 6a).
+2. Live run → 12 nowych Media (id=2..13, każde z trzema wariantami
+   `thumbnail/card/hero` wygenerowanymi przez sharp), 23 newsy podlinkowane.
+   Czas total: ~3 s.
+3. Re-run idempotency → `utworzonych: 0, pominiętych: 13, news
+   zaktualizowanych: 0, pominiętych: 24`. Zero side effects. ✅
+4. Build CMS UP (`CMS_URL=http://localhost:3000 npm run build`):
+   - `/aktualnosci/index.html` — 24 obrazki, wszystkie URL-e absolute do
+     `http://localhost:3000/api/media/file/<filename>-640x...webp` (wariant
+     `card`). 7 sztuk to `herb-wks-640x640.webp` (shared dla 11 newsów —
+     5 z nich nie wpada do "pierwszej strony" listy ze względu na limit/sort).
+   - `/aktualnosci/orzel-na-horyzoncie/` — `<img
+     src=".../orzel-na-horyzoncie-1200x630.webp" alt="Zdjęcie z wpisu: ORZEŁ
+     NA HORYZONCIE! 🔥 …">` — wariant `hero` + `News.coverAlt` per-context.
+   - `/aktualnosci/komunikat-zarzadu/` — `<img src=".../herb-wks-1200x630.webp"
+     alt="Herb WKS Wierzbice – wpis „📢 Komunikat Zarządu" …">` — wspólne
+     Media (id=2), unikalny alt per news. ✅
+   - `/index.html` (homepage) — featured ma hero 1200×630, grid ma card
+     640×… ✅
+5. Build CMS DOWN (`CMS_URL=http://localhost:9999 npm run build`):
+   `[cms] Niedostępne (http://localhost:9999): fetch failed — fallback do
+   .md`, fallback rendering pokazuje legacy `/news/*.jpg` i `/herb-wks.png`. ✅
+
+### Open
+
+- Etap 7 (Collections `Teams` + `Players`) — następny krok. `Teams` + relacja
+  `players.team`, fetch w `apps/web/src/pages/druzyny/[slug].astro`.
+- Edge case na przyszłość: jeśli edytor doda nowy news z `cover: /herb-wks.png`
+  (przez panel admin nie wpisze stringa, tylko wybierze plik), to po prostu
+  wskaże istniejące Media id=2 — żadnej dodatkowej logiki nie potrzeba.
+- Legacy pliki `apps/web/public/news/*.{jpg,jpeg}` zostają w repo do safety
+  net dla CMS DOWN fallback (per decyzja z Etapu 6a).
+
+---
+
 ## 2026-04-26 (Etap 6a) — Collection `Media` + `News.cover` jako upload + warianty obrazków
 
 Domknięty Etap 6a z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Po

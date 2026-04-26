@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etap 6a DONE — `Media` collection z imageSizes Wariant A (thumbnail 320 / card 640 / hero 1200×630, WebP), `News.cover` jako upload-relacja, frontend wybiera wariant przez `pickCoverUrl`. Test manualny: 1 cover uploaded → build pokazuje hero/card warianty z absolute URL. CMS DOWN fallback do `.md` nadal działa.)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etap 6b DONE — migracja 13 plików `apps/web/public/news/*` + `herb-wks.png` do kolekcji Media + linkowanie do 24 newsów. `migrate-news-covers.ts` (idempotentny, 2-krokowy). Wszystkie 24 newsy mają `cover` jako relację do Media (12 unique + `herb-wks` shared dla 11 newsów + `orzel-na-horyzoncie` z 6a). Build CMS UP: 100 % covers z `<CMS_URL>/api/media/file/...webp` warianty hero/card. Build CMS DOWN: fallback do legacy `/news/*.jpg` nadal działa.)
 
 ## Produkcja
 
@@ -181,9 +181,25 @@ Implementacja:
   3 warianty WebP (24/68/96 KB), build CMS UP daje 40 stron z poprawnymi
   URL-ami z `<CMS_URL>/api/media/file/`; build CMS DOWN — fallback do
   `/news/*.jpg` z `.md` nadal działa.
-- ⏳ **Etapy 6b–18** — nie rozpoczęte. Następny: **Etap 6b** (skrypt
-  `migrate-news-covers.ts` — upload 13 plików `apps/web/public/news/*` +
-  `herb-wks.png` do Media i linkowanie do 24 newsów po slug).
+- ✅ **Etap 6b (2026-04-26)** — migracja istniejących coverów z legacy
+  Markdownów do Media + linkowanie do News. Skrypt
+  `apps/cms/scripts/migrate-news-covers.ts` (NEW, idempotentny, 2-krokowy):
+  (1) upload 12 nowych plików do Media (1 z 6a — `orzel-na-horyzoncie.jpg` —
+  zachowane przez idempotency po `filename`); (2) update `News.cover` po
+  slug. **`herb-wks.png` uploadowany RAZ (Media id=2) i podlinkowany do 11
+  herb-newsów** zgodnie z decyzją z planu. Końcowy stan: 13 rekordów w Media,
+  24/24 newsów z poprawnym `cover`. Tryby `--dry-run` (loguje plan, zero side
+  effects) i live. Re-run skryptu = 0 zmian. Build CMS UP daje 100 %
+  poprawnie linkujących stron (lista → wariant `card` 640×, single news +
+  homepage featured → `hero` 1200×630). Build CMS DOWN: `[cms] Niedostępne …
+  fetch failed — fallback do .md` warning + render z legacy ścieżek.
+  `News.coverAlt` per-context override działa nawet dla 11 newsów
+  współdzielących `herb-wks` (każdy ma swój alt). Drobny pitfall (sentinel
+  `0` w dry-run łapany przez `if (!mediaId)`) naprawiony zanim doszło do
+  live runa.
+- ⏳ **Etapy 7–18** — nie rozpoczęte. Następny: **Etap 7** (collections
+  `Teams` + `Players` z relacją `players.team → teams`, edycja
+  `apps/web/src/pages/druzyny/[slug].astro` na fetch przez Payload).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden
