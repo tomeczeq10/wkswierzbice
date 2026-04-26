@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etap 4b DONE — homepage `pages/index.astro` + `MagazineHome` + `StadionHome` przepięte na `fetchNewsList()`. Cały frontend news czyta WYŁĄCZNIE z CMS z fallbackiem do .md.)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etap 5 DONE — 24 newsy zmigrowane z `.md` do Payload przez idempotentny skrypt + custom md→Lexical parser. API zwraca 25 newsów (24 + 1 testowy z Etapu 3), build CMS UP daje 25 stron `/aktualnosci/<slug>`.)
 
 ## Produkcja
 
@@ -151,9 +151,22 @@ Implementacja:
   homepage pokazuje 1 news z CMS w 4 szablonach (klasyk/marka/magazyn/stadion);
   CMS DOWN → build success w 1.68s, 11 newsów .md na homepage, 3 warningi
   `[cms] Niedostępne`. `getCollection('teams')` zostaje bez zmian (do Etapów 7–8).
-- ⏳ **Etapy 5–18** — nie rozpoczęte. Następny: **Etap 5** (migracja 24 plików
-  `apps/web/src/content/news/*.md` → Payload przez `gray-matter` + Local API,
-  z mapowaniem markdown body → Lexical).
+- ✅ **Etap 5 (2026-04-26)** — migracja 24 newsów `apps/web/src/content/news/*.md`
+  → Payload. Stworzony custom mini-parser markdown → Lexical
+  (`apps/cms/scripts/lib/md-to-lexical.ts`, 2-stopniowy: bold/italic outer +
+  linki inner z propagacją formatu na text-nodes wewnątrz `<a>`). Skrypt
+  `apps/cms/scripts/migrate-news.ts` (gray-matter + Payload Local API,
+  idempotentny per slug, tagi też idempotentnie po `name`). Slug newsa = nazwa
+  pliku bez `.md` — URL-e `/aktualnosci/<slug>` zachowane 1:1. Test: dry-run +
+  real run = 24/24 newsów, 13 nowych tagów (1 istniejący `seniorzy`); re-run
+  zero side effects; API zwraca 25 docs; build CMS UP = 41 stron, w tym 25 ×
+  `/aktualnosci/<slug>`; spot-check 2 newsów (`komunikat-zarzadu` z italic+link
+  i `wazna-wygrana-3-1-wolow` z `<br>` w akapicie) — HTML poprawny. Złapany
+  pitfall: 1-stopniowy regex parser kradł literały markdown wewnątrz italic
+  obejmującego link → fix dwukrokowy. `cover` zostaje stringiem (do Etapu 6).
+  Pliki .md w repo zostają jako safety net dla fallbacku.
+- ⏳ **Etapy 6–18** — nie rozpoczęte. Następny: **Etap 6** (collection `Media` +
+  upload, podmiana `cover: text` na relację, migracja plików z `apps/web/public/news/`).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

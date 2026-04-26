@@ -13,6 +13,99 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-26 (Etap 5) — Migracja 24 newsów MD → Payload
+
+Domknięty Etap 5 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Po
+Etapie 4b cały frontend Astro czytał news z Payload, ale w bazie był tylko 1
+testowy news (z Etapu 3). 24 oryginalne newsy żyły wciąż w
+`apps/web/src/content/news/*.md` jako markdown z YAML frontmatterem, używane
+tylko jako fallback przy CMS DOWN. Etap 5 to ich import do CMS jako rekordów
+Payload — z konwersją markdown body → Lexical i zachowaniem istniejących URL-i.
+
+### Added
+
+- **`apps/cms/scripts/lib/md-to-lexical.ts`** — własny mini-parser markdown →
+  Lexical SerializedEditorState. Zakres dopasowany do prostoty naszych 24 .md
+  (zero nagłówków, blockquote, list, code blocks — zweryfikowane gradient
+  grep'em przed pisaniem):
+  - akapity rozdzielone `\n\n+`,
+  - linebreak (single `\n` w obrębie akapitu) → Lexical `linebreak` node →
+    `<br>` w HTML,
+  - inline: `**bold**`/`__bold__` → format=1, `_italic_`/`*italic*` → format=2,
+    `[text](url)` → link node (`linkType: 'custom'`, `newTab: true`).
+  - **Algorytm 2-stopniowy:** `parseInline` rozpoznaje warstwą zewnętrzną
+    bold/italic (mogą obejmować link), wywołuje rekurencyjnie z dodanym
+    `format`; `parseLinksAndText` w plain segmentach wyciąga linki i
+    propaguje `format` na text-node dziecko linka.
+  - Dzięki temu `_… [link](url) …_` daje italic-text + link{italic-text} +
+    italic-text (poprawny `<em>…</em><a><em>…</em></a><em>…</em>`).
+- **`apps/cms/scripts/migrate-news.ts`** — skrypt migracyjny:
+  - Czyta wszystkie `apps/web/src/content/news/*.md` z `gray-matter`.
+  - **Slug newsa = nazwa pliku bez `.md`** (1:1 z Astro Content Collections —
+    URL-e `/aktualnosci/<slug>` zachowane).
+  - Tagi: dla każdego unikalnego stringa z YAML `tags[]` tworzy/podpina rekord
+    w kolekcji `tags` (idempotentnie po `name`).
+  - Newsy idempotentnie po `slug` (`find` → `create` jeśli brak; pomija jeśli
+    istnieje).
+  - Tryb `--dry-run` (zero side effects) i tryb live.
+  - `cover` zostawiamy jako string (np. `/news/orzel-na-horyzoncie.jpg`) — w
+    Etapie 6 podmienimy na relację do Media + faktyczny upload.
+- **`apps/cms/scripts/delete-news-by-slug.ts`** — pomocniczy skrypt
+  (`npx tsx … <slug>`). Użyty raz przy naprawie buga w parserze; zostawiony
+  w repo bo będzie użyteczny przy Etapie 6 i kolejnych iteracjach migracji.
+- **devDep `gray-matter@4`** w `apps/cms/package.json`.
+
+### Changed
+
+- Baza Payload: +24 rekordy w `news` (id 2..25; id=1 to testowy `testowy-news-z-cms`
+  z Etapu 3) i +13 rekordów w `tags` (`zapowiedź, turniej, żaki, orliki, wynik,
+  juniorzy, kibice, klub, zawodnik meczu, młodzicy, młodzież, trampkarze,
+  życzenia` — `seniorzy` istniał z Etapu 3).
+
+### Tests
+
+- **Dry-run** — 24 newsy + 14 tagów do utworzenia (1 istniejący), zero side
+  effects, zero błędów. ✅
+- **Real run** — 24/24 newsów utworzonych, 13 nowych tagów, 0 błędów. ✅
+- **Re-run** — 0 nowych rekordów, 23 pominięte (idempotentność OK; jeden news
+  utworzony bo był wcześniej skasowany ręcznie do testu naprawy parsera). ✅
+- **API** — `GET /api/news?limit=100&depth=2&where[draft][equals]=false`
+  zwraca 25 docs, każdy z relacją `tags` rozwiniętą do obiektów `{ id, name }`. ✅
+- **Astro build (CMS UP)** — exit 0, **41 stron** w 1.67 s, w tym
+  `dist/aktualnosci/<slug>/index.html` × 25 + `dist/aktualnosci/index.html`
+  (lista). ✅
+- **Spot-check** wyrenderowanego HTML:
+  - `komunikat-zarzadu` (jedyny news z italic + link): `<em>Pełny wpis dostępny na </em><a href="…fb.com/posts/…" rel="noopener noreferrer" target="_blank"><em>fanpage'u klubu na Facebooku</em></a><em>.</em>` ✅
+  - `wazna-wygrana-3-1-wolow` (8 akapitów, jeden z 3 strzelcami rozdzielonymi
+    pojedynczym `\n`): 8 × `<p>`, w tym `<p>Lima ⚽️<br />Kamiński ⚽️<br />Marciniszyn ⚽️</p>`. ✅
+- **Homepage** — 11 unikalnych linków `/aktualnosci/<slug>` na `dist/index.html`
+  (top11 z 25, sortowane po dacie desc; `testowy-news-z-cms` z 2026-04-26 na
+  czele, dalej oryginalne newsy z marca/kwietnia 2026). ✅
+
+### Fixed
+
+- **Bug w pierwszej (1-stopniowej) wersji parsera markdown → Lexical:** dla
+  wejścia `_Pełny wpis dostępny na [fanpage'u klubu na Facebooku](https://…)._`
+  greedy regex italic łapał całą zawartość między pierwszym a ostatnim `_`,
+  ale literał `[…](…)` wewnątrz nie był rozpoznawany — w rezultacie cały
+  akapit szedł do CMS jako italic-text z surowym markdownem. Złapane przy
+  spot-checku JSON-a po pierwszym real run-ie. Fix: 2-stopniowy parser
+  (commit) — outer formatting (bold/italic) → inner linki, format propaguje
+  na text-node wewnątrz linka. Naprawiony pojedynczy news przez
+  `delete-news-by-slug.ts komunikat-zarzadu` + re-run migracji
+  (idempotentność zadziałała: stworzony tylko ten 1 brakujący).
+
+### Open
+
+- **Etap 6** — Collection `Media` w Payload + upload obrazków, podmiana
+  `cover: text` na relację, migracja plików `apps/web/public/herb-wks.png` i
+  `apps/web/public/news/*.jpg` do CMS-owego storage.
+- Pliki `apps/web/src/content/news/*.md` zostają w repo jako safety net dla
+  fallbacku w `apps/web/src/lib/cms.ts` (CMS DOWN → build używa .md). Decyzja
+  o usunięciu — po Etapach 6 i 17 (gdy CMS będzie produkcyjnie z backupem).
+
+---
+
 ## 2026-04-26 (mini-stage 4b) — Homepage przepięta na CMS
 
 Domknięty Etap 4b z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md).

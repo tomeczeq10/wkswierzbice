@@ -273,18 +273,32 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 
 #### Etap 5. Migracja 24 newsów MD → Payload
 
-**Status:** [ ] not started
+**Status:** [x] DONE 2026-04-26
 
-**Co robimy:**
-- `apps/cms/scripts/migrate-news.ts` — czyta wszystkie `apps/web/src/content/news/*.md` przez `gray-matter`, parsuje frontmatter, używa Payload Local API (`getPayload({ config }).create({ collection: 'news', data })`).
-- Mapowanie pól: `date` (string → Date), `tags`, `cover` (string ścieżki → na razie zostaje string, w Etapie 6 podmienimy na upload).
-- Idempotentność: skrypt sprawdza czy news o danym `slug` już istnieje, pomija duplikaty.
+**Co zrobione:**
+- `apps/cms/scripts/lib/md-to-lexical.ts` — własny mini-parser markdown → Lexical (akapity, linebreak, bold, italic, link). 2-stopniowy: outer formatowanie (bold/italic) → inner linki, format propaguje na text-nodes wewnątrz `<a>` (np. `_… [link](url)._` daje italic-text + link{italic-text} + italic-text).
+  - Świadome ograniczenia: brak nagłówków, blockquote, list, code blocks. Nasze 24 .md ich nie miały (zweryfikowane gradient grep'em przed pisaniem) — wystarczał tak prosty zakres.
+- `apps/cms/scripts/migrate-news.ts` — `gray-matter` (zainstalowany jako devDep w `apps/cms`) + Payload Local API. Slug newsa = nazwa pliku bez `.md`, **żeby URL-e `/aktualnosci/<slug>` zostały 1:1 z dotychczasowymi** (Astro Content Collection slug = filename stem).
+- Tagi tworzone idempotentnie (`find` po `name` → `create` jeśli brak). Newsy idempotentnie po `slug`. Tryb `--dry-run` (zero side effects, tylko log planu).
+- `apps/cms/scripts/delete-news-by-slug.ts` — pomocniczy skrypt (użyty raz po naprawie buga w parserze; zostawiony w repo, przyda się przy iteracji nad Etap 6 itp.).
 
-**Test:**
-- `npm run migrate:news --workspace=cms` → 24 newsy w bazie.
-- /aktualnosci pokazuje wszystkie 24, posortowane po dacie malejąco.
-- Wyrywkowo sprawdzam 3 newsy: tytuł, data, tagi, cover, treść poprawne.
-- Re-run skryptu nie tworzy duplikatów.
+**Test (wykonany):**
+- Dry-run: 24 newsy + 14 tagów (1 istniejący `seniorzy` z Etapu 3, 13 nowych: `zapowiedź, turniej, żaki, orliki, wynik, juniorzy, kibice, klub, zawodnik meczu, młodzicy, młodzież, trampkarze, życzenia`). ✅
+- Real run: 24/24 utworzone (id 2..25 — id=1 to testowy news z Etapu 3). 0 błędów. ✅
+- Re-run: 23 pominięte ("istnieje"), 0 utworzonych (idempotentność OK). ✅
+- API `GET /api/news?limit=100&depth=2&where[draft][equals]=false` zwraca **25 newsów** (24 + 1 testowy z Etapu 3), wszystkie z poprawnymi tagami przez relację `depth=2`. ✅
+- `apps/web` build (CMS UP): exit 0, **41 stron**, w tym `dist/aktualnosci/<slug>/index.html` × 25 + `dist/aktualnosci/index.html` (lista). ✅
+- Spot-check 2 newsów:
+  - `komunikat-zarzadu` (jedyny z italic + link) → `<em>Pełny wpis dostępny na </em><a href="…fb.com/posts/…" target="_blank"><em>fanpage'u klubu na Facebooku</em></a><em>.</em>` ✅
+  - `wazna-wygrana-3-1-wolow` (8 akapitów, w tym blok z 3 strzelcami z `<br>`) → 8 × `<p>` w tym jeden z `<br />` między linijkami. ✅
+- Homepage: 11 unikalnych linków `/aktualnosci/<slug>` (top11 z 25, sortowane po dacie desc; testowy news z 2026-04-26 na czele). ✅
+
+**Zostawione w polu (świadomie):**
+- `cover` jest dalej stringiem (np. `/news/orzel-na-horyzoncie.jpg`) — w Etapie 6 podmienimy na relację do `Media` collection + faktyczny upload.
+- Pliki `apps/web/src/content/news/*.md` zostają w repo jako **safety net** dla `cms.ts` fallback (CMS DOWN → build i tak działa). Decyzja: nie usuwamy ich teraz; jeśli kiedyś CMS będzie 100 % stabilny i mamy backupy bazy, można rozważyć skasowanie.
+
+**Pitfall złapany w trakcie:**
+- Pierwsza wersja parsera 1-stopniowa (jeden regex z alternatywami) na `_Pełny wpis [link](…)._` matchnęła italic od `_` do `_` greedy, ale wewnątrz nie rozpoznawała linka — stracona semantyka. Fix: rozdzielenie na `parseInline` (bold/italic) + `parseLinksAndText` (linki w plain segments), z propagacją `format` w dół. Po naprawie: usunięcie wadliwego rekordu (`delete-news-by-slug.ts`) + re-run migracji → idempotentny zaimport tylko brakującego newsa.
 
 ---
 
@@ -568,9 +582,12 @@ Po każdym etapie aktualizujemy:
 - Wpis do [`STATE.md`](STATE.md) w sekcji „Wariant 2 / Panel admina".
 - Wpis do [`CHANGELOG.md`](CHANGELOG.md) z datą sesji.
 
-**Stan na 2026-04-25 (po sesji 3 — szósta tura):**
+**Stan na 2026-04-26 (po Etapie 5):**
 - ✅ Etap 1 DONE (monorepo + git init).
 - ✅ Etap 2 DONE (Payload zainstalowany, /admin działa, first-user signup OK).
 - ✅ Etap 3 DONE (kolekcje News + Tags z relacją hasMany, slugify PL, Lexical body, walidacje PL, full CRUD przez API).
-- ⏳ Etapy 4–18 nie rozpoczęte.
-- **Następny:** Etap 4 — Astro odpytuje Payload REST (zamiast `getCollection('news')` z plików .md → fetch z `/api/news?where[draft][equals]=false&sort=-date`).
+- ✅ Etap 4 DONE (Astro odpytuje Payload REST + graceful fallback do .md gdy CMS DOWN).
+- ✅ Etap 4b DONE (homepage — `index.astro` + `MagazineHome` + `StadionHome` — czyta `fetchNewsList()`).
+- ✅ Etap 5 DONE (24 newsy zmigrowane do Payload, custom md→Lexical parser, idempotentny skrypt migracyjny).
+- ⏳ Etapy 6–18 nie rozpoczęte.
+- **Następny:** Etap 6 — Collection `Media` + upload obrazków (zamiana `cover: string` na relację do Media + upload plików z `apps/web/public/news/`).
