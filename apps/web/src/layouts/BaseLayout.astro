@@ -2,9 +2,12 @@
 import "@/styles/global.css";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
-import { SITE } from "@/config/site";
+import { fetchSiteConfig } from "@/lib/cms-site";
 import TemplateInit from "@/templates/init.astro";
 import TemplateSwitcher from "@/templates/TemplateSwitcher.astro";
+
+const cfg = await fetchSiteConfig();
+const SITE = cfg.site;
 
 interface Props {
   title?: string;
@@ -68,20 +71,20 @@ const ogImage = new URL(image, Astro.site ?? SITE.url).toString();
       "description": SITE.description,
       "address": {
         "@type": "PostalAddress",
-        "streetAddress": "ul. Tarnopolska 21",
-        "postalCode": "55-040",
-        "addressLocality": "Wierzbice",
+        "streetAddress": cfg.contact.address.street,
+        "postalCode": cfg.contact.address.postalCode,
+        "addressLocality": cfg.contact.address.city,
         "addressCountry": "PL",
       },
       "contactPoint": {
         "@type": "ContactPoint",
-        "telephone": "+48501596400",
-        "email": "klub@wkswierzbice.pl",
+        "telephone": cfg.contact.phone.replace(/\\s+/g, ""),
+        "email": cfg.contact.email,
         "contactType": "customer service",
         "availableLanguage": "Polish",
       },
       "sameAs": [
-        "https://www.facebook.com/WKSWIERZBICEOFFICIAL",
+        cfg.social.facebook,
       ],
     })} />
   </head>

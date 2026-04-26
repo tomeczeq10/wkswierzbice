@@ -97,8 +97,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    siteConfig: SiteConfig;
+  };
+  globalsSelect: {
+    siteConfig: SiteConfigSelect<false> | SiteConfigSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -651,6 +655,128 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Ustawienia globalne strony (nawigacja, kontakt, social). Front ma fallback do `site.ts` gdy CMS OFF.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "siteConfig".
+ */
+export interface SiteConfig {
+  id: number;
+  site: {
+    name: string;
+    shortName: string;
+    tagline?: string | null;
+    description?: string | null;
+    url?: string | null;
+    language?: string | null;
+    founded?: number | null;
+    reactivated?: number | null;
+    league?: string | null;
+    city?: string | null;
+    region?: string | null;
+    defaultOgImage?: string | null;
+  };
+  nav?:
+    | {
+        label: string;
+        href: string;
+        id?: string | null;
+      }[]
+    | null;
+  contact?: {
+    email?: string | null;
+    phone?: string | null;
+    address?: {
+      street?: string | null;
+      postalCode?: string | null;
+      city?: string | null;
+      country?: string | null;
+    };
+    officeAddress?: {
+      street?: string | null;
+      postalCode?: string | null;
+      city?: string | null;
+    };
+    googleMapsEmbedSrc?: string | null;
+    googleMapsLink?: string | null;
+  };
+  social?: {
+    facebook?: string | null;
+    facebookAlt?: string | null;
+    instagram?: string | null;
+    youtube?: string | null;
+    tiktok?: string | null;
+    facebookFollowers?: number | null;
+  };
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "siteConfig_select".
+ */
+export interface SiteConfigSelect<T extends boolean = true> {
+  site?:
+    | T
+    | {
+        name?: T;
+        shortName?: T;
+        tagline?: T;
+        description?: T;
+        url?: T;
+        language?: T;
+        founded?: T;
+        reactivated?: T;
+        league?: T;
+        city?: T;
+        region?: T;
+        defaultOgImage?: T;
+      };
+  nav?:
+    | T
+    | {
+        label?: T;
+        href?: T;
+        id?: T;
+      };
+  contact?:
+    | T
+    | {
+        email?: T;
+        phone?: T;
+        address?:
+          | T
+          | {
+              street?: T;
+              postalCode?: T;
+              city?: T;
+              country?: T;
+            };
+        officeAddress?:
+          | T
+          | {
+              street?: T;
+              postalCode?: T;
+              city?: T;
+            };
+        googleMapsEmbedSrc?: T;
+        googleMapsLink?: T;
+      };
+  social?:
+    | T
+    | {
+        facebook?: T;
+        facebookAlt?: T;
+        instagram?: T;
+        youtube?: T;
+        tiktok?: T;
+        facebookFollowers?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

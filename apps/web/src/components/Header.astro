@@ -1,6 +1,10 @@
 ---
 import Logo from "./Logo.astro";
-import { SITE, NAV } from "@/config/site";
+import { fetchSiteConfig } from "@/lib/cms-site";
+
+const cfg = await fetchSiteConfig();
+const SITE = cfg.site;
+const NAV = cfg.nav;
 
 const pathname = Astro.url.pathname.replace(/\/$/, "") || "/";
 ---

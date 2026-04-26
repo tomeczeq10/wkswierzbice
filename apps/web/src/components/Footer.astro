@@ -1,6 +1,12 @@
 ---
 import Logo from "./Logo.astro";
-import { SITE, CONTACT, SOCIAL, NAV } from "@/config/site";
+import { fetchSiteConfig } from "@/lib/cms-site";
+
+const cfg = await fetchSiteConfig();
+const SITE = cfg.site;
+const CONTACT = cfg.contact;
+const SOCIAL = cfg.social;
+const NAV = cfg.nav;
 
 const year = new Date().getFullYear();
 ---
