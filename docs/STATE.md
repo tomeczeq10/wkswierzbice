@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etap 4 DONE — Astro odpytuje Payload REST z graceful fallbackiem do .md, Lexical → HTML async, `/aktualnosci/*` w pełni przepięte na CMS)
+> **Ostatnia aktualizacja:** 2026-04-26 (Etap 4b DONE — homepage `pages/index.astro` + `MagazineHome` + `StadionHome` przepięte na `fetchNewsList()`. Cały frontend news czyta WYŁĄCZNIE z CMS z fallbackiem do .md.)
 
 ## Produkcja
 
@@ -142,8 +142,18 @@ Implementacja:
   slug przy idempotentnym seed-zie (workaround: lowercase wszędzie). Test E2E:
   CMS UP → 1 news z CMS na liście (md zignorowane); CMS DOWN → 24 newsy z .md,
   build success w 1.62s.
-- ⏳ **Etapy 4b–18** — nie rozpoczęte. Następny: **Etap 4b** (homepage na CMS) →
-  potem **Etap 5** (migracja 24 .md → Payload przez `gray-matter` + Local API).
+- ✅ **Etap 4b (2026-04-26)** — homepage `apps/web/src/pages/index.astro`
+  + komponenty `MagazineHome.astro` i `StadionHome.astro` przepięte z
+  `getCollection('news')` na `fetchNewsList()`. Typ Props w obu komponentach
+  zmieniony z `CollectionEntry<'news'>[]` na `NewsItem[]` (identyczny shape,
+  zero zmian w renderze). Po Etapie 4b cały frontend news (3 strony) czyta
+  WYŁĄCZNIE z CMS, fallback do .md jako safety net. Test E2E: CMS UP →
+  homepage pokazuje 1 news z CMS w 4 szablonach (klasyk/marka/magazyn/stadion);
+  CMS DOWN → build success w 1.68s, 11 newsów .md na homepage, 3 warningi
+  `[cms] Niedostępne`. `getCollection('teams')` zostaje bez zmian (do Etapów 7–8).
+- ⏳ **Etapy 5–18** — nie rozpoczęte. Następny: **Etap 5** (migracja 24 plików
+  `apps/web/src/content/news/*.md` → Payload przez `gray-matter` + Local API,
+  z mapowaniem markdown body → Lexical).
 
 **Plan implementacji rozbity na 18 etapów (Faza A–F):**
 [`PAYLOAD-ROADMAP.md`](PAYLOAD-ROADMAP.md). Każdy etap = 2–6 h pracy + jeden

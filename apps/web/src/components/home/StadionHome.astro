@@ -4,7 +4,7 @@
  * Sticky LED-style scoreboard u góry, auto-scrolling marquee z meczami,
  * split layout: main content + sticky tabela ligi po prawej.
  */
-import type { CollectionEntry } from "astro:content";
+import type { NewsItem } from "@/lib/cms";
 import NewsCard from "@/components/NewsCard.astro";
 import SponsorGrid from "@/components/SponsorGrid.astro";
 import { SITE, HIGHLIGHTS } from "@/config/site";
@@ -31,7 +31,7 @@ interface Standing {
 }
 
 interface Props {
-  news: CollectionEntry<"news">[];
+  news: NewsItem[];
   upcoming: Match[];
   played: Match[];
   standings: Standing[];

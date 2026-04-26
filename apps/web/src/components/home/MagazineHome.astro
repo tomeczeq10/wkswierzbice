@@ -4,7 +4,7 @@
  * DARK MODE + sticky compact match bar + editorial sidebar „Top stories"
  * + full-bleed featured z drop cap + serif typography dla treści.
  */
-import type { CollectionEntry } from "astro:content";
+import type { NewsItem } from "@/lib/cms";
 import { SITE, SOCIAL, HIGHLIGHTS } from "@/config/site";
 
 interface Match {
@@ -18,7 +18,7 @@ interface Match {
 }
 
 interface Props {
-  news: CollectionEntry<"news">[];
+  news: NewsItem[];
   nextMatch: Match | null;
   lastMatch: Match | null;
   position: number | null;

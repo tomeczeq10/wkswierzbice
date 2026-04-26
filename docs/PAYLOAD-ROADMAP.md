@@ -251,6 +251,26 @@ Test pełen przeszedł: dev (504 ms), 4 szablony renderują, sync (16 drużyn /
 **Zostawione na Etap 4b (osobny mini-stage przed Etap 5):**
 - `apps/web/src/pages/index.astro` (homepage) wciąż używa `getCollection('news')`. Trzeba przepisać na `fetchNewsList()`.
 
+#### Etap 4b. Homepage na CMS (mini-stage)
+
+**Status:** [x] DONE (2026-04-26)
+
+**Co zostało zrobione:**
+- `apps/web/src/pages/index.astro` — `getCollection('news', !data.draft).sort(...)` → `fetchNewsList()` (sortowanie już w `cms.ts`).
+- `apps/web/src/components/home/MagazineHome.astro` — `news: CollectionEntry<'news'>[]` → `news: NewsItem[]`. Import zmieniony z `astro:content` → `@/lib/cms`.
+- `apps/web/src/components/home/StadionHome.astro` — analogicznie.
+- Komponenty `Hero`, `MarkaTicker`, `WhyUs`, `MatchHero`, `ScoreBanner`, `MatchCountdown`, `TeamCard`, `NewsCard`, `MagazineHome`, `StadionHome` używają tego samego shape (`post.slug`, `post.data.{title,date,excerpt,cover,coverAlt,tags,facebookUrl}`) — zero zmian w renderze, bo `NewsItem` ma identyczne pola jak `CollectionEntry<'news'>`.
+- `teams = await getCollection('teams')` zostaje bez zmian — Teams collection w CMS dopiero w Etapach 7–8.
+
+**Test (manual, oba scenariusze):**
+- ✅ **CMS UP:** `curl http://localhost:4321/` zwraca homepage (HTTP 200, 361 KB). Testowy news z CMS pojawia się 4× w HTML (klasyk newsTop3, marka newsTop6, magazyn featured + sidebar/grid, stadion newsTop6) — pliki .md zignorowane bo CMS odpowiedział.
+- ✅ **CMS DOWN:** `kill <pid>` na :3000, `npx astro build` w `apps/web/`:
+  - Exit 0, `[build] 40 page(s) built in 1.68s`.
+  - 3 warningi `[cms] Niedostępne (...): fetch failed — fallback do .md` (1× lista, 1× [slug], 1× homepage).
+  - `dist/index.html` zawiera 11 linków `/aktualnosci/<slug>` (z `newsTop11`), wszystkie z plików .md, posortowane od najnowszych.
+
+**Po Etap 4b:** cały frontend Astro czyta news WYŁĄCZNIE z CMS (lub graceful fallback do .md gdy CMS down). Homepage, lista, single — spójny source of truth. Pozostaje migracja danych (Etap 5).
+
 #### Etap 5. Migracja 24 newsów MD → Payload
 
 **Status:** [ ] not started

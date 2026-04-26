@@ -13,6 +13,53 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-26 (mini-stage 4b) — Homepage przepięta na CMS
+
+Domknięty Etap 4b z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md).
+Po Etap 4 strony `/aktualnosci/*` szły z Payload, ale homepage
+`apps/web/src/pages/index.astro` wciąż używała `getCollection('news')`. Teraz
+też wpięta. Cały frontend news czyta z jednego źródła (CMS + fallback .md).
+
+### Changed
+
+- **`apps/web/src/pages/index.astro`** — `getCollection('news', !data.draft).sort(...)`
+  → `await fetchNewsList()` (sortowanie już w `cms.ts`). `newsTop3`, `newsTop6`,
+  `newsTop11` używane przez 4 szablony (klasyk, marka, magazyn, stadion).
+- **`apps/web/src/components/home/MagazineHome.astro`** — typ Props
+  `news: CollectionEntry<"news">[]` → `news: NewsItem[]`. Import zmieniony z
+  `astro:content` → `@/lib/cms`. Render bez zmian (identyczny shape:
+  `post.slug`, `post.data.title`, `post.data.date`, `post.data.cover`, etc.).
+- **`apps/web/src/components/home/StadionHome.astro`** — analogiczna zmiana.
+
+### Pominięte (świadomie)
+
+- `teams = await getCollection("teams")` w `pages/index.astro` zostaje bez
+  zmian — Teams collection w Payload dopiero w Etapie 7. Po Etapie 8 (migracja
+  drużyn) ten kawałek przepniemy w Etapie 8b lub w samym Etapie 7.
+
+### Test
+
+- ✅ **CMS UP:** `curl http://localhost:4321/` zwraca homepage (HTTP 200,
+  361 KB). Testowy news z CMS (`testowy-news-z-cms`) pojawia się **4×** w HTML
+  — raz na każdy szablon (klasyk/marka/magazyn/stadion). Pliki .md zignorowane.
+- ✅ **CMS DOWN** (`kill <pid>` na :3000):
+  - `npx astro build` w `apps/web/` → exit 0, `[build] 40 page(s) built in 1.68s`.
+  - **3 warningi** `[cms] Niedostępne (...): fetch failed — fallback do .md`
+    (1× `/aktualnosci/[slug]`, 1× `/aktualnosci/`, 1× `/`). Etap 4 dawał 2
+    warningi, teraz dochodzi 3-ci dla homepage — spodziewane.
+  - `dist/index.html` zawiera 11 unikalnych linków `/aktualnosci/<slug>` (z
+    `newsTop11`), wszystkie z plików .md, posortowane od najnowszych.
+
+### Po Etap 4b
+
+Cały frontend news (3 strony Astro: homepage `/`, lista `/aktualnosci/`,
+single `/aktualnosci/<slug>`) czyta WYŁĄCZNIE z CMS, z gracefulnym fallbackiem
+do .md gdy CMS niedostępny. Spójny source of truth. Następny krok: **Etap 5** —
+migracja 24 plików `apps/web/src/content/news/*.md` → Payload przez
+`gray-matter` + Local API, z mapowaniem markdown body → Lexical.
+
+---
+
 ## 2026-04-26 — Etap 4 DONE: Astro odpytuje Payload REST (z graceful fallbackiem)
 
 Wykonany Etap 4 z [`docs/PAYLOAD-ROADMAP.md`](docs/PAYLOAD-ROADMAP.md). Strony

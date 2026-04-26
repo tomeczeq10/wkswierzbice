@@ -16,10 +16,9 @@ import StadionHome from "@/components/home/StadionHome.astro";
 
 import { SITE, HIGHLIGHTS } from "@/config/site";
 import season from "@/data/season.json";
+import { fetchNewsList } from "@/lib/cms";
 
-const allNewsAll = (await getCollection("news", ({ data }) => !data.draft)).sort(
-  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-);
+const allNewsAll = await fetchNewsList();
 const newsTop3 = allNewsAll.slice(0, 3);
 const newsTop6 = allNewsAll.slice(0, 6);
 const newsTop11 = allNewsAll.slice(0, 11);
