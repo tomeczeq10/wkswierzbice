@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isEditorOrAdmin } from '../access'
 
 /**
  * Galeria klubu (Etap 9) — płaska lista zdjęć.
@@ -17,6 +18,9 @@ export const Gallery: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isEditorOrAdmin,
   },
   defaultSort: 'order',
   fields: [

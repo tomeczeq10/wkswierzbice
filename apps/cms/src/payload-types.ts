@@ -74,6 +74,11 @@ export interface Config {
     teams: Team;
     players: Player;
     gallery: Gallery;
+    board: Board;
+    staff: Staff;
+    sponsors: Sponsor;
+    heroSlides: HeroSlide;
+    staticPages: StaticPage;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +93,11 @@ export interface Config {
     teams: TeamsSelect<false> | TeamsSelect<true>;
     players: PlayersSelect<false> | PlayersSelect<true>;
     gallery: GallerySelect<false> | GallerySelect<true>;
+    board: BoardSelect<false> | BoardSelect<true>;
+    staff: StaffSelect<false> | StaffSelect<true>;
+    sponsors: SponsorsSelect<false> | SponsorsSelect<true>;
+    heroSlides: HeroSlidesSelect<false> | HeroSlidesSelect<true>;
+    staticPages: StaticPagesSelect<false> | StaticPagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -99,12 +109,15 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     siteConfig: SiteConfig;
+    season: Season;
   };
   globalsSelect: {
     siteConfig: SiteConfigSelect<false> | SiteConfigSelect<true>;
+    season: SeasonSelect<false> | SeasonSelect<true>;
   };
   locale: null;
   widgets: {
+    'season-sync': SeasonSyncWidget;
     collections: CollectionsWidget;
   };
   user: User;
@@ -137,6 +150,11 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  role: 'admin' | 'redaktor' | 'trener';
+  /**
+   * Używane tylko dla roli trener — ogranicza edycję zawodników do tej drużyny.
+   */
+  team?: (number | null) | Team;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -155,6 +173,53 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  /**
+   * Część adresu po /druzyny/. Wypełniane auto z nazwy, można nadpisać.
+   */
+  slug: string;
+  category: 'seniorzy' | 'rezerwy' | 'juniorzy' | 'trampkarze' | 'orlik' | 'zak' | 'skrzat' | 'kobiety' | 'inna';
+  league?: string | null;
+  coach: string;
+  assistantCoach?: string | null;
+  trainingSchedule?: string | null;
+  /**
+   * Opcjonalnie. Jeśli brak, strona pokaże układ bez zdjęcia.
+   */
+  photo?: (number | null) | Media;
+  /**
+   * Wyższa wartość = wyżej na listach.
+   */
+  order?: number | null;
+  /**
+   * Treść renderowana na stronie drużyny. Dla spójności używamy Lexical (jak w newsach).
+   */
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -282,53 +347,6 @@ export interface Tag {
   createdAt: string;
 }
 /**
- * Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "teams".
- */
-export interface Team {
-  id: number;
-  name: string;
-  /**
-   * Część adresu po /druzyny/. Wypełniane auto z nazwy, można nadpisać.
-   */
-  slug: string;
-  category: 'seniorzy' | 'rezerwy' | 'juniorzy' | 'trampkarze' | 'orlik' | 'zak' | 'skrzat' | 'kobiety' | 'inna';
-  league?: string | null;
-  coach: string;
-  assistantCoach?: string | null;
-  trainingSchedule?: string | null;
-  /**
-   * Opcjonalnie. Jeśli brak, strona pokaże układ bez zdjęcia.
-   */
-  photo?: (number | null) | Media;
-  /**
-   * Wyższa wartość = wyżej na listach.
-   */
-  order?: number | null;
-  /**
-   * Treść renderowana na stronie drużyny. Dla spójności używamy Lexical (jak w newsach).
-   */
-  description?: {
-    root: {
-      type: string;
-      children: {
-        type: any;
-        version: number;
-        [k: string]: unknown;
-      }[];
-      direction: ('ltr' | 'rtl') | null;
-      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
-      indent: number;
-      version: number;
-    };
-    [k: string]: unknown;
-  } | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Kadra drużyn. Każdy zawodnik należy do jednej drużyny (relacja do Teams).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -370,6 +388,103 @@ export interface Gallery {
    * Rezerwa pod przyszłe albumy — na razie puste.
    */
   albumId?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Zarząd klubu (sekcja /o-klubie).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board".
+ */
+export interface Board {
+  id: number;
+  name: string;
+  role: string;
+  highlight?: boolean | null;
+  bio?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sztab szkoleniowy (sekcja /o-klubie).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff".
+ */
+export interface Staff {
+  id: number;
+  name: string;
+  role: string;
+  type: 'trener_pierwszej_druzyny' | 'trener_mlodziezy' | 'inne';
+  bio?: string | null;
+  photo?: (number | null) | Media;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Sponsorzy i partnerzy klubu (strona /sponsorzy + komponenty).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors".
+ */
+export interface Sponsor {
+  id: number;
+  name: string;
+  tier: 'strategiczny' | 'glowny' | 'wspierajacy';
+  logo: number | Media;
+  website?: string | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Karuzela na stronie głównej.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "heroSlides".
+ */
+export interface HeroSlide {
+  id: number;
+  image: number | Media;
+  kicker?: string | null;
+  title: string;
+  subtitle?: string | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+  active?: boolean | null;
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Treści stron: o-klubie / nabory / kontakt / polityka-prywatnosci.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staticPages".
+ */
+export interface StaticPage {
+  id: number;
+  slug: 'o-klubie' | 'nabory' | 'kontakt' | 'polityka-prywatnosci';
+  title: string;
+  body?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -424,6 +539,26 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'gallery';
         value: number | Gallery;
+      } | null)
+    | ({
+        relationTo: 'board';
+        value: number | Board;
+      } | null)
+    | ({
+        relationTo: 'staff';
+        value: number | Staff;
+      } | null)
+    | ({
+        relationTo: 'sponsors';
+        value: number | Sponsor;
+      } | null)
+    | ({
+        relationTo: 'heroSlides';
+        value: number | HeroSlide;
+      } | null)
+    | ({
+        relationTo: 'staticPages';
+        value: number | StaticPage;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -472,6 +607,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
+  team?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -618,6 +755,74 @@ export interface GallerySelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "board_select".
+ */
+export interface BoardSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  highlight?: T;
+  bio?: T;
+  photo?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staff_select".
+ */
+export interface StaffSelect<T extends boolean = true> {
+  name?: T;
+  role?: T;
+  type?: T;
+  bio?: T;
+  photo?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "sponsors_select".
+ */
+export interface SponsorsSelect<T extends boolean = true> {
+  name?: T;
+  tier?: T;
+  logo?: T;
+  website?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "heroSlides_select".
+ */
+export interface HeroSlidesSelect<T extends boolean = true> {
+  image?: T;
+  kicker?: T;
+  title?: T;
+  subtitle?: T;
+  ctaLabel?: T;
+  ctaHref?: T;
+  active?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "staticPages_select".
+ */
+export interface StaticPagesSelect<T extends boolean = true> {
+  slug?: T;
+  title?: T;
+  body?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -714,6 +919,32 @@ export interface SiteConfig {
   createdAt?: string | null;
 }
 /**
+ * Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (dashboard button + cron).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "season".
+ */
+export interface Season {
+  id: number;
+  lastSync?: string | null;
+  lastSyncStatus: 'idle' | 'running' | 'success' | 'error';
+  lastSyncError?: string | null;
+  /**
+   * To jest “źródło prawdy” dla /terminarz w Astro. Front ma fallback do lokalnego season.json jeśli CMS niedostępny.
+   */
+  data?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "siteConfig_select".
  */
@@ -777,6 +1008,29 @@ export interface SiteConfigSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "season_select".
+ */
+export interface SeasonSelect<T extends boolean = true> {
+  lastSync?: T;
+  lastSyncStatus?: T;
+  lastSyncError?: T;
+  data?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "season-sync_widget".
+ */
+export interface SeasonSyncWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'medium' | 'large' | 'x-large' | 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { canCreatePlayer, canDeletePlayer, canUpdatePlayer } from '../access'
+
 export const Players: CollectionConfig = {
   slug: 'players',
   labels: {
@@ -13,6 +15,9 @@ export const Players: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: canCreatePlayer,
+    update: canUpdatePlayer,
+    delete: canDeletePlayer,
   },
   defaultSort: 'name',
   fields: [
@@ -44,6 +49,17 @@ export const Players: CollectionConfig = {
       label: { pl: 'Drużyna', en: 'Team' },
       admin: {
         position: 'sidebar',
+      },
+      hooks: {
+        beforeValidate: [
+          ({ value, req }) => {
+            // Trener nie może przypisać zawodnika do innej drużyny niż własna.
+            const role = (req.user as any)?.role
+            const userTeam = (req.user as any)?.team
+            if (role === 'trener' && userTeam) return userTeam
+            return value
+          },
+        ],
       },
     },
     {

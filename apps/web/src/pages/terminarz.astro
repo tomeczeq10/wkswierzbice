@@ -2,7 +2,9 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
 import { SITE, STATS } from "@/config/site";
-import season from "@/data/season.json";
+import { fetchSeason } from "@/lib/cms-season";
+
+const season = await fetchSeason();
 
 type SeasonMatch = (typeof season)["rounds"][number]["matches"][number];
 type WksMatch = (typeof season)["wks"]["played"][number];

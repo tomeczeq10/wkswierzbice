@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
+import { isAdmin } from '../access'
 
 export const Teams: CollectionConfig = {
   slug: 'teams',
@@ -15,6 +16,9 @@ export const Teams: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: isAdmin,
+    update: isAdmin,
+    delete: isAdmin,
   },
   defaultSort: '-order',
   fields: [

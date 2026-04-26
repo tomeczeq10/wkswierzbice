@@ -1,5 +1,6 @@
 ---
-import { SITE, SOCIAL, HERO_SLIDES } from "@/config/site";
+import { SITE, SOCIAL } from "@/config/site";
+import { fetchHeroSlides } from "@/lib/cms-hero";
 
 interface Props {
   image?: string;
@@ -18,7 +19,7 @@ const {
 } = Astro.props;
 
 const heightClass = variant === "home" ? "min-h-[80vh]" : "min-h-[40vh]";
-const slides = variant === "home" ? HERO_SLIDES : [{ image, kicker, title, subtitle }];
+const slides = variant === "home" ? await fetchHeroSlides() : [{ image, kicker, title, subtitle }];
 ---
 
 <section

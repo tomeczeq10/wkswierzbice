@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
+import { isEditorOrAdmin } from '../access'
 
 /**
  * Aktualności klubowe.
@@ -34,6 +35,9 @@ export const News: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isEditorOrAdmin,
   },
   defaultSort: '-date',
   fields: [

@@ -1,7 +1,11 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
-import { SITE, BOARD, STAFF } from "@/config/site";
+import { SITE } from "@/config/site";
+import { fetchBoard, fetchStaff } from "@/lib/cms-people";
+
+const STAFF = await fetchStaff();
+const BOARD = await fetchBoard();
 ---
 
 <BaseLayout

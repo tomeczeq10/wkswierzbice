@@ -1,13 +1,16 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
-import { SPONSORS, CONTACT } from "@/config/site";
+import { CONTACT } from "@/config/site";
+import { fetchSponsors } from "@/lib/cms-sponsors";
 
 const tiers = [
   { id: "strategiczny", label: "Sponsor strategiczny" },
   { id: "glowny", label: "Sponsorzy główni" },
   { id: "wspierajacy", label: "Partnerzy wspierający" },
 ] as const;
+
+const SPONSORS = await fetchSponsors();
 
 const grouped = tiers.map((tier) => ({
   ...tier,

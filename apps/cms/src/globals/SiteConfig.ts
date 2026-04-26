@@ -1,10 +1,12 @@
 import type { GlobalConfig } from 'payload'
+import { isAdmin } from '../access'
 
 export const SiteConfig: GlobalConfig = {
   slug: 'siteConfig',
   label: { pl: 'Konfiguracja strony', en: 'Site config' },
   access: {
     read: () => true,
+    update: isAdmin,
   },
   admin: {
     description:

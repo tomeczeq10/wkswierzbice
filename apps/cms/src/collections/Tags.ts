@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
+import { isEditorOrAdmin } from '../access'
 
 /**
  * Tagi do oznaczania newsów (np. "seniorzy", "wynik", "turniej").
@@ -31,6 +32,9 @@ export const Tags: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isEditorOrAdmin,
   },
   fields: [
     {

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isEditorOrAdmin } from '../access'
 
 /**
  * Kolekcja Media — uploads w Payload (Etap 6a).
@@ -30,6 +31,9 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: isEditorOrAdmin,
+    update: isEditorOrAdmin,
+    delete: isEditorOrAdmin,
   },
   fields: [
     {
@@ -44,7 +48,7 @@ export const Media: CollectionConfig = {
   ],
   upload: {
     staticDir: 'media',
-    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+    mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
     imageSizes: [
       {
         name: 'thumbnail',

@@ -1,12 +1,13 @@
 ---
-import { SPONSORS } from "@/config/site";
+import { fetchSponsors } from "@/lib/cms-sponsors";
 
 interface Props {
   variant?: "compact" | "full";
 }
 
 const { variant = "compact" } = Astro.props;
-const items = variant === "compact" ? SPONSORS.slice(0, 6) : SPONSORS;
+const all = await fetchSponsors();
+const items = variant === "compact" ? all.slice(0, 6) : all;
 ---
 
 <div

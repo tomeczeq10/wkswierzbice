@@ -39,7 +39,7 @@ if (existing.docs.length > 0) {
   await payload.update({
     collection: 'users',
     id,
-    data: { password },
+    data: { password, role: 'admin', team: null },
   })
   console.log(`✓ Admin "${email}" już istnieje (id=${id}) — hasło zaktualizowane.`)
   process.exit(0)
@@ -47,7 +47,7 @@ if (existing.docs.length > 0) {
 
 const created = await payload.create({
   collection: 'users',
-  data: { email, password },
+  data: { email, password, role: 'admin', team: null },
 })
 console.log(`🚀 Utworzono admina: id=${created.id}, email=${email}`)
 console.log(`   Hasło: z env ADMIN_PASSWORD (lub default dev — zmień w panelu /admin po pierwszym logowaniu).`)

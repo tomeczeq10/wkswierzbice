@@ -2,6 +2,11 @@
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
 import { SITE, CONTACT } from "@/config/site";
+import { fetchStaticPage } from "@/lib/cms-static-pages";
+import { lexicalToHtml } from "@/lib/lexical";
+
+const cmsPage = await fetchStaticPage("polityka-prywatnosci");
+const cmsHtml = cmsPage?.body ? await lexicalToHtml(cmsPage.body as any) : null;
 ---
 
 <BaseLayout title="Polityka prywatności" description="Zasady przetwarzania danych osobowych przez klub WKS Wierzbice.">
@@ -9,30 +14,38 @@ import { SITE, CONTACT } from "@/config/site";
 
   <section class="section">
     <div class="container mx-auto max-w-3xl prose-club">
-      <h2>Administrator danych</h2>
-      <p>
-        Administratorem danych osobowych jest <strong>{SITE.name}</strong>,
-        {CONTACT.address.street}, {CONTACT.address.postalCode} {CONTACT.address.city}.
-      </p>
+      {
+        cmsHtml ? (
+          <Fragment set:html={cmsHtml} />
+        ) : (
+          <>
+            <h2>Administrator danych</h2>
+            <p>
+              Administratorem danych osobowych jest <strong>{SITE.name}</strong>,
+              {CONTACT.address.street}, {CONTACT.address.postalCode} {CONTACT.address.city}.
+            </p>
 
-      <h2>Cel i podstawa prawna przetwarzania</h2>
-      <ul>
-        <li>Obsługa zapytań przesyłanych przez formularz kontaktowy – art. 6 ust. 1 lit. f RODO.</li>
-        <li>Rekrutacja do sekcji młodzieżowych – art. 6 ust. 1 lit. a RODO (zgoda).</li>
-        <li>Realizacja działalności statutowej klubu – art. 6 ust. 1 lit. f RODO.</li>
-      </ul>
+            <h2>Cel i podstawa prawna przetwarzania</h2>
+            <ul>
+              <li>Obsługa zapytań przesyłanych przez formularz kontaktowy – art. 6 ust. 1 lit. f RODO.</li>
+              <li>Rekrutacja do sekcji młodzieżowych – art. 6 ust. 1 lit. a RODO (zgoda).</li>
+              <li>Realizacja działalności statutowej klubu – art. 6 ust. 1 lit. f RODO.</li>
+            </ul>
 
-      <h2>Okres przechowywania</h2>
-      <p>Dane przechowywane są przez okres niezbędny do realizacji celu, w którym zostały zebrane, lub do momentu cofnięcia zgody.</p>
+            <h2>Okres przechowywania</h2>
+            <p>Dane przechowywane są przez okres niezbędny do realizacji celu, w którym zostały zebrane, lub do momentu cofnięcia zgody.</p>
 
-      <h2>Prawa osoby, której dane dotyczą</h2>
-      <p>Przysługuje Ci prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania oraz wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</p>
+            <h2>Prawa osoby, której dane dotyczą</h2>
+            <p>Przysługuje Ci prawo dostępu do danych, ich sprostowania, usunięcia, ograniczenia przetwarzania oraz wniesienia skargi do Prezesa Urzędu Ochrony Danych Osobowych.</p>
 
-      <h2>Kontakt</h2>
-      <p>
-        W sprawach dotyczących przetwarzania danych osobowych prosimy o kontakt:
-        <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
-      </p>
+            <h2>Kontakt</h2>
+            <p>
+              W sprawach dotyczących przetwarzania danych osobowych prosimy o kontakt:
+              <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>.
+            </p>
+          </>
+        )
+      }
     </div>
   </section>
 </BaseLayout>
