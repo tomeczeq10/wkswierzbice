@@ -1,5 +1,4 @@
 ---
-import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 
 import Hero from "@/components/Hero.astro";
@@ -17,13 +16,14 @@ import StadionHome from "@/components/home/StadionHome.astro";
 import { SITE, HIGHLIGHTS } from "@/config/site";
 import season from "@/data/season.json";
 import { fetchNewsList, pickCoverUrl, resolveCoverAlt } from "@/lib/cms";
+import { fetchTeamsList } from "@/lib/cms-teams";
 
 const allNewsAll = await fetchNewsList();
 const newsTop3 = allNewsAll.slice(0, 3);
 const newsTop6 = allNewsAll.slice(0, 6);
 const newsTop11 = allNewsAll.slice(0, 11);
 
-const teams = (await getCollection("teams")).sort(
+const teams = (await fetchTeamsList()).sort(
   (a, b) => (a.data.order ?? 0) - (b.data.order ?? 0),
 );
 

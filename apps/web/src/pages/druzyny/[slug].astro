@@ -1,12 +1,13 @@
 ---
 import type { GetStaticPaths } from "astro";
-import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
 import PlayerGrid from "@/components/PlayerGrid.astro";
+import { fetchTeamsList, type TeamItem } from "@/lib/cms-teams";
+import { lexicalToHtml } from "@/lib/lexical";
 
 export const getStaticPaths: GetStaticPaths = async () => {
-  const teams = await getCollection("teams");
+  const teams = await fetchTeamsList();
   return teams.map((team) => ({
     params: { slug: team.slug },
     props: { team },
@@ -14,8 +15,18 @@ export const getStaticPaths: GetStaticPaths = async () => {
 };
 
 const { team } = Astro.props;
-const { Content } = await team.render();
-const { name, category, league, coach, assistantCoach, trainingSchedule, photo, roster } = team.data;
+const t = team as TeamItem;
+const { name, category, league, coach, assistantCoach, trainingSchedule, photo, roster } = t.data;
+
+let bodyHtml: string | null = null;
+let MdContent: Awaited<ReturnType<Extract<TeamItem["body"], { type: "md" }>["entry"]["render"]>>["Content"] | null = null;
+
+if (t.body.type === "lexical") {
+  bodyHtml = await lexicalToHtml(t.body.value);
+} else if (t.body.type === "md") {
+  const rendered = await t.body.entry.render();
+  MdContent = rendered.Content;
+}
 ---
 
 <BaseLayout title={name} description={`Drużyna ${name} – ${league ?? category}.`}>
@@ -38,7 +49,7 @@ const { name, category, league, coach, assistantCoach, trainingSchedule, photo, 
           )
         }
         <div class="prose-club">
-          <Content />
+          {MdContent ? <MdContent /> : bodyHtml ? <Fragment set:html={bodyHtml} /> : null}
         </div>
 
         {roster.length > 0 && (

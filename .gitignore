@@ -25,6 +25,11 @@ pnpm-debug.log*
 # możliwość zmiany — ignorujemy wszystkie pliki .db/.db-journal w apps/cms/.
 apps/cms/*.db
 apps/cms/*.db-journal
+apps/cms/src/*.db
+apps/cms/src/*.db-journal
+
+# Przypadkowy katalog `media/` w root (np. zły cwd przy uploadach) — prawda leży w `apps/cms/media/`.
+/media/
 apps/cms/uploads/
 apps/cms/.next/
 

@@ -1,12 +1,10 @@
 ---
-import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
 import TeamCard from "@/components/TeamCard.astro";
+import { fetchTeamsList } from "@/lib/cms-teams";
 
-const teams = (await getCollection("teams")).sort(
-  (a, b) => b.data.order - a.data.order,
-);
+const teams = (await fetchTeamsList()).sort((a, b) => b.data.order - a.data.order);
 ---
 
 <BaseLayout

@@ -2,10 +2,11 @@
  * Seeduje konto admin po reset/fresh dev DB.
  *
  * Czytane z `apps/cms/.env` (lub fallback do bezpiecznych dev-defaultów):
+ *   ADMIN_LOGIN=admin            (opcjonalnie; jeśli bez '@', dopisujemy `@local.test`)
  *   ADMIN_EMAIL=admin@wks-wierzbice.pl
  *   ADMIN_PASSWORD=<wpisz w .env, NIGDY nie commituj>
  *
- * Idempotentne — jeśli user już istnieje, skrypt loguje pomijam.
+ * Idempotentne — jeśli user już istnieje, skrypt ustawia mu hasło na nowe.
  *
  * Uruchomienie: npx tsx apps/cms/scripts/seed-admin.ts
  */
@@ -21,7 +22,8 @@ dotenvConfig({ path: path.resolve(__dirname, '../.env') })
 const { getPayload } = await import('payload')
 const payloadConfig = (await import('../src/payload.config')).default
 
-const email = process.env.ADMIN_EMAIL ?? 'admin@wks-wierzbice.pl'
+const rawLogin = process.env.ADMIN_LOGIN ?? process.env.ADMIN_EMAIL ?? 'admin@wks-wierzbice.pl'
+const email = rawLogin.includes('@') ? rawLogin : `${rawLogin}@local.test`
 const password = process.env.ADMIN_PASSWORD ?? 'dev-pass-2026!'
 
 const payload = await getPayload({ config: payloadConfig })
@@ -33,7 +35,13 @@ const existing = await payload.find({
 })
 
 if (existing.docs.length > 0) {
-  console.log(`✓ Admin "${email}" już istnieje (id=${existing.docs[0].id}), pomijam.`)
+  const id = existing.docs[0].id
+  await payload.update({
+    collection: 'users',
+    id,
+    data: { password },
+  })
+  console.log(`✓ Admin "${email}" już istnieje (id=${id}) — hasło zaktualizowane.`)
   process.exit(0)
 }
 

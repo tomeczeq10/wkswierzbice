@@ -9,9 +9,25 @@ import { Users } from './collections/Users'
 import { Media } from './collections/Media'
 import { News } from './collections/News'
 import { Tags } from './collections/Tags'
+import { Teams } from './collections/Teams'
+import { Players } from './collections/Players'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+/** Katalog `apps/cms` (nie `apps/cms/src` — tam leży `payload.config.ts`). */
+const cmsRoot = path.resolve(dirname, '..')
+
+function resolveSqliteUrl(raw: string): string {
+  // `file:./cms.db` jest wygodne w .env, ale Next/Payload bywa uruchamiany z różnym cwd
+  // (root monorepo vs apps/cms). Normalizujemy ścieżkę względną do katalogu `apps/cms`.
+  if (!raw) return raw
+  if (!raw.startsWith('file:')) return raw
+  const p = raw.slice('file:'.length) // np. "./cms.db" albo "/abs/path.db"
+  if (p.startsWith('./') || p.startsWith('../')) {
+    return `file:${path.resolve(cmsRoot, p)}`
+  }
+  return raw
+}
 
 export default buildConfig({
   admin: {
@@ -20,7 +36,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, News, Tags],
+  collections: [Users, Media, News, Tags, Teams, Players],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -28,7 +44,7 @@ export default buildConfig({
   },
   db: sqliteAdapter({
     client: {
-      url: process.env.DATABASE_URL || '',
+      url: resolveSqliteUrl(process.env.DATABASE_URL || ''),
     },
   }),
   sharp,

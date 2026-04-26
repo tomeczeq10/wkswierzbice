@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     news: News;
     tags: Tag;
+    teams: Team;
+    players: Player;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +84,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    teams: TeamsSelect<false> | TeamsSelect<true>;
+    players: PlayersSelect<false> | PlayersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -272,6 +276,75 @@ export interface Tag {
   createdAt: string;
 }
 /**
+ * Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams".
+ */
+export interface Team {
+  id: number;
+  name: string;
+  /**
+   * Część adresu po /druzyny/. Wypełniane auto z nazwy, można nadpisać.
+   */
+  slug: string;
+  category: 'seniorzy' | 'rezerwy' | 'juniorzy' | 'trampkarze' | 'orlik' | 'zak' | 'skrzat' | 'kobiety' | 'inna';
+  league?: string | null;
+  coach: string;
+  assistantCoach?: string | null;
+  trainingSchedule?: string | null;
+  /**
+   * Opcjonalnie. Jeśli brak, strona pokaże układ bez zdjęcia.
+   */
+  photo?: (number | null) | Media;
+  /**
+   * Wyższa wartość = wyżej na listach.
+   */
+  order?: number | null;
+  /**
+   * Treść renderowana na stronie drużyny. Dla spójności używamy Lexical (jak w newsach).
+   */
+  description?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Kadra drużyn. Każdy zawodnik należy do jednej drużyny (relacja do Teams).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "players".
+ */
+export interface Player {
+  id: number;
+  name: string;
+  number?: number | null;
+  /**
+   * Np. "Bramkarz", "Obrońca", "Pomocnik", "Napastnik". Front grupuje zawodników po słowach-kluczach.
+   */
+  position?: string | null;
+  team: number | Team;
+  /**
+   * Opcjonalny portret. Jeśli brak, karta pokaże watermark z herbem.
+   */
+  photo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -310,6 +383,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'tags';
         value: number | Tag;
+      } | null)
+    | ({
+        relationTo: 'teams';
+        value: number | Team;
+      } | null)
+    | ({
+        relationTo: 'players';
+        value: number | Player;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -454,6 +535,37 @@ export interface NewsSelect<T extends boolean = true> {
 export interface TagsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "teams_select".
+ */
+export interface TeamsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  category?: T;
+  league?: T;
+  coach?: T;
+  assistantCoach?: T;
+  trainingSchedule?: T;
+  photo?: T;
+  order?: T;
+  description?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "players_select".
+ */
+export interface PlayersSelect<T extends boolean = true> {
+  name?: T;
+  number?: T;
+  position?: T;
+  team?: T;
+  photo?: T;
   updatedAt?: T;
   createdAt?: T;
 }
