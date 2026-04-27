@@ -53,6 +53,12 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 - **Produkcja: zawieszony CMS po seedzie Docker** — w `payload_migrations` zostawał
   `batch=-1` (tryb dev); Payload czekał na stdin. Seed przez Docker: **`NODE_ENV=production`**
   w `--env-file`; w **`docs/DEPLOY-HOME-SERVER.md`** opis naprawy (`DELETE … batch=-1`).
+- **Cache produkcji (Cloudflare / przeglądarka):** `apps/web/src/middleware.ts`
+  — `Cache-Control: no-store` na odpowiedziach HTML; **`apps/cms/next.config.ts`**
+  — to samo dla **`/api/*`** (JSON z Payloada).
+- **Cache produkcji (HTML + API):** middleware Astro (`no-store` na HTML) oraz
+  nagłówki Next na **`/api/*`** w `apps/cms/next.config.ts` — mniej „starej”
+  strony przy Cloudflare / przeglądarce.
 - **SSR + CMS:** usunięto **jednorazowy cache modułowy** w `fetchSiteConfig()` (`cms-site.ts`)
   — po edycji globalu `siteConfig` w panelu strona widziała stare dane do restartu
   `wks-web`. Do zapytań REST Payload dodano **`cache: 'no-store'`** w `cms*.ts`.

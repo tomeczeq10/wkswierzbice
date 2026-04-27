@@ -218,6 +218,11 @@ docker exec salon-caddy wget -S -qO- http://wks-cms:3000/admin 2>&1 | head -10
 - **Web kontener restartuje się (np. `ERR_MODULE_NOT_FOUND piccolore`)**:
   w obrazie brakuje runtime `node_modules`. W naszym obrazie docelowo kopiujemy
   `node_modules` do runtime.
+- **Edycja w CMS, a strona dalej „stara” (nie lokalnie)** — często **cache HTML**
+  (Cloudflare przy tunelu, przeglądarka). W kodzie: middleware Astro ustawia
+  `Cache-Control: no-store` na HTML; Next ustawia to samo na `/api/*`. W
+  Cloudflare: reguła **Bypass cache** dla hosta demo albo wyczyść cache po
+  większych zmianach treści.
 - **Strona pokazuje aktualności / obrazy, a w `/admin` kolekcje są puste**:
   front domyślnie ma **fallback do Markdown** (`src/content/news/*.md`) i plików
   w `public/`, gdy CMS zwraca **0 newsów** — wygląda jak „pełny” serwis przy

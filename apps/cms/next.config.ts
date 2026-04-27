@@ -8,6 +8,19 @@ const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'private, no-store, max-age=0, must-revalidate',
+          },
+        ],
+      },
+    ]
+  },
   // W monorepo Next.js domyślnie próbuje wykryć "workspace root" idąc w górę
   // od katalogu projektu. Bez outputFileTracingRoot Turbopack myli ścieżki
   // i nie znajduje `next/package.json` (hoisted do root node_modules).
