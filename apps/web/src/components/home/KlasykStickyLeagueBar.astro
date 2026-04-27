@@ -99,12 +99,12 @@ const outcomeLabel: Record<Outcome, string> = { win: "W", draw: "R", loss: "P" }
     </div>
 
     {lastMatch && (
-      <div class="flex items-center gap-2 min-w-0">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
         <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 font-display shrink-0">Ostatni</span>
         <span class:list={["font-display text-base shrink-0", outcomeColor[lastMatch.result?.outcome ?? "draw"]]}>
           {lastMatch.result?.scoreLabel ?? "-:-"}
         </span>
-        <span class="text-white/80 truncate max-w-[10rem] hidden sm:inline">{lastMatch.opponent}</span>
+        <span class="text-white/80 hidden sm:inline break-words">{lastMatch.opponent}</span>
       </div>
     )}
 
@@ -120,9 +120,9 @@ const outcomeLabel: Record<Outcome, string> = { win: "W", draw: "R", loss: "P" }
     </div>
 
     {nextMatch && (
-      <div class="flex items-center gap-2 md:ml-0 ml-auto min-w-0">
+      <div class="flex flex-wrap items-center gap-x-2 gap-y-1 md:ml-0 ml-auto min-w-0">
         <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 font-display shrink-0">Następny</span>
-        <span class="text-white/90 truncate max-w-[12rem] hidden sm:inline">{nextMatch.opponent}</span>
+        <span class="text-white/90 hidden sm:inline break-words">{nextMatch.opponent}</span>
         <span class="text-white/70 shrink-0">{formatShortDate(nextMatch.date, nextMatch.time, nextMatch.dateRaw)}</span>
         <a href="/terminarz" class="shrink-0 text-brand-secondary uppercase tracking-widest hover:underline hidden md:inline">
           Terminarz →
