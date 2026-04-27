@@ -113,15 +113,15 @@ async function main() {
       role: s.role,
       bio: s.bio ?? null,
       photo: photoId && photoId !== 0 ? photoId : null,
-      type: 'trener_pierwszej_druzyny',
+      type: 'trener_pierwszej_druzyny' as const,
       order: i,
     }
     if (existing.docs.length > 0) {
       if (DRY_RUN) console.log(`  [dry] update: ${s.name}`)
-      else await payload.update({ collection: 'staff', id: existing.docs[0].id, data })
+      else await (payload as any).update({ collection: 'staff', id: existing.docs[0].id, data })
     } else {
       if (DRY_RUN) console.log(`  [dry] create: ${s.name}`)
-      else await payload.create({ collection: 'staff', data })
+      else await (payload as any).create({ collection: 'staff', data })
     }
   }
 
@@ -145,10 +145,10 @@ async function main() {
     }
     if (existing.docs.length > 0) {
       if (DRY_RUN) console.log(`  [dry] update: ${b.name}`)
-      else await payload.update({ collection: 'board', id: existing.docs[0].id, data })
+      else await (payload as any).update({ collection: 'board', id: existing.docs[0].id, data })
     } else {
       if (DRY_RUN) console.log(`  [dry] create: ${b.name}`)
-      else await payload.create({ collection: 'board', data })
+      else await (payload as any).create({ collection: 'board', data })
     }
   }
 
@@ -166,15 +166,15 @@ async function main() {
       name: s.name,
       tier: s.tier,
       website: s.url,
-      logo: logoId && logoId !== 0 ? logoId : null,
+      logo: logoId && logoId !== 0 ? logoId : undefined,
       order: i,
     }
     if (existing.docs.length > 0) {
       if (DRY_RUN) console.log(`  [dry] update: ${s.name}`)
-      else await payload.update({ collection: 'sponsors', id: existing.docs[0].id, data })
+      else await (payload as any).update({ collection: 'sponsors', id: existing.docs[0].id, data })
     } else {
       if (DRY_RUN) console.log(`  [dry] create: ${s.name}`)
-      else await payload.create({ collection: 'sponsors', data })
+      else await (payload as any).create({ collection: 'sponsors', data })
     }
   }
 

@@ -13,6 +13,60 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-27 — Deploy domowy: migracje SQLite + poprawka volume DB
+
+### Added
+
+- **`docs/DEPLOY-GIT-WORKFLOW.md`** + **`scripts/deploy-home-server.sh`** +
+  skrypt npm **`deploy:home`** — deploy przez **Git** (push → `git pull` na
+  serwerze + `docker compose`), zamiast pełnego archiwum tar przy wolnym łączu.
+
+### Fixed
+
+- **Panel `/admin` na produkcji (Docker)**: pusta baza bez tabel (`no such table:
+  users`) — włączono `prodMigrations` w `apps/cms/src/payload.config.ts` oraz
+  dodano początkową migrację w `apps/cms/src/migrations/`.
+- **SQLite `readonly database` przy migracji**: bind-mount **pojedynczego pliku**
+  `cms.db` blokował zapis (WAL/shm). W `deploy/wks/docker-compose.yml` mount
+  jest teraz na **cały katalog** `./persist` → `/data/wks`, a `DATABASE_URL` /
+  `UPLOADS_DIR` ustawione na ścieżki w tym volume.
+- **`docs/DEPLOY-HOME-SERVER.md`**, **`deploy/wks/env.cms.example`** — opis nowej
+  konfiguracji persist i typowych błędów.
+- **SSR + dynamiczne strony**: `getStaticPaths` jest ignorowane przy
+  `output: "server"` — **`druzyny/[slug].astro`** i **`aktualnosci/[slug].astro`**
+  ładowały dane po `Astro.params` + `fetch*List()`, zamiast z pustych `props`
+  (wcześniej **HTTP 500** na `/druzyny/seniorzy` itd.).
+- **`fetchTeamsList()`**: przy częściowej liście z CMS dokładane są brakujące
+  drużyny z `content/teams/*.md` (unik 404 na slugach legacy).
+- **`apps/web/astro.config.mjs`**: `server.strictPort: true` na **4321** —
+  unik cichego przeskoku na 4322 przy zajętym porcie (łatwo wtedy oglądać
+  „stary” dev na 4321).
+- **`druzyny/[slug].astro`**, **`aktualnosci/[slug].astro`**: `export const prerender = false`
+  — bez tego Astro zgłasza **GetStaticPathsRequired** (trasa domyślnie jak do
+  SSG; dane i tak ładujemy po `Astro.params` przy SSR).
+
+---
+
+## 2026-04-26 — Tabela ligowa: `/tabela`, home (klasyk), nawigacja
+
+### Added
+
+- **`apps/web/src/pages/tabela.astro`** — strona z pełną tabelą seniorów (źródło:
+  `fetchSeason()` / CMS + fallback `season.json`).
+- **`apps/web/src/components/LeagueStandingsTable.astro`** — wspólna tabela
+  standings dla `/tabela` i strony głównej (szablon klasyk).
+
+### Changed
+
+- **`apps/web/src/pages/index.astro`** — sekcja tabeli na home (tylko blok
+  `data-template-only="klasyk"`), `fetchSeason()` zamiast importu JSON dla
+  całej strony głównej.
+- **`apps/web/src/pages/terminarz.astro`** — zamiast pełnej tabeli: skrót z
+  miejscem WKS + CTA do `/tabela` i kotwicy na home.
+- **`apps/web/src/config/site.ts`** — pozycja menu „Tabela” → `/tabela`.
+
+---
+
 ## 2026-04-26 (Etapy 8–9 + domknięcie 7) — Drużyny: zdjęcia; Galeria w Payload
 
 ### Added

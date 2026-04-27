@@ -8,6 +8,11 @@ interface Props {
   title?: string;
   subtitle?: string;
   variant?: "home" | "page";
+  seasonSummary?: {
+    position: number | null;
+    points: number | null;
+    goalsFor: number | null;
+  };
 }
 
 const {
@@ -16,10 +21,28 @@ const {
   title = SITE.name,
   subtitle = SITE.tagline,
   variant = "home",
+  seasonSummary = undefined,
 } = Astro.props;
 
 const heightClass = variant === "home" ? "min-h-[80vh]" : "min-h-[40vh]";
 const slides = variant === "home" ? await fetchHeroSlides() : [{ image, kicker, title, subtitle }];
+
+function pointsLabel(n: number): string {
+  // PL: 1 punkt, 2–4 punkty (z wyjątkami 12–14), reszta punktów
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (n === 1) return "punkt";
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) return "punkty";
+  return "punktów";
+}
+
+function seasonSubtitle(): string | null {
+  if (!seasonSummary) return null;
+  const { position, points, goalsFor } = seasonSummary;
+  if (position == null || points == null) return null;
+  const goalsPart = goalsFor != null ? ` · ${goalsFor} strzelone gole` : "";
+  return `${position}. miejsce · ${points} ${pointsLabel(points)}${goalsPart}`;
+}
 ---
 
 <section
@@ -69,11 +92,18 @@ const slides = variant === "home" ? await fetchHeroSlides() : [{ image, kicker, 
           <h1 class="font-display uppercase tracking-tight max-w-4xl animate-fade-up">
             {slide.title ?? title}
           </h1>
-          {slide.subtitle && (
-            <p class="mt-4 max-w-2xl text-lg sm:text-xl text-slate-100/90 animate-fade-up">
-              {slide.subtitle}
-            </p>
-          )}
+          {(() => {
+            const dynamic =
+              variant === "home" &&
+              slide.title?.trim() === "Walczymy o awans" &&
+              seasonSubtitle();
+            const effective = dynamic ?? slide.subtitle ?? null;
+            return effective ? (
+              <p class="mt-4 max-w-2xl text-lg sm:text-xl text-slate-100/90 animate-fade-up">
+                {effective}
+              </p>
+            ) : null;
+          })()}
           {variant === "home" && i === 0 && (
             <div class="mt-8 flex flex-wrap gap-3 animate-fade-up">
               <a href="/terminarz" class="btn-primary">Terminarz meczów</a>

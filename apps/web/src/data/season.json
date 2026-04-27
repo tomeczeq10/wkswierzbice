@@ -1,40 +1,50 @@
 {
   "season": "Klasa okręgowa 2025/2026, grupa Wrocław",
   "source": "http://www.90minut.pl/liga/1/liga14275.html",
-  "fetchedAt": "2026-04-25T13:42:29.497Z",
+  "fetchedAt": "2026-04-27T19:51:58.904Z",
   "standings": [
     {
       "position": 1,
       "team": "Polonia Bielany Wrocławskie",
-      "played": 22,
-      "points": 50,
-      "wins": 16,
+      "played": 23,
+      "points": 53,
+      "wins": 17,
       "draws": 2,
       "losses": 4,
-      "goals": "58-24"
+      "goals": "60-24"
     },
     {
       "position": 2,
-      "team": "WKS Wierzbice",
-      "played": 22,
-      "points": 50,
+      "team": "Rokita 1946 Brzeg Dolny",
+      "played": 23,
+      "points": 51,
       "wins": 16,
-      "draws": 2,
+      "draws": 3,
       "losses": 4,
-      "goals": "73-31"
+      "goals": "63-42"
     },
     {
       "position": 3,
-      "team": "Rokita 1946 Brzeg Dolny",
-      "played": 22,
-      "points": 48,
-      "wins": 15,
-      "draws": 3,
-      "losses": 4,
-      "goals": "60-41"
+      "team": "WKS Wierzbice",
+      "played": 23,
+      "points": 50,
+      "wins": 16,
+      "draws": 2,
+      "losses": 5,
+      "goals": "73-33"
     },
     {
       "position": 4,
+      "team": "MKP Wołów",
+      "played": 23,
+      "points": 44,
+      "wins": 13,
+      "draws": 5,
+      "losses": 5,
+      "goals": "60-38"
+    },
+    {
+      "position": 5,
       "team": "Orzeł Pawłowice (Wrocław)",
       "played": 23,
       "points": 44,
@@ -44,104 +54,94 @@
       "goals": "47-29"
     },
     {
-      "position": 5,
-      "team": "MKP Wołów",
-      "played": 22,
-      "points": 41,
-      "wins": 12,
-      "draws": 5,
-      "losses": 5,
-      "goals": "56-35"
-    },
-    {
       "position": 6,
       "team": "Polonia Trzebnica",
-      "played": 22,
+      "played": 23,
       "points": 39,
       "wins": 12,
       "draws": 3,
-      "losses": 7,
-      "goals": "55-30"
+      "losses": 8,
+      "goals": "56-33"
     },
     {
       "position": 7,
-      "team": "Zenit Międzybórz",
-      "played": 21,
-      "points": 32,
+      "team": "Strzelinianka Strzelin",
+      "played": 23,
+      "points": 33,
       "wins": 10,
-      "draws": 2,
-      "losses": 9,
-      "goals": "33-54"
+      "draws": 3,
+      "losses": 10,
+      "goals": "43-48"
     },
     {
       "position": 8,
-      "team": "Strzelinianka Strzelin",
+      "team": "Zenit Międzybórz",
       "played": 22,
-      "points": 30,
-      "wins": 9,
-      "draws": 3,
+      "points": 32,
+      "wins": 10,
+      "draws": 2,
       "losses": 10,
-      "goals": "40-48"
+      "goals": "37-59"
     },
     {
       "position": 9,
       "team": "Piast Żerniki (Wrocław)",
-      "played": 22,
-      "points": 28,
-      "wins": 8,
+      "played": 23,
+      "points": 31,
+      "wins": 9,
       "draws": 4,
       "losses": 10,
-      "goals": "54-54"
+      "goals": "59-58"
     },
     {
       "position": 10,
       "team": "Piast II Żmigród",
-      "played": 22,
-      "points": 27,
-      "wins": 8,
+      "played": 23,
+      "points": 30,
+      "wins": 9,
       "draws": 3,
       "losses": 11,
-      "goals": "39-39"
+      "goals": "42-41"
     },
     {
       "position": 11,
-      "team": "KS Łozina",
-      "played": 22,
-      "points": 25,
-      "wins": 7,
-      "draws": 4,
+      "team": "Orzeł Marszowice",
+      "played": 21,
+      "points": 26,
+      "wins": 8,
+      "draws": 2,
       "losses": 11,
-      "goals": "36-53"
+      "goals": "35-38"
     },
     {
       "position": 12,
-      "team": "Orzeł Marszowice",
-      "played": 20,
-      "points": 23,
+      "team": "KS Łozina",
+      "played": 23,
+      "points": 25,
       "wins": 7,
-      "draws": 2,
-      "losses": 11,
-      "goals": "32-37"
+      "draws": 4,
+      "losses": 12,
+      "goals": "39-57"
     },
     {
       "position": 13,
       "team": "Piast Lutynia",
-      "played": 22,
+      "played": 23,
       "points": 22,
       "wins": 6,
       "draws": 4,
-      "losses": 12,
-      "goals": "31-43"
+      "losses": 13,
+      "goals": "32-46"
     },
     {
       "position": 14,
       "team": "Sokół Marcinkowice",
-      "played": 21,
+      "played": 22,
       "points": 18,
       "wins": 5,
       "draws": 3,
-      "losses": 13,
-      "goals": "25-40"
+      "losses": 14,
+      "goals": "25-43"
     },
     {
       "position": 15,
@@ -156,12 +156,12 @@
     {
       "position": 16,
       "team": "Wratislavia Wrocław",
-      "played": 22,
+      "played": 23,
       "points": 7,
       "wins": 1,
       "draws": 4,
-      "losses": 17,
-      "goals": "25-79"
+      "losses": 18,
+      "goals": "27-82"
     }
   ],
   "rounds": [
@@ -2594,9 +2594,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Rokita 1946 Brzeg Dolny",
           "away": "Polonia Trzebnica",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 3,
+          "awayScore": 1,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:00",
           "dateRaw": "25 kwietnia, 15:00",
@@ -2607,9 +2607,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Polonia Bielany Wrocławskie",
           "away": "WKS Wierzbice",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 2,
+          "awayScore": 0,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:00",
           "dateRaw": "25 kwietnia, 15:00",
@@ -2620,9 +2620,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Orzeł Marszowice",
           "away": "Piast Lutynia",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 3,
+          "awayScore": 1,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:00",
           "dateRaw": "25 kwietnia, 15:00",
@@ -2646,9 +2646,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Zenit Międzybórz",
           "away": "Piast Żerniki (Wrocław)",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 4,
+          "awayScore": 5,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:00",
           "dateRaw": "25 kwietnia, 15:00",
@@ -2659,9 +2659,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Sokół Marcinkowice",
           "away": "Strzelinianka Strzelin",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 0,
+          "awayScore": 3,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:30",
           "dateRaw": "25 kwietnia, 15:30",
@@ -2672,9 +2672,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "MKP Wołów",
           "away": "KS Łozina",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 4,
+          "awayScore": 3,
+          "played": true,
           "date": "2026-04-25",
           "time": "15:00",
           "dateRaw": "25 kwietnia, 15:00",
@@ -2685,9 +2685,9 @@
           "roundLabel": "25-26 kwietnia",
           "home": "Wratislavia Wrocław",
           "away": "Piast II Żmigród",
-          "homeScore": null,
-          "awayScore": null,
-          "played": false,
+          "homeScore": 2,
+          "awayScore": 3,
+          "played": true,
           "date": "2026-04-25",
           "time": "14:00",
           "dateRaw": "25 kwietnia, 14:00",
@@ -3863,9 +3863,7 @@
           "scoreLabel": "2:0",
           "homeAwayLabel": "2:0"
         }
-      }
-    ],
-    "upcoming": [
+      },
       {
         "round": 23,
         "date": "2026-04-25",
@@ -3875,9 +3873,17 @@
         "opponent": "Polonia Bielany Wrocławskie",
         "home": "Polonia Bielany Wrocławskie",
         "away": "WKS Wierzbice",
-        "played": false,
-        "result": null
-      },
+        "played": true,
+        "result": {
+          "ours": 0,
+          "theirs": 2,
+          "outcome": "loss",
+          "scoreLabel": "0:2",
+          "homeAwayLabel": "2:0"
+        }
+      }
+    ],
+    "upcoming": [
       {
         "round": 24,
         "date": "2026-05-01",

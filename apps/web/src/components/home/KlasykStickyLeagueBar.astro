@@ -1,0 +1,155 @@
+---
+import type { SeasonData } from "@/lib/cms-season";
+import { formatDateShort } from "@/lib/format";
+
+type Outcome = "win" | "draw" | "loss";
+type SeasonRound = SeasonData["rounds"][number];
+type SeasonMatch = SeasonRound["matches"][number];
+type WksMatch = SeasonData["wks"]["played"][number];
+
+interface Props {
+  position: number | null;
+  points: number | null;
+  lastMatch: WksMatch | null;
+  nextMatch: SeasonData["wks"]["upcoming"][number] | null;
+  upcoming: SeasonData["wks"]["upcoming"];
+  form: Outcome[];
+  rounds: SeasonRound[];
+}
+
+const { position, points, lastMatch, nextMatch, upcoming, form, rounds } = Astro.props;
+
+const outcomeColor = {
+  win: "text-emerald-300",
+  draw: "text-amber-300",
+  loss: "text-rose-300",
+} as const;
+
+const formatShortDate = (dateStr: string | null, time: string | null, raw: string | null) => {
+  if (!dateStr) return raw ?? "TBD";
+  const d = new Date(`${dateStr}T${time ?? "12:00"}:00+02:00`);
+  if (Number.isNaN(d.getTime())) return raw ?? dateStr;
+  return `${d.getDate()}.${String(d.getMonth() + 1).padStart(2, "0")}${time ? ` · ${time}` : ""}`;
+};
+
+function isPlayed(m: SeasonMatch): boolean {
+  return Boolean(m.played) && m.homeScore != null && m.awayScore != null;
+}
+
+function lastPlayedRound(all: SeasonRound[]): SeasonRound | null {
+  for (let i = all.length - 1; i >= 0; i--) {
+    const r = all[i];
+    if (r?.matches?.some(isPlayed)) return r;
+  }
+  return null;
+}
+
+function matchDateLabel(m: SeasonMatch): string {
+  if (!m.date) return "";
+  const time = m.time ?? null;
+  const d = new Date(`${m.date}T${time || "12:00"}:00+02:00`);
+  if (Number.isNaN(d.getTime())) return m.date;
+  const dateLabel = formatDateShort(d);
+  return time ? `${dateLabel} ${time}` : dateLabel;
+}
+
+const round = lastPlayedRound(rounds);
+const played = round ? round.matches.filter(isPlayed) : [];
+
+const upcomingMarquee = upcoming.slice(0, 8);
+
+const marqueeItems = [
+  // Wyniki kolejki (inne kluby) — priorytet dla „użyteczności ligowej”
+  ...played.map((m) => ({
+    kind: "result" as const,
+    label: "",
+    text: `${m.home} ${m.homeScore}:${m.awayScore} ${m.away}`,
+    meta: m.date ? `(${matchDateLabel(m)})` : "",
+  })),
+  // Najbliższe mecze WKS — „stadionowy sztos”
+  ...upcomingMarquee.map((m) => ({
+    kind: "upcoming" as const,
+    label: `K${m.round}`,
+    text: m.venue === "home" ? `WKS – ${m.opponent}` : `${m.opponent} – WKS`,
+    meta: formatShortDate(m.date, m.time, m.dateRaw),
+  })),
+];
+
+const marqueeFull = [...marqueeItems, ...marqueeItems];
+
+const outcomeBg: Record<Outcome, string> = {
+  win: "bg-emerald-600",
+  draw: "bg-amber-500",
+  loss: "bg-rose-600",
+};
+const outcomeLabel: Record<Outcome, string> = { win: "W", draw: "R", loss: "P" };
+---
+
+<div class="sticky top-[72px] z-40 bg-brand-primary-dark text-white shadow-2xl">
+  <div class="h-0.5 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-primary"></div>
+
+  <div class="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 text-xs py-2.5">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-1.5 px-2 py-0.5 bg-brand-secondary text-white text-[9px] uppercase tracking-[0.3em] font-display rounded-sm">
+        <span class="w-1 h-1 bg-white rounded-full marka-pulse"></span>
+        Live
+      </div>
+      <span class="font-display text-brand-secondary text-base">{position ?? "–"}.</span>
+      <span class="font-display uppercase">{points ?? 0} pkt</span>
+    </div>
+
+    {lastMatch && (
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 font-display shrink-0">Ostatni</span>
+        <span class:list={["font-display text-base shrink-0", outcomeColor[lastMatch.result?.outcome ?? "draw"]]}>
+          {lastMatch.result?.scoreLabel ?? "-:-"}
+        </span>
+        <span class="text-white/80 truncate max-w-[10rem] hidden sm:inline">{lastMatch.opponent}</span>
+      </div>
+    )}
+
+    <div class="hidden md:flex items-center gap-2 ml-auto">
+      <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 font-display">Forma</span>
+      <div class="flex gap-1.5">
+        {form.map((o) => (
+          <span class:list={["w-7 h-7 rounded-md text-white font-display text-sm flex items-center justify-center", outcomeBg[o]]}>
+            {outcomeLabel[o]}
+          </span>
+        ))}
+      </div>
+    </div>
+
+    {nextMatch && (
+      <div class="flex items-center gap-2 md:ml-0 ml-auto min-w-0">
+        <span class="text-[9px] uppercase tracking-[0.3em] text-white/50 font-display shrink-0">Następny</span>
+        <span class="text-white/90 truncate max-w-[12rem] hidden sm:inline">{nextMatch.opponent}</span>
+        <span class="text-white/70 shrink-0">{formatShortDate(nextMatch.date, nextMatch.time, nextMatch.dateRaw)}</span>
+        <a href="/terminarz" class="shrink-0 text-brand-secondary uppercase tracking-widest hover:underline hidden md:inline">
+          Terminarz →
+        </a>
+      </div>
+    )}
+  </div>
+
+  {marqueeItems.length > 0 && (
+    <div class="marka-ticker overflow-hidden border-t border-white/10 bg-brand-primary-dark/90">
+      <div class="marka-ticker-track flex whitespace-nowrap py-2 text-[11px]">
+        {marqueeFull.map((it) => (
+          <span class="px-6 shrink-0 inline-flex items-center gap-2">
+            <span class="text-brand-secondary font-display">●</span>
+            {it.label && (
+              <span class="text-white/60 uppercase tracking-widest font-display">
+                {it.label}
+              </span>
+            )}
+            <span class="text-white">{it.text}</span>
+            {it.meta && <span class="text-white/50 font-display">{it.meta}</span>}
+          </span>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <div class="h-0.5 bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-primary"></div>
+</div>
+

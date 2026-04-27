@@ -1,8 +1,11 @@
 import { GALLERY } from '@/config/site'
 import type { Gallery as GalleryDoc, Media } from '@wks/shared'
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL || import.meta.env.PUBLIC_CMS_URL || 'http://localhost:3000'
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+
+const CMS_PUBLIC_URL: string =
+  import.meta.env.CMS_PUBLIC_URL || import.meta.env.PUBLIC_CMS_URL || CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 2500
 
@@ -15,7 +18,7 @@ export type GalleryItem = {
 function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
   if (!maybeUrl) return undefined
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl
-  return new URL(maybeUrl, CMS_URL).toString()
+  return new URL(maybeUrl, CMS_PUBLIC_URL).toString()
 }
 
 function pickGallerySrc(media: Media | number | null | undefined): string | undefined {
@@ -39,7 +42,7 @@ function adaptCmsGallery(doc: GalleryDoc): GalleryItem | null {
 }
 
 async function fetchGalleryFromCms(): Promise<GalleryDoc[] | null> {
-  const url = new URL('/api/gallery', CMS_URL)
+  const url = new URL('/api/gallery', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '500')
   url.searchParams.set('sort', 'order')
@@ -54,7 +57,7 @@ async function fetchGalleryFromCms(): Promise<GalleryDoc[] | null> {
     return Array.isArray(json.docs) ? json.docs : []
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[cms] Galeria niedostępna (${CMS_URL}): ${msg} — fallback do site.ts`)
+    console.warn(`[cms] Galeria niedostępna (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
     return null
   }
 }

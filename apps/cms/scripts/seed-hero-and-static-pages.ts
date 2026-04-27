@@ -92,7 +92,7 @@ async function main() {
       limit: 1,
     })
     const data = {
-      image: mediaId && mediaId !== 0 ? mediaId : null,
+      image: mediaId && mediaId !== 0 ? mediaId : undefined,
       kicker: s.kicker ?? null,
       title: s.title ?? `Slajd ${i + 1}`,
       subtitle: s.subtitle ?? null,
@@ -103,10 +103,10 @@ async function main() {
     }
     if (existing.docs.length > 0) {
       if (DRY_RUN) console.log(`  [dry] update heroSlide ${i}`)
-      else await payload.update({ collection: 'heroSlides', id: existing.docs[0].id, data })
+      else await (payload as any).update({ collection: 'heroSlides', id: existing.docs[0].id, data })
     } else {
       if (DRY_RUN) console.log(`  [dry] create heroSlide ${i}`)
-      else await payload.create({ collection: 'heroSlides', data })
+      else await (payload as any).create({ collection: 'heroSlides', data })
     }
   }
 

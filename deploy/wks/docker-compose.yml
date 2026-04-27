@@ -1,0 +1,51 @@
+services:
+  wks-cms:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: wks-cms-monorepo:latest
+    container_name: wks-cms
+    restart: unless-stopped
+    working_dir: /app/cms/apps/cms
+    command: ["node", "server.js"]
+    env_file:
+      - .env.cms
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      # Ścieżki muszą wskazywać na zamontowany volume `./persist` → `/data/wks`
+      DATABASE_URL: file:/data/wks/cms.db
+      UPLOADS_DIR: /data/wks/media
+    networks:
+      - web
+    expose:
+      - "3000"
+    volumes:
+      # Mount całego katalogu (nie samego pliku `cms.db`).
+      # SQLite potrzebuje móc tworzyć pliki obok bazy (np. WAL/SHM) oraz musi mieć zapis do katalogu.
+      - ./persist:/data/wks
+
+  wks-web:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    image: wks-cms-monorepo:latest
+    container_name: wks-web
+    restart: unless-stopped
+    working_dir: /app/web
+    command: ["node", "dist/server/entry.mjs"]
+    env_file:
+      - .env.web
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4321
+    networks:
+      - web
+    expose:
+      - "4321"
+
+networks:
+  web:
+    external: true

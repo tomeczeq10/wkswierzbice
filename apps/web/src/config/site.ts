@@ -78,6 +78,7 @@ export const NAV: { label: string; href: string }[] = [
   { label: "Aktualności", href: "/aktualnosci" },
   { label: "Drużyny", href: "/druzyny" },
   { label: "Terminarz", href: "/terminarz" },
+  { label: "Tabela", href: "/tabela" },
   { label: "Galeria", href: "/galeria" },
   { label: "Sponsorzy", href: "/sponsorzy" },
   { label: "Nabory", href: "/nabory" },

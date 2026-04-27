@@ -216,6 +216,9 @@ npm run build
 
 # Podgląd buildu produkcyjnego
 npm run preview
+
+# Deploy na serwer domowy (Git + SSH): ustaw WKS_SSH_HOST, potem
+# npm run deploy:home — szczegóły: docs/DEPLOY-GIT-WORKFLOW.md
 ```
 
 ### Dodawanie nowego artykułu

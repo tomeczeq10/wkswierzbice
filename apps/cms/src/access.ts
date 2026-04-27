@@ -29,8 +29,10 @@ export function canEditPlayerDoc({ req, doc }: { req: PayloadRequest; doc: any }
   return Boolean(userTeam && docTeam && String(userTeam) === String(docTeam))
 }
 
-export const canUpdatePlayer: Access = ({ req, doc }) => canEditPlayerDoc({ req, doc })
-export const canDeletePlayer: Access = ({ req, doc }) => canEditPlayerDoc({ req, doc })
+export const canUpdatePlayer: Access = (args: any) =>
+  canEditPlayerDoc({ req: args.req, doc: args.doc })
+export const canDeletePlayer: Access = (args: any) =>
+  canEditPlayerDoc({ req: args.req, doc: args.doc })
 
 export const canCreatePlayer: Access = ({ req }) => {
   const r = getRole(req)

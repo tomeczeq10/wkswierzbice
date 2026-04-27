@@ -10,7 +10,13 @@ export const Season: GlobalConfig = {
   },
   admin: {
     description:
-      'Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (dashboard button + cron).',
+      'Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (przycisk poniżej + widget na dashboardzie + cron).',
+    components: {
+      elements: {
+        /** Ten sam komponent co widget dashboardu — widać tu zawsze, gdy import map jest OK. */
+        beforeDocumentControls: ['./components/SeasonSyncWidget.tsx#default'],
+      },
+    },
   },
   fields: [
     {

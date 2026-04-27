@@ -14,6 +14,11 @@
  *
  * Idempotentny — re-run zero side effects.
  *
+ * **Po `rm cms.db`:** usuń też pliki w `apps/cms/media/` (albo po migracji uruchom
+ * `npx tsx apps/cms/scripts/reconcile-media-files.ts`). Inaczej Payload przy uploadzie
+ * dopisze sufiksy `-1`, `-3` do `filename`, a na dysku zostaną starsze nazwy bez sufiksu
+ * → `/api/media/file/...` zwraca 404 na froncie.
+ *
  * Uruchomienie:
  *   npx tsx apps/cms/scripts/migrate-news-covers.ts --dry-run
  *   npx tsx apps/cms/scripts/migrate-news-covers.ts

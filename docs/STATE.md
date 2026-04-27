@@ -4,14 +4,25 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-26 (Etapy **7–9** DONE: `Teams` + `Players`, migracja 5 drużyn + roster, front `/druzyny` + lista + home z CMS + enrichment `photo` z `.md` gdy brak Media; `migrate-team-photos.ts` dla rastrów; kolekcja **`gallery`** + `fetchGalleryList()` + `/galeria` z fallbackiem do `GALLERY` w `site.ts` gdy CMS pusty. Skrypty: `npm run migrate:teams`, `npm run migrate:team-photos` (root). Następny krok w roadmapie: **Etap 10** — globals `siteConfig`.)
+> **Ostatnia aktualizacja:** 2026-04-27 — Demo deploy **web + CMS** na serwerze
+> domowym (`wkswierzbice.tmielczarek.pl`): Docker (`wks-web` SSR + `wks-cms`),
+> SQLite z **migracjami w prod** (`prodMigrations`), persist przez mount
+> katalogu `./persist` (nie samego pliku `cms.db`). Instrukcja:
+> [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).
 
 ## Produkcja
 
-- **URL:** https://wkswierzbice.pl
+- **URL (docelowy klub):** https://wkswierzbice.pl
+- **URL (demo / serwer domowy):** https://wkswierzbice.tmielczarek.pl — Astro SSR
+  + Payload pod `/admin` (routing w Caddy: `/admin*`, `/api*`, `/_next*` → CMS).
 - **Hosting:** serwer domowy Tomka (domena tmielczarek.pl wskazuje na niego)
   — rozwiązanie tymczasowe. Jeśli klub kupi stronę, przejmie hosting/VPS.
-- **Deploy:** ręczny — `npm run build` → rsync/SFTP z `dist/` do katalogu domeny
+- **Deploy (demo domowe):** Docker Compose w `deploy/wks/` + Caddy — opis w
+  [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md). **Aktualizacja kodu na
+  serwerze:** preferowane przez Git — [`docs/DEPLOY-GIT-WORKFLOW.md`](DEPLOY-GIT-WORKFLOW.md)
+  (`npm run deploy:home` po `git push`).
+- **Deploy (stary opis statyczny):** `npm run build` → rsync/SFTP z `dist/` do
+  katalogu domeny (gdy wracamy do czystego SSG bez Node na serwerze).
 - **Dane meczowe:** odświeżane ręcznie przy buildzie (prebuild hook odpala
   `sync:season` z 90minut.pl)
 
@@ -59,7 +70,8 @@ Implementacja:
   statystykami drużyny, highlights
 - `/o-klubie` — historia, zarząd (z `BOARD`), sztab (z `STAFF`), timeline
 - `/druzyny` + `/druzyny/[slug]` — lista i profile 5 drużyn
-- `/terminarz` — dynamiczny, napędzany `src/data/season.json`
+- `/terminarz` — dynamiczny, napędzany `season.json` / CMS; tabela ligowa na
+  **`/tabela`** i na home (szablon klasyk), na terminarzu skrót + linki
 - `/aktualnosci` + `/aktualnosci/[slug]` — 24 artykuły z FB
 - `/galeria` — lightbox (placeholdery SVG)
 - `/kontakt`, `/nabory` — formularze (nieaktywne, `FORMS.*` puste)
@@ -299,6 +311,39 @@ Pełna lista + estymaty + plan kolejności w
   roadmap. Default: Wariant A (3 sztywne role admin/redaktor/trener).
   Wariant B (role + per-zasób override) jako opcjonalny etap 19. 3 warianty
   opisane w [`ADMIN-PANEL.md`](ADMIN-PANEL.md).
+
+## Backlog pomysłów (bez terminu — na przyszłość)
+
+### Transmisje LIVE meczów na stronie
+
+- **Cel:** osoba na meczu (np. admin/redaktor) startuje stream z telefonu lub
+  kamery; kibic ogląda na stronie klubu (niekoniecznie na Facebooku).
+- **Prosty wariant:** stream na **YouTube Live / Facebook Live / Twitch** z
+  aplikacji na telefonie → na `wkswierzbice.pl` **embed** (`iframe`) albo
+  prominentny link „Oglądaj LIVE”. Mało pracy, stabilne skalowanie; typowe
+  opóźnienie dziesiątki sekund.
+- **Bardziej „markowy” wariant:** publikacja **RTMPS** (Larix, OBS) do usługi
+  typu **Mux / Cloudflare Stream / Amazon IVS** → player HLS na stronie;
+  ewentualnie w CMS pole „URL streamu / status LIVE”.
+- **Niskie opóźnienie:** WebRTC (drożej, bardziej złożone) — zwykle niepotrzebne
+  przy okręgówce.
+- **Do rozstrzygnięcia później:** prawa do transmisji (regulamin ligi/ZPN),
+  zgody na wizerunek, ewentualne mutowanie przez platformę przy muzyce na
+  stadionie.
+
+### Integracja aktualności z Facebookiem (fanpage klubu)
+
+- **Dziś w treści:** artykuły mają opcjonalne `facebookUrl` (link do posta na
+  FB) — dobre jako „źródło” i dla wpisów skróconych z CTA na fanpage.
+- **Kierunek „strona → Facebook”:** po publikacji wpisu w **Payload** można
+  dodać hook / endpoint wywołujący **Facebook Graph API** (`POST` na
+  `/{page-id}/feed`) — wymaga aplikacji Meta, **Page Access Token**, często
+  weryfikacji uprawnień; treść + link do pełnego artykułu na domenie klubu.
+- **Kierunek „Facebook → strona”:** okresowy import postów z fanpage’a przez
+  Graph API (lista postów strony) — możliwe, ale trzeba pilnować **duplikatów**
+  (co jest źródłem prawdy), formatu zdjęć i długości tekstu.
+- **Hybryda:** redaktor pisze w CMS → automatyczny post na FB z linkiem do
+  artykułu (najczęstszy sensowny model przy migracji z „tylko FB”).
 
 ## Następne kroki (roadmap)
 

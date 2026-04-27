@@ -1,8 +1,11 @@
 import type { HeroSlide, Media } from '@wks/shared'
 import { HERO_SLIDES } from '@/config/site'
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL || import.meta.env.PUBLIC_CMS_URL || 'http://localhost:3000'
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+
+const CMS_PUBLIC_URL: string =
+  import.meta.env.CMS_PUBLIC_URL || import.meta.env.PUBLIC_CMS_URL || CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 4000
 
@@ -18,7 +21,7 @@ export type HeroSlideItem = {
 function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
   if (!maybeUrl) return undefined
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl
-  return new URL(maybeUrl, CMS_URL).toString()
+  return new URL(maybeUrl, CMS_PUBLIC_URL).toString()
 }
 
 function pickImage(media: Media | number | null | undefined): string | undefined {
@@ -50,7 +53,7 @@ function adapt(doc: HeroSlide): HeroSlideItem | null {
 }
 
 export async function fetchHeroSlides(): Promise<HeroSlideItem[]> {
-  const url = new URL('/api/heroSlides', CMS_URL)
+  const url = new URL('/api/heroSlides', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '50')
   url.searchParams.set('sort', 'order')
@@ -69,7 +72,7 @@ export async function fetchHeroSlides(): Promise<HeroSlideItem[]> {
     return out.length > 0 ? out : fromLocal()
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[cms] HeroSlides niedostępne (${CMS_URL}): ${msg} — fallback do site.ts`)
+    console.warn(`[cms] HeroSlides niedostępne (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
     return fromLocal()
   }
 }

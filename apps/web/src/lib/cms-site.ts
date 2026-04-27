@@ -1,8 +1,8 @@
 import { CONTACT, NAV, SITE, SOCIAL } from '@/config/site'
 import type { SiteConfig as SiteConfigDoc } from '@wks/shared'
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL || import.meta.env.PUBLIC_CMS_URL || 'http://localhost:3000'
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
 
 const FETCH_TIMEOUT_MS = 2500
 
@@ -105,7 +105,7 @@ export async function fetchSiteConfig(): Promise<SiteConfig> {
   if (cached) return await cached
 
   cached = (async () => {
-    const url = new URL('/api/globals/siteConfig', CMS_URL)
+    const url = new URL('/api/globals/siteConfig', CMS_INTERNAL_URL)
     try {
       const res = await fetch(url.toString(), {
         headers: { Accept: 'application/json' },
@@ -117,7 +117,7 @@ export async function fetchSiteConfig(): Promise<SiteConfig> {
       return adapt(json.global)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`[cms] siteConfig niedostępny (${CMS_URL}): ${msg} — fallback do site.ts`)
+      console.warn(`[cms] siteConfig niedostępny (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
       return fromLocal()
     }
   })()

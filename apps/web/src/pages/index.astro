@@ -4,7 +4,6 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 import Hero from "@/components/Hero.astro";
 import NewsCard from "@/components/NewsCard.astro";
 import SponsorGrid from "@/components/SponsorGrid.astro";
-import ScoreBanner from "@/components/ScoreBanner.astro";
 import MatchCountdown from "@/components/MatchCountdown.astro";
 import MatchHero from "@/components/MatchHero.astro";
 import MarkaTicker from "@/components/MarkaTicker.astro";
@@ -12,11 +11,14 @@ import WhyUs from "@/components/WhyUs.astro";
 import TeamCard from "@/components/TeamCard.astro";
 import MagazineHome from "@/components/home/MagazineHome.astro";
 import StadionHome from "@/components/home/StadionHome.astro";
+import LeagueStandingsTable from "@/components/LeagueStandingsTable.astro";
 
 import { SITE, HIGHLIGHTS } from "@/config/site";
-import season from "@/data/season.json";
+import { fetchSeason } from "@/lib/cms-season";
 import { fetchNewsList, pickCoverUrl, resolveCoverAlt } from "@/lib/cms";
 import { fetchTeamsList } from "@/lib/cms-teams";
+
+const season = await fetchSeason();
 
 const allNewsAll = await fetchNewsList();
 const newsTop3 = allNewsAll.slice(0, 3);
@@ -32,6 +34,12 @@ const lastMatch = [...season.wks.played].reverse()[0] ?? null;
 const wksStanding = season.standings.find((s) => s.team === "WKS Wierzbice");
 const wksPosition = wksStanding?.position ?? null;
 const wksPoints = wksStanding?.points ?? null;
+const goalsForHero = (() => {
+  const raw = wksStanding?.goals ?? null;
+  if (!raw) return null;
+  const [gf] = raw.split("-").map((x) => Number(x));
+  return Number.isFinite(gf) ? gf : null;
+})();
 
 const wins = wksStanding?.wins ?? 16;
 const draws = wksStanding?.draws ?? 2;
@@ -47,62 +55,55 @@ const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.o
        SZABLON 1: KLASYK (default)
        ============================================================ */}
   <div data-template-only="klasyk">
-    <Hero />
-
-    <ScoreBanner
-      lastMatch={lastMatch}
-      nextMatch={nextMatch}
-      position={wksPosition}
-      points={wksPoints}
-    />
+    <Hero seasonSummary={{ position: wksPosition, points: wksPoints, goalsFor: goalsForHero }} />
 
     {nextMatch && <MatchCountdown match={nextMatch} />}
 
-    <!-- O klubie – skrót -->
-    <section class="section">
-      <div class="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
-        <div>
-          <span class="section-kicker">O klubie</span>
-          <h2 class="section-title">Od {SITE.founded} roku piszemy historię piłki w Wierzbicach</h2>
-          <p class="mt-4 text-lg text-slate-600 leading-relaxed">
-            {SITE.name} to zielono-biało-czerwona rodzina. Klub powstał w {SITE.founded} roku,
-            a po prawie 20-letniej przerwie został reaktywowany w {SITE.reactivated} roku.
-            Naszym największym osiągnięciem pozostaje historyczny awans do
-            <strong> IV ligi dolnośląskiej </strong> w sezonie 2021/2022.
-          </p>
-          <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
-            <li class="flex gap-3 items-start">
-              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-              <span>Wicelider Klasy okręgowej Wrocław 2025/2026</span>
-            </li>
-            <li class="flex gap-3 items-start">
-              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-              <span>Pełnowymiarowe boisko trawiaste 100 × 65 m</span>
-            </li>
-            <li class="flex gap-3 items-start">
-              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-              <span>Szkolenie młodzieży z gminy Kobierzyce – od żaków po juniorów</span>
-            </li>
-            <li class="flex gap-3 items-start">
-              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-              <span>Regularne występy w Pucharze Polski – Dolnośląski ZPN</span>
-            </li>
-          </ul>
-          <div class="mt-8">
-            <a href="/o-klubie" class="btn-primary">Poznaj naszą historię</a>
+    <!-- Aktualności -->
+    <section class="section bg-slate-50">
+      <div class="container mx-auto">
+        <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
+          <div>
+            <span class="section-kicker">Aktualności</span>
+            <h2 class="section-title">Co się dzieje w klubie</h2>
           </div>
+          <a href="/aktualnosci" class="text-brand-primary font-display uppercase text-sm hover:underline">
+            Wszystkie aktualności →
+          </a>
         </div>
-        <div class="relative">
-          <div class="rounded-xl shadow-lg w-full aspect-[4/3] bg-gradient-to-br from-brand-ink via-brand-primary to-brand-primary-dark flex items-center justify-center">
-            <img src="/herb-wks.png" alt="Herb WKS Wierzbice" class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl opacity-90" />
-          </div>
-          <div class="absolute -bottom-6 -left-6 bg-brand-ink text-white rounded-xl p-5 shadow-xl hidden sm:block">
-            <div class="text-5xl font-display leading-none">{new Date().getFullYear() - SITE.founded}</div>
-            <div class="text-xs uppercase tracking-widest mt-1 text-brand-secondary">lat tradycji</div>
-          </div>
+        <div class="grid md:grid-cols-3 gap-6">
+          {newsTop3.map((post) => (
+            <NewsCard
+              href={`/aktualnosci/${post.slug}`}
+              title={post.data.title}
+              date={post.data.date}
+              excerpt={post.data.excerpt}
+              cover={pickCoverUrl(post.data.cover, "card")}
+              coverAlt={resolveCoverAlt(post)}
+              tags={post.data.tags}
+              facebookUrl={post.data.facebookUrl}
+            />
+          ))}
         </div>
       </div>
     </section>
+
+    <!-- Tabela ligowa (seniorzy) -->
+    {season.standings.length > 0 && (
+      <section class="section" id="tabela-seniorow" aria-label="Tabela ligowa — seniorzy">
+        <div class="container mx-auto max-w-4xl">
+          <LeagueStandingsTable standings={season.standings} seasonLabel={season.season} />
+          <p class="mt-6 text-center">
+            <a
+              href="/tabela"
+              class="text-xs font-display uppercase text-brand-primary hover:underline"
+            >
+              Osobna strona tabeli →
+            </a>
+          </p>
+        </div>
+      </section>
+    )}
 
     <!-- Statystyki sezonu -->
     <section class="section !pt-10 !pb-12 bg-slate-50">
@@ -209,31 +210,48 @@ const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.o
       </div>
     </section>
 
-    <!-- Aktualności -->
-    <section class="section bg-slate-50">
-      <div class="container mx-auto">
-        <div class="flex flex-wrap items-end justify-between gap-4 mb-10">
-          <div>
-            <span class="section-kicker">Aktualności</span>
-            <h2 class="section-title">Co się dzieje w klubie</h2>
+    <!-- O klubie – skrót -->
+    <section class="section">
+      <div class="container mx-auto grid lg:grid-cols-2 gap-12 items-center">
+        <div>
+          <span class="section-kicker">O klubie</span>
+          <h2 class="section-title">Od {SITE.founded} roku piszemy historię piłki w Wierzbicach</h2>
+          <p class="mt-4 text-lg text-slate-600 leading-relaxed">
+            {SITE.name} to zielono-biało-czerwona rodzina. Klub powstał w {SITE.founded} roku,
+            a po prawie 20-letniej przerwie został reaktywowany w {SITE.reactivated} roku.
+            Naszym największym osiągnięciem pozostaje historyczny awans do
+            <strong> IV ligi dolnośląskiej </strong> w sezonie 2021/2022.
+          </p>
+          <ul class="mt-6 grid sm:grid-cols-2 gap-3 text-sm">
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Wicelider Klasy okręgowej Wrocław 2025/2026</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Pełnowymiarowe boisko trawiaste 100 × 65 m</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Szkolenie młodzieży z gminy Kobierzyce – od żaków po juniorów</span>
+            </li>
+            <li class="flex gap-3 items-start">
+              <span class="mt-1 inline-block w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+              <span>Regularne występy w Pucharze Polski – Dolnośląski ZPN</span>
+            </li>
+          </ul>
+          <div class="mt-8">
+            <a href="/o-klubie" class="btn-primary">Poznaj naszą historię</a>
           </div>
-          <a href="/aktualnosci" class="text-brand-primary font-display uppercase text-sm hover:underline">
-            Wszystkie aktualności →
-          </a>
         </div>
-        <div class="grid md:grid-cols-3 gap-6">
-          {newsTop3.map((post) => (
-            <NewsCard
-              href={`/aktualnosci/${post.slug}`}
-              title={post.data.title}
-              date={post.data.date}
-              excerpt={post.data.excerpt}
-              cover={pickCoverUrl(post.data.cover, "card")}
-              coverAlt={resolveCoverAlt(post)}
-              tags={post.data.tags}
-              facebookUrl={post.data.facebookUrl}
-            />
-          ))}
+        <div class="relative">
+          <div class="rounded-xl shadow-lg w-full aspect-[4/3] bg-gradient-to-br from-brand-ink via-brand-primary to-brand-primary-dark flex items-center justify-center">
+            <img src="/herb-wks.png" alt="Herb WKS Wierzbice" class="w-48 h-48 sm:w-64 sm:h-64 object-contain drop-shadow-2xl opacity-90" />
+          </div>
+          <div class="absolute -bottom-6 -left-6 bg-brand-ink text-white rounded-xl p-5 shadow-xl hidden sm:block">
+            <div class="text-5xl font-display leading-none">{new Date().getFullYear() - SITE.founded}</div>
+            <div class="text-xs uppercase tracking-widest mt-1 text-brand-secondary">lat tradycji</div>
+          </div>
         </div>
       </div>
     </section>

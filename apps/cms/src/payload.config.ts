@@ -1,5 +1,7 @@
 import { sqliteAdapter } from '@payloadcms/db-sqlite'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { en } from '@payloadcms/translations/languages/en'
+import { pl } from '@payloadcms/translations/languages/pl'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -22,11 +24,21 @@ import { Season } from './globals/Season'
 
 import cron from 'node-cron'
 import { syncSeason } from './lib/sync-season'
+import { migrations } from './migrations'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
-/** Katalog `apps/cms` (nie `apps/cms/src` — tam leży `payload.config.ts`). */
-const cmsRoot = path.resolve(dirname, '..')
+/**
+ * Katalog `apps/cms`.
+ *
+ * WAŻNE: w trybie production (Next standalone) ścieżki z `import.meta.url` wskazują na bundlowane pliki w `.next/`,
+ * więc nie da się na nich stabilnie wyliczyć `apps/cms`. Opieramy się na `process.cwd()`:
+ * - w monorepo: uruchamiane z root → `<root>/apps/cms`
+ * - w standalone: ustawiamy working_dir na `.../apps/cms` → `<cwd>`
+ */
+const cmsRoot = process.cwd().endsWith(path.join('apps', 'cms'))
+  ? process.cwd()
+  : path.resolve(process.cwd(), 'apps/cms')
 
 function resolveSqliteUrl(raw: string): string {
   // `file:./cms.db` jest wygodne w .env, ale Next/Payload bywa uruchamiany z różnym cwd
@@ -46,16 +58,24 @@ export default buildConfig({
     importMap: {
       baseDir: path.resolve(dirname),
     },
+    meta: {
+      titleSuffix: '— WKS Wierzbice',
+    },
     dashboard: {
       widgets: [
         {
           slug: 'season-sync',
-          ComponentPath: './components/SeasonSyncWidget.tsx#default',
+          Component: './components/SeasonSyncWidget.tsx#default',
           minWidth: 'medium',
           maxWidth: 'full',
         },
       ],
     },
+  },
+  /** Panel admina: UI po polsku (Payload + angielski zapasowy). */
+  i18n: {
+    fallbackLanguage: 'pl',
+    supportedLanguages: { pl, en },
   },
   collections: [
     Users,
@@ -81,8 +101,11 @@ export default buildConfig({
     client: {
       url: resolveSqliteUrl(process.env.DATABASE_URL || ''),
     },
+    // W produkcji (Docker) musimy jawnie uruchamiać migracje, bo "push" działa tylko w dev.
+    // To odblokowuje start CMS-a na świeżym `cms.db`.
+    prodMigrations: migrations,
   }),
-  sharp,
+  sharp: sharp as any,
   endpoints: [
     {
       path: '/season/sync',

@@ -1,28 +1,36 @@
 ---
-import type { GetStaticPaths } from "astro";
+export const prerender = false;
+
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { formatDate } from "@/lib/format";
 import {
   fetchNewsList,
+  pickArticleBodyCoverUrl,
   pickCoverUrl,
   resolveCoverAlt,
   type NewsItem,
 } from "@/lib/cms";
 import { lexicalToHtml } from "@/lib/lexical";
+import { stripLeadingTitleFromExcerpt } from "@/lib/news-excerpt";
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const posts = await fetchNewsList();
-  return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post },
-  }));
-};
-
-interface Props { post: NewsItem }
-const { post } = Astro.props;
+// SSR (`output: "server"`): `getStaticPaths` jest ignorowane — patrz `druzyny/[slug].astro`.
+const slug = Astro.params.slug;
+if (!slug || typeof slug !== "string") {
+  return Astro.redirect("/404");
+}
+const posts = await fetchNewsList();
+const post = posts.find((p) => p.slug === slug);
+if (!post) {
+  return Astro.redirect("/404");
+}
 const { title, date, tags, author, excerpt, facebookUrl, truncated } = post.data;
-const coverUrl = pickCoverUrl(post.data.cover, "hero");
+const ogImageUrl =
+  pickCoverUrl(post.data.cover, "hero") ??
+  pickCoverUrl(post.data.cover, "card") ??
+  pickArticleBodyCoverUrl(post.data.cover);
+const articleCoverUrl = pickArticleBodyCoverUrl(post.data.cover);
 const coverAlt = resolveCoverAlt(post);
+const headerExcerpt = stripLeadingTitleFromExcerpt(title, excerpt);
 
 let bodyHtml: string | null = null;
 let MdContent: Awaited<ReturnType<Extract<NewsItem["body"], { type: "md" }>["entry"]["render"]>>["Content"] | null = null;
@@ -35,7 +43,11 @@ if (post.body.type === "lexical") {
 }
 ---
 
-<BaseLayout title={title} description={excerpt} image={coverUrl}>
+<BaseLayout
+  title={title}
+  description={headerExcerpt || excerpt}
+  image={ogImageUrl}
+>
   <article>
     <header class="bg-brand-ink text-white">
       <div class="container mx-auto py-16 sm:py-20 max-w-4xl">
@@ -53,18 +65,20 @@ if (post.body.type === "lexical") {
           }
         </div>
         <h1>{title}</h1>
-        <p class="mt-4 text-lg text-slate-200 max-w-2xl">{excerpt}</p>
+        <p class="mt-4 text-lg text-slate-200 max-w-2xl">{headerExcerpt}</p>
       </div>
     </header>
 
     {
-      coverUrl && (
-        <div class="container mx-auto max-w-4xl -mt-8 relative z-10 px-4">
-          <figure class="rounded-xl shadow-xl bg-slate-100 overflow-hidden flex items-center justify-center">
+      articleCoverUrl && (
+        <div class="container mx-auto max-w-4xl -mt-4 sm:-mt-6 relative z-10 px-4">
+          <figure class="rounded-xl shadow-xl overflow-hidden bg-slate-100 max-w-3xl mx-auto">
             <img
-              src={coverUrl}
+              src={articleCoverUrl}
               alt={coverAlt}
-              class="max-h-[70vh] w-auto max-w-full object-contain"
+              class="w-full h-auto max-h-[min(85vh,1400px)] object-contain mx-auto block"
+              decoding="async"
+              fetchpriority="high"
             />
           </figure>
         </div>

@@ -1,8 +1,11 @@
 import type { Board as BoardDoc, Media, Staff as StaffDoc } from '@wks/shared'
 import { BOARD as BOARD_LOCAL, STAFF as STAFF_LOCAL } from '@/config/site'
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL || import.meta.env.PUBLIC_CMS_URL || 'http://localhost:3000'
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+
+const CMS_PUBLIC_URL: string =
+  import.meta.env.CMS_PUBLIC_URL || import.meta.env.PUBLIC_CMS_URL || CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 4000
 
@@ -17,17 +20,18 @@ export type PersonItem = {
 function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
   if (!maybeUrl) return undefined
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl
-  return new URL(maybeUrl, CMS_URL).toString()
+  return new URL(maybeUrl, CMS_PUBLIC_URL).toString()
 }
 
 function pickPhoto(media: Media | number | null | undefined): string | undefined {
   if (!media || typeof media === 'number') return undefined
+  // Preferujemy warianty `imageSizes` (lepsza waga), ale zawsze fallback do oryginału.
   const url = media.sizes?.card?.url ?? media.sizes?.thumbnail?.url ?? media.url ?? null
   return absolutizeCmsUrl(url)
 }
 
 export async function fetchBoard(): Promise<PersonItem[]> {
-  const url = new URL('/api/board', CMS_URL)
+  const url = new URL('/api/board', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '50')
   url.searchParams.set('sort', 'order')
@@ -51,13 +55,13 @@ export async function fetchBoard(): Promise<PersonItem[]> {
     return out
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[cms] Board niedostępny (${CMS_URL}): ${msg} — fallback do site.ts`)
+    console.warn(`[cms] Board niedostępny (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
     return BOARD_LOCAL
   }
 }
 
 export async function fetchStaff(): Promise<PersonItem[]> {
-  const url = new URL('/api/staff', CMS_URL)
+  const url = new URL('/api/staff', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '50')
   url.searchParams.set('sort', 'order')
@@ -80,7 +84,7 @@ export async function fetchStaff(): Promise<PersonItem[]> {
     return out
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[cms] Staff niedostępny (${CMS_URL}): ${msg} — fallback do site.ts`)
+    console.warn(`[cms] Staff niedostępny (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
     return STAFF_LOCAL
   }
 }

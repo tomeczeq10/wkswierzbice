@@ -1,8 +1,11 @@
 import { getCollection } from 'astro:content'
 import type { Media, Player, Team } from '@wks/shared'
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL || import.meta.env.PUBLIC_CMS_URL || 'http://localhost:3000'
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+
+const CMS_PUBLIC_URL: string =
+  import.meta.env.CMS_PUBLIC_URL || import.meta.env.PUBLIC_CMS_URL || CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 2500
 
@@ -48,7 +51,7 @@ export type TeamItem = {
 function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
   if (!maybeUrl) return undefined
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl
-  return new URL(maybeUrl, CMS_URL).toString()
+  return new URL(maybeUrl, CMS_PUBLIC_URL).toString()
 }
 
 function pickMediaUrl(media: Media | number | null | undefined): string | undefined {
@@ -93,7 +96,7 @@ function adaptCmsPlayers(players: Player[]): TeamRosterEntry[] {
 }
 
 async function fetchTeamsFromCms(): Promise<Team[] | null> {
-  const url = new URL('/api/teams', CMS_URL)
+  const url = new URL('/api/teams', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '200')
   url.searchParams.set('sort', '-order')
@@ -108,13 +111,13 @@ async function fetchTeamsFromCms(): Promise<Team[] | null> {
     return Array.isArray(json.docs) ? json.docs : []
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.warn(`[cms] Niedostępne (${CMS_URL}): ${msg} — fallback do teams .md`)
+    console.warn(`[cms] Niedostępne (${CMS_INTERNAL_URL}): ${msg} — fallback do teams .md`)
     return null
   }
 }
 
 async function fetchPlayersForTeamFromCms(teamId: number): Promise<Player[] | null> {
-  const url = new URL('/api/players', CMS_URL)
+  const url = new URL('/api/players', CMS_INTERNAL_URL)
   url.searchParams.set('depth', '2')
   url.searchParams.set('limit', '500')
   url.searchParams.set('sort', 'number')
@@ -189,6 +192,18 @@ export async function fetchTeamsList(): Promise<TeamItem[]> {
     }
   }
 
+  // CMS może zwracać >0 drużyn, ale bez pełnego zestawu slugów (np. demo).
+  // Wtedy bez tego bloku `/druzyny/seniorzy` kończy się 404 mimo `content/teams/*.md`.
+  const presentSlugs = new Set(result.map((item) => item.slug))
+  const mdFull = await fetchTeamsFromMd()
+  for (const mdItem of mdFull) {
+    if (!presentSlugs.has(mdItem.slug)) {
+      result.push(mdItem)
+      presentSlugs.add(mdItem.slug)
+    }
+  }
+
+  result.sort((a, b) => b.data.order - a.data.order)
   return result
 }
 

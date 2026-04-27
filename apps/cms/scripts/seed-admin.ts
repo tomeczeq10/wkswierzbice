@@ -1,10 +1,12 @@
 /**
  * Seeduje konto admin po reset/fresh dev DB.
  *
- * Czytane z `apps/cms/.env` (lub fallback do bezpiecznych dev-defaultów):
- *   ADMIN_LOGIN=admin            (opcjonalnie; jeśli bez '@', dopisujemy `@local.test`)
- *   ADMIN_EMAIL=admin@wks-wierzbice.pl
- *   ADMIN_PASSWORD=<wpisz w .env, NIGDY nie commituj>
+ * Czytane z `apps/cms/.env` (lub fallback **TYLKO DEV** — proste konto z prośby zespołu):
+ *   ADMIN_EMAIL=admin@wks.local  (Payload: pole „Email” w /admin — pierwszeństwo nad ADMIN_LOGIN)
+ *   ADMIN_PASSWORD=admin
+ *   ADMIN_LOGIN=admin            (tylko gdy brak ADMIN_EMAIL; bez '@' → `…@local.test`)
+ *
+ * Nadpisz w `.env` w produkcji — nigdy nie commituj prawdziwych haseł.
  *
  * Idempotentne — jeśli user już istnieje, skrypt ustawia mu hasło na nowe.
  *
@@ -22,9 +24,9 @@ dotenvConfig({ path: path.resolve(__dirname, '../.env') })
 const { getPayload } = await import('payload')
 const payloadConfig = (await import('../src/payload.config')).default
 
-const rawLogin = process.env.ADMIN_LOGIN ?? process.env.ADMIN_EMAIL ?? 'admin@wks-wierzbice.pl'
+const rawLogin = process.env.ADMIN_EMAIL ?? process.env.ADMIN_LOGIN ?? 'admin@wks.local'
 const email = rawLogin.includes('@') ? rawLogin : `${rawLogin}@local.test`
-const password = process.env.ADMIN_PASSWORD ?? 'dev-pass-2026!'
+const password = process.env.ADMIN_PASSWORD ?? 'admin'
 
 const payload = await getPayload({ config: payloadConfig })
 
@@ -50,5 +52,5 @@ const created = await payload.create({
   data: { email, password, role: 'admin', team: null },
 })
 console.log(`🚀 Utworzono admina: id=${created.id}, email=${email}`)
-console.log(`   Hasło: z env ADMIN_PASSWORD (lub default dev — zmień w panelu /admin po pierwszym logowaniu).`)
+console.log(`   Hasło: z env ADMIN_PASSWORD (lub domyślne dev — zmień w panelu /admin).`)
 process.exit(0)

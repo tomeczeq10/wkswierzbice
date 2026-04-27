@@ -919,7 +919,7 @@ export interface SiteConfig {
   createdAt?: string | null;
 }
 /**
- * Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (dashboard button + cron).
+ * Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (przycisk poniżej + widget na dashboardzie + cron).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "season".

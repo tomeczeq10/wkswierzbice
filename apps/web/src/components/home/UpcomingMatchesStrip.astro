@@ -1,0 +1,108 @@
+---
+import type { SeasonData } from "@/lib/cms-season";
+import { formatDateShort } from "@/lib/format";
+
+type WksMatch = SeasonData["wks"]["upcoming"][number];
+type Outcome = "win" | "draw" | "loss";
+
+interface Props {
+  upcoming: WksMatch[];
+  form: Outcome[];
+}
+
+const { upcoming, form } = Astro.props;
+
+const upcomingShort = upcoming.slice(0, 4);
+const upcomingMarquee = upcoming.slice(0, 6);
+const marqueeFull = [...upcomingMarquee, ...upcomingMarquee];
+
+function matchDateLabel(m: WksMatch): string {
+  if (!m.date) return "—";
+  const time = m.time ?? null;
+  // Strefa PL (projekty ma stałą konwencję +02:00 dla dat meczów).
+  const d = new Date(`${m.date}T${time || "12:00"}:00+02:00`);
+  if (Number.isNaN(d.getTime())) return m.date;
+  const dateLabel = formatDateShort(d);
+  return time ? `${dateLabel} · ${time}` : dateLabel;
+}
+
+const outcomeBg: Record<Outcome, string> = {
+  win: "bg-emerald-600",
+  draw: "bg-amber-500",
+  loss: "bg-rose-600",
+};
+
+const outcomeLabel: Record<Outcome, string> = {
+  win: "W",
+  draw: "R",
+  loss: "P",
+};
+---
+
+<section class="border-y border-brand-primary/15 bg-brand-primary/5">
+  <div class="container mx-auto">
+    <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 py-3">
+      <div class="flex items-center justify-between md:justify-start gap-4">
+        <div class="text-[10px] uppercase tracking-[0.3em] text-brand-primary font-display whitespace-nowrap">
+          Najbliższe mecze
+        </div>
+        <a href="/terminarz" class="text-[10px] uppercase tracking-widest font-display text-slate-500 hover:text-brand-primary hover:underline whitespace-nowrap md:hidden">
+          Terminarz →
+        </a>
+      </div>
+
+      {/* MOBILE: ticker */}
+      <div class="md:hidden marka-ticker overflow-hidden">
+        <div class="marka-ticker-track flex whitespace-nowrap py-1.5 text-[11px] text-brand-ink">
+          {marqueeFull.map((m) => (
+            <span class="px-4 shrink-0">
+              <span class="text-brand-primary font-display">•</span>{" "}
+              <span class="font-display uppercase text-slate-500">K{m.round}</span>{" "}
+              <span class="text-slate-500">{matchDateLabel(m)}</span>{" "}
+              <span class="font-medium text-brand-ink">WKS</span>{" "}
+              <span class="text-slate-400 font-display">{m.venue === "home" ? "–" : "@"}</span>{" "}
+              <span class="font-medium text-brand-ink">{m.opponent}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* DESKTOP: lista + forma */}
+      <div class="hidden md:flex items-center justify-between gap-6 flex-1">
+        <div class="flex items-center gap-4 min-w-0">
+          {upcomingShort.map((m) => (
+            <div class="min-w-0">
+              <div class="text-xs font-medium text-brand-ink truncate">
+                <span class="text-slate-400 font-display mr-1">{m.venue === "home" ? "vs" : "@"}</span>
+                {m.opponent}
+              </div>
+              <div class="text-[10px] uppercase tracking-widest text-slate-500 font-display mt-0.5">
+                K{m.round} · {matchDateLabel(m)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div class="flex items-center gap-4 shrink-0">
+          <div class="flex items-center gap-2">
+            <div class="text-[10px] uppercase tracking-[0.3em] text-slate-500 font-display whitespace-nowrap">
+              Forma
+            </div>
+            <div class="flex gap-1.5">
+              {form.map((o) => (
+                <span class:list={["w-7 h-7 rounded-md text-white font-display text-sm flex items-center justify-center", outcomeBg[o]]}>
+                  {outcomeLabel[o]}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <a href="/terminarz" class="text-[10px] uppercase tracking-widest font-display text-slate-500 hover:text-brand-primary hover:underline whitespace-nowrap">
+            Pełny terminarz →
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+

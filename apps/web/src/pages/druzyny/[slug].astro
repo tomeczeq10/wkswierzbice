@@ -1,20 +1,26 @@
 ---
-import type { GetStaticPaths } from "astro";
+// Bez tego Astro traktuje trasę jak do prerenderu i wymaga `getStaticPaths`
+// (błąd GetStaticPathsRequired mimo `output: "server"`).
+export const prerender = false;
+
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
 import PlayerGrid from "@/components/PlayerGrid.astro";
 import { fetchTeamsList, type TeamItem } from "@/lib/cms-teams";
 import { lexicalToHtml } from "@/lib/lexical";
 
-export const getStaticPaths: GetStaticPaths = async () => {
-  const teams = await fetchTeamsList();
-  return teams.map((team) => ({
-    params: { slug: team.slug },
-    props: { team },
-  }));
-};
+// SSR (`output: "server"`): `getStaticPaths` jest ignorowane — dane muszą być
+// zaciągnięte po `Astro.params` przy każdym żądaniu.
+const slug = Astro.params.slug;
+if (!slug || typeof slug !== "string") {
+  return Astro.redirect("/404");
+}
+const teams = await fetchTeamsList();
+const team = teams.find((x) => x.slug === slug);
+if (!team) {
+  return Astro.redirect("/404");
+}
 
-const { team } = Astro.props;
 const t = team as TeamItem;
 const { name, category, league, coach, assistantCoach, trainingSchedule, photo, roster } = t.data;
 

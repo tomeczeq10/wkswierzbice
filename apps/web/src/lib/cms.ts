@@ -15,10 +15,14 @@ import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
 import type { News, Tag, Media } from '@wks/shared';
 
-const CMS_URL: string =
-  import.meta.env.CMS_URL ||
+const CMS_INTERNAL_URL: string =
+  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+
+// Do generowania absolutnych URL-i (np. obrazki w HTML) używamy publicznej domeny.
+const CMS_PUBLIC_URL: string =
+  import.meta.env.CMS_PUBLIC_URL ||
   import.meta.env.PUBLIC_CMS_URL ||
-  'http://localhost:3000';
+  CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 5_000;
 
@@ -86,7 +90,7 @@ export type NewsItem = {
 function absolutizeCmsUrl(maybeUrl: string | null | undefined): string | undefined {
   if (!maybeUrl) return undefined;
   if (/^https?:\/\//i.test(maybeUrl)) return maybeUrl;
-  return new URL(maybeUrl, CMS_URL).toString();
+  return new URL(maybeUrl, CMS_PUBLIC_URL).toString();
 }
 
 function adaptCmsCover(media: Media | null | number | undefined): NewsCover {
@@ -119,6 +123,19 @@ export function pickCoverUrl(cover: NewsCover, variant: CoverVariant): string | 
   if (!cover) return undefined;
   if (cover.source === 'md') return cover.url;
   return cover.sizes[variant] ?? cover.url;
+}
+
+/**
+ * Obrazek w treści artykułu (pod nagłówkiem). Nie używa wariantu `hero` (Payload
+ * kadruje 1200×630 od środka) — portretowe okładki z Facebooka traciły głowę.
+ * OG / meta: nadal `pickCoverUrl(..., "hero")`.
+ */
+export function pickArticleBodyCoverUrl(cover: NewsCover | null | undefined): string | undefined {
+  if (!cover) return undefined;
+  if (cover.source === 'cms') {
+    return cover.url ?? pickCoverUrl(cover, 'card') ?? pickCoverUrl(cover, 'thumbnail');
+  }
+  return cover.url;
 }
 
 /**
@@ -182,7 +199,7 @@ type CmsListResponse = {
 };
 
 async function fetchFromCms(): Promise<News[] | null> {
-  const url = new URL('/api/news', CMS_URL);
+  const url = new URL('/api/news', CMS_INTERNAL_URL);
   url.searchParams.set('depth', '2');
   url.searchParams.set('limit', '500');
   url.searchParams.set('sort', '-date');
@@ -216,7 +233,7 @@ async function fetchFromCms(): Promise<News[] | null> {
     return json.docs;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.warn(`[cms] Niedostępne (${CMS_URL}): ${msg} — fallback do .md`);
+    console.warn(`[cms] Niedostępne (${CMS_INTERNAL_URL}): ${msg} — fallback do .md`);
     return null;
   }
 }

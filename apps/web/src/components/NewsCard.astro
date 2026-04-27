@@ -1,5 +1,6 @@
 ---
 import { formatDate } from "@/lib/format";
+import { stripLeadingTitleFromExcerpt } from "@/lib/news-excerpt";
 
 interface Props {
   href: string;
@@ -22,20 +23,22 @@ const {
   tags = [],
   facebookUrl,
 } = Astro.props;
+
+const cardExcerpt = stripLeadingTitleFromExcerpt(title, excerpt);
 ---
 
 <article class="group flex flex-col overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
   <a
     href={href}
     aria-label={title}
-    class="relative block aspect-[4/3] overflow-hidden bg-slate-100"
+    class="relative block aspect-[4/3] overflow-hidden bg-slate-200"
   >
     {cover ? (
       <img
         src={cover}
         alt={coverAlt}
         loading="lazy"
-        class="absolute inset-0 w-full h-full object-contain transition-transform duration-700 group-hover:scale-[1.03]"
+        class="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-[1.03]"
       />
     ) : (
       <div class="absolute inset-0 bg-gradient-to-br from-brand-primary to-brand-primary-dark flex items-center justify-center">
@@ -81,8 +84,8 @@ const {
     <h3 class="mt-2 font-display text-lg sm:text-xl uppercase leading-snug text-brand-ink">
       <a href={href} class="hover:text-brand-primary transition-colors">{title}</a>
     </h3>
-    {excerpt && (
-      <p class="mt-2 text-sm text-slate-600 line-clamp-3">{excerpt}</p>
+    {cardExcerpt && (
+      <p class="mt-2 text-sm text-slate-600 line-clamp-3">{cardExcerpt}</p>
     )}
     <a
       href={href}

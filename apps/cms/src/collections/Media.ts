@@ -1,5 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import { isEditorOrAdmin } from '../access'
+import path from 'path'
+
+const uploadsDir =
+  process.env.UPLOADS_DIR
+    ? path.resolve(process.env.UPLOADS_DIR)
+    : process.cwd().endsWith(path.join('apps', 'cms'))
+      ? path.resolve(process.cwd(), 'media')
+      : path.resolve(process.cwd(), 'apps/cms/media')
 
 /**
  * Kolekcja Media — uploads w Payload (Etap 6a).
@@ -47,7 +55,7 @@ export const Media: CollectionConfig = {
     },
   ],
   upload: {
-    staticDir: 'media',
+    staticDir: uploadsDir,
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
     imageSizes: [
       {
