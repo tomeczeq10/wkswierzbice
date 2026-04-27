@@ -62,6 +62,7 @@ export async function fetchHeroSlides(): Promise<HeroSlideItem[]> {
   try {
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)

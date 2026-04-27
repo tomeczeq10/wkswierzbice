@@ -61,15 +61,12 @@ export default buildConfig({
     meta: {
       titleSuffix: '— WKS Wierzbice',
     },
-    dashboard: {
-      widgets: [
-        {
-          slug: 'season-sync',
-          Component: './components/SeasonSyncWidget.tsx#default',
-          minWidth: 'medium',
-          maxWidth: 'full',
+    components: {
+      views: {
+        dashboard: {
+          Component: './components/Dashboard#default',
         },
-      ],
+      },
     },
   },
   /** Panel admina: UI po polsku (Payload + angielski zapasowy). */

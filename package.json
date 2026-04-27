@@ -19,7 +19,8 @@
     "generate:importmap": "npm run generate:importmap --workspace=cms",
     "migrate:teams": "npx tsx apps/cms/scripts/migrate-teams.ts",
     "migrate:team-photos": "npx tsx apps/cms/scripts/migrate-team-photos.ts",
-    "deploy:home": "bash scripts/deploy-home-server.sh"
+    "deploy:home": "bash scripts/deploy-home-server.sh",
+    "seed:cms-on-server": "bash scripts/wks-cms-seed-prod-db.sh"
   },
   "engines": {
     "node": ">=20.0.0"

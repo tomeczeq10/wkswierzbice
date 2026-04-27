@@ -20,6 +20,9 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 - **`docs/DEPLOY-GIT-WORKFLOW.md`** + **`scripts/deploy-home-server.sh`** +
   skrypt npm **`deploy:home`** — deploy przez **Git** (push → `git pull` na
   serwerze + `docker compose`), zamiast pełnego archiwum tar przy wolnym łączu.
+- **`scripts/wks-cms-seed-prod-db.sh`** + npm **`seed:cms-on-server`** —
+  przez SSH wypełnia produkcyjny SQLite w `deploy/wks/persist` tymi samymi
+  skryptami Payload co lokalnie; **`docs/DEPLOY-HOME-SERVER.md` §8**.
 
 ### Fixed
 
@@ -44,6 +47,20 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 - **`druzyny/[slug].astro`**, **`aktualnosci/[slug].astro`**: `export const prerender = false`
   — bez tego Astro zgłasza **GetStaticPathsRequired** (trasa domyślnie jak do
   SSG; dane i tak ładujemy po `Astro.params` przy SSR).
+- **`fetchFromCms()`** (`apps/web/src/lib/cms.ts`): gdy API zwraca **0 newsów**
+  (`totalDocs` 0), **fallback do Markdown** — żeby pusta baza na produkcji nie
+  udawała „pełnego CMS” przy pełnym `/admin`.
+- **Produkcja: zawieszony CMS po seedzie Docker** — w `payload_migrations` zostawał
+  `batch=-1` (tryb dev); Payload czekał na stdin. Seed przez Docker: **`NODE_ENV=production`**
+  w `--env-file`; w **`docs/DEPLOY-HOME-SERVER.md`** opis naprawy (`DELETE … batch=-1`).
+- **SSR + CMS:** usunięto **jednorazowy cache modułowy** w `fetchSiteConfig()` (`cms-site.ts`)
+  — po edycji globalu `siteConfig` w panelu strona widziała stare dane do restartu
+  `wks-web`. Do zapytań REST Payload dodano **`cache: 'no-store'`** w `cms*.ts`.
+
+### Removed
+
+- **`.github/workflows/deploy.yml`** — workflow „Build and Deploy (FTP)”;
+  nieużywany przy deployu przez Docker + Git (`DEPLOY-GIT-WORKFLOW`).
 
 ---
 

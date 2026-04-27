@@ -104,6 +104,7 @@ async function fetchTeamsFromCms(): Promise<Team[] | null> {
   try {
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -126,6 +127,7 @@ async function fetchPlayersForTeamFromCms(teamId: number): Promise<Player[] | nu
   try {
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)

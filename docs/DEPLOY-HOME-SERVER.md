@@ -207,7 +207,63 @@ docker exec salon-caddy wget -S -qO- http://wks-cms:3000/admin 2>&1 | head -10
 - **SQLite “Unable to open … cms.db: 14”**: zły typ mounta albo brak praw zapisu.
 - **SQLite `attempt to write a readonly database` na starcie migracji**: najczęściej **bind-mount pojedynczego pliku** `cms.db` — użyj mounta całego `./persist` (jak w aktualnym `deploy/wks/docker-compose.yml`) i `chown -R 1001:1001 persist`.
 - **`/admin` “This page couldn’t load” + digest**: sprawdź `docker logs wks-cms` — jeśli widzisz `no such table: users`, to baza jest pusta bez migracji; jeśli błąd zapisu — patrz punkt wyżej.
+- **`/admin` / cały CMS „wisi” (timeout, brak odpowiedzi)** — w logach `wks-cms`
+  widać pytanie Payload: *„It looks like you've run Payload in dev mode…”*
+  (czeka na stdin). Zwykle w SQLite jest wiersz **`payload_migrations` z `batch = -1`**
+  (np. po seedzie w Dockerze **bez** `NODE_ENV=production`). Na hoście:
+  z katalogu repo:  
+  `python3 -c "import sqlite3;c=sqlite3.connect('deploy/wks/persist/cms.db');c.execute('DELETE FROM payload_migrations WHERE batch=-1');c.commit()"`,  
+  potem `cd deploy/wks && docker compose restart wks-cms`.
+  Aktualny `npm run seed:cms-on-server` ustawia już **`NODE_ENV=production`** w kontenerze seedującym.
 - **Web kontener restartuje się (np. `ERR_MODULE_NOT_FOUND piccolore`)**:
   w obrazie brakuje runtime `node_modules`. W naszym obrazie docelowo kopiujemy
   `node_modules` do runtime.
+- **Strona pokazuje aktualności / obrazy, a w `/admin` kolekcje są puste**:
+  front domyślnie ma **fallback do Markdown** (`src/content/news/*.md`) i plików
+  w `public/`, gdy CMS zwraca **0 newsów** — wygląda jak „pełny” serwis przy
+  pustej bazie SQLite. Wypełnij bazę tymi samymi skryptami co lokalnie:
+  [`§8) Seed bazy CMS na serwerze (skrypt)`](#8-seed-bazy-cms-na-serwerze-skrypt).
+
+---
+
+## 8) Seed bazy CMS na serwerze (skrypt)
+
+Po `git clone` lub nowym `persist/` Payload tworzy **tylko tabele** (`prodMigrations`),
+ale **nie importuje** newsów, mediów, drużyn itd. — trzeba to zrobić **raz**
+(z laptopa przez SSH), tak jak robiłeś lokalnie (`seed-admin`, `migrate-news`, …).
+
+**Wymagania na serwerze:** pełny klon repo w `WKS_DEPLOY_PATH`, `deploy/wks/.env.cms`
+z poprawnym `PAYLOAD_SECRET`. Skrypt użyje **Node 20** z `PATH` (np. nvm w
+interaktywnej sesji), a gdy na hoście **nie ma** `node` — **`docker run node:20-bookworm`**
+(z mountem repo i `persist`). `ADMIN_EMAIL` pusty lub `admin@wks.local` w pliku
+jest traktowany jak **`admin@wkswierzbice.pl`** (żeby nie zostawać na adresie z
+przykładu). Hasło: `ADMIN_PASSWORD` z pliku lub domyślne z `seed-admin.ts`.
+
+Z maszyny z dostępem SSH:
+
+```bash
+export WKS_SSH_HOST=root@192.168.0.5    # lub inny host
+export WKS_DEPLOY_PATH=/srv/wks/wks_cms   # opcjonalnie
+npm run seed:cms-on-server
+```
+
+Skrypt (`scripts/wks-cms-seed-prod-db.sh`):
+
+1. Ustawia `DATABASE_URL` / `UPLOADS_DIR` na **`deploy/wks/persist/`** (ten sam
+   volume co kontener `wks-cms`).
+2. Uruchamia kolejno: `seed-admin`, `migrate-news`, `migrate-news-covers`,
+   `migrate-teams`, `migrate-team-photos`, `seed-hero-and-static-pages`,
+   `migrate-site-people-and-sponsors` (idempotentne — ponowne odpalenie jest
+   bezpieczne).
+3. `chown -R 1001:1001 deploy/wks/persist` i `docker compose restart wks-cms`.
+
+Pierwszy raz pobierze zależności: **`npm ci`** w katalogu głównym repo (kilka
+minut). Kolejne uruchomienia pomijają `npm ci`, dopóki istnieje `node_modules`;
+wymuś ponownie: `WKS_SEED_FORCE_NPM_CI=1 npm run seed:cms-on-server`.
+
+**Po pierwszym seedzie przed tą poprawką** mógł powstać użytkownik `admin@wks.local`
+— nadal możesz się nim zalogować (hasło z `ADMIN_PASSWORD`, zwykle `admin`).
+Żeby mieć tylko `admin@wkswierzbice.pl`: zaktualizuj repo, ponów
+`npm run seed:cms-on-server` (pierwszy krok `seed-admin` utworzy lub zaktualizuje
+to konto), a `admin@wks.local` usuń w panelu **Użytkownicy**.
 

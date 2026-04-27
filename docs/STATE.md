@@ -20,9 +20,13 @@
 - **Deploy (demo domowe):** Docker Compose w `deploy/wks/` + Caddy — opis w
   [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md). **Aktualizacja kodu na
   serwerze:** preferowane przez Git — [`docs/DEPLOY-GIT-WORKFLOW.md`](DEPLOY-GIT-WORKFLOW.md)
-  (`npm run deploy:home` po `git push`).
-- **Deploy (stary opis statyczny):** `npm run build` → rsync/SFTP z `dist/` do
-  katalogu domeny (gdy wracamy do czystego SSG bez Node na serwerze).
+  (`npm run deploy:home` po `git push`). **Pusta baza na serwerze a pełna strona:**
+  front ma fallback do `.md` / `public/` — wypełnienie panelu: `npm run seed:cms-on-server`
+  (§8 w DEPLOY-HOME-SERVER).
+- **Deploy (stary opis statyczny, ręczny):** `npm run build` → rsync/SFTP z
+  `dist/` do katalogu domeny (gdy wracamy do czystego SSG bez Node na serwerze).
+  Workflow FTP w GitHub Actions został usunięty — nie był zgodny z monorepo /
+  SSR.
 - **Dane meczowe:** odświeżane ręcznie przy buildzie (prebuild hook odpala
   `sync:season` z 90minut.pl)
 

@@ -99,29 +99,22 @@ function adapt(doc: SiteConfigDoc): SiteConfig {
   }
 }
 
-let cached: Promise<SiteConfig> | null = null
-
 export async function fetchSiteConfig(): Promise<SiteConfig> {
-  if (cached) return await cached
-
-  cached = (async () => {
-    const url = new URL('/api/globals/siteConfig', CMS_INTERNAL_URL)
-    try {
-      const res = await fetch(url.toString(), {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-      })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = (await res.json()) as { global?: SiteConfigDoc }
-      if (!json.global) return fromLocal()
-      return adapt(json.global)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.warn(`[cms] siteConfig niedostępny (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
-      return fromLocal()
-    }
-  })()
-
-  return await cached
+  const url = new URL('/api/globals/siteConfig', CMS_INTERNAL_URL)
+  try {
+    const res = await fetch(url.toString(), {
+      headers: { Accept: 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const json = (await res.json()) as { global?: SiteConfigDoc }
+    if (!json.global) return fromLocal()
+    return adapt(json.global)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.warn(`[cms] siteConfig niedostępny (${CMS_INTERNAL_URL}): ${msg} — fallback do site.ts`)
+    return fromLocal()
+  }
 }
 

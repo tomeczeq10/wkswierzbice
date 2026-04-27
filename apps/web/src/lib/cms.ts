@@ -208,6 +208,7 @@ async function fetchFromCms(): Promise<News[] | null> {
   try {
     const res = await fetch(url.toString(), {
       headers: { Accept: 'application/json' },
+      cache: 'no-store',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
 
@@ -228,6 +229,16 @@ async function fetchFromCms(): Promise<News[] | null> {
       console.warn(
         `[cms] Lista news ma więcej stron niż limit ${url.searchParams.get('limit')}. Zwiększ limit albo zaimplementuj paginację.`,
       );
+    }
+
+    // Świeża prodowa baza: tabele są, ale 0 rekordów — wtedy pokazujemy Markdown
+    // z repo (jak przy niedostępnym CMS), żeby nie mylić „pełnej strony” z pełnym panelem.
+    const total = json.totalDocs;
+    if (json.docs.length === 0 && (total === undefined || total === 0)) {
+      console.warn(
+        `[cms] Brak opublikowanych newsów w CMS (totalDocs=${total ?? '?'}) — fallback do .md`,
+      );
+      return null;
     }
 
     return json.docs;
