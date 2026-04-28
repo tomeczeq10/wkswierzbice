@@ -1,11 +1,21 @@
 import type { Board as BoardDoc, Media, Staff as StaffDoc } from '@wks/shared'
 import { BOARD as BOARD_LOCAL, STAFF as STAFF_LOCAL } from '@/config/site'
 
+// UWAGA (SSR w Docker): `import.meta.env.*` jest wypiekane w buildzie.
+// Na produkcji źródłem prawdy muszą być zmienne runtime z `process.env`.
 const CMS_INTERNAL_URL: string =
-  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+  process.env.CMS_INTERNAL_URL ||
+  process.env.CMS_URL ||
+  import.meta.env.CMS_INTERNAL_URL ||
+  import.meta.env.CMS_URL ||
+  'http://localhost:3000'
 
 const CMS_PUBLIC_URL: string =
-  import.meta.env.CMS_PUBLIC_URL || import.meta.env.PUBLIC_CMS_URL || CMS_INTERNAL_URL
+  process.env.CMS_PUBLIC_URL ||
+  process.env.PUBLIC_CMS_URL ||
+  import.meta.env.CMS_PUBLIC_URL ||
+  import.meta.env.PUBLIC_CMS_URL ||
+  CMS_INTERNAL_URL
 
 const FETCH_TIMEOUT_MS = 4000
 

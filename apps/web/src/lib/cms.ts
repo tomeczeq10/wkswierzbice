@@ -15,11 +15,19 @@ import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
 import type { News, Tag, Media } from '@wks/shared';
 
+// UWAGA (SSR w Docker): `import.meta.env.*` jest wypiekane w buildzie.
+// Na produkcji źródłem prawdy muszą być zmienne runtime z `process.env`.
 const CMS_INTERNAL_URL: string =
-  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+  process.env.CMS_INTERNAL_URL ||
+  process.env.CMS_URL ||
+  import.meta.env.CMS_INTERNAL_URL ||
+  import.meta.env.CMS_URL ||
+  'http://localhost:3000'
 
 // Do generowania absolutnych URL-i (np. obrazki w HTML) używamy publicznej domeny.
 const CMS_PUBLIC_URL: string =
+  process.env.CMS_PUBLIC_URL ||
+  process.env.PUBLIC_CMS_URL ||
   import.meta.env.CMS_PUBLIC_URL ||
   import.meta.env.PUBLIC_CMS_URL ||
   CMS_INTERNAL_URL

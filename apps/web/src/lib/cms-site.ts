@@ -1,8 +1,14 @@
 import { CONTACT, NAV, SITE, SOCIAL } from '@/config/site'
 import type { SiteConfig as SiteConfigDoc } from '@wks/shared'
 
+// UWAGA (SSR w Docker): `import.meta.env.*` jest wypiekane w buildzie.
+// Na produkcji źródłem prawdy muszą być zmienne runtime z `process.env`.
 const CMS_INTERNAL_URL: string =
-  import.meta.env.CMS_INTERNAL_URL || import.meta.env.CMS_URL || 'http://localhost:3000'
+  process.env.CMS_INTERNAL_URL ||
+  process.env.CMS_URL ||
+  import.meta.env.CMS_INTERNAL_URL ||
+  import.meta.env.CMS_URL ||
+  'http://localhost:3000'
 
 const FETCH_TIMEOUT_MS = 2500
 
