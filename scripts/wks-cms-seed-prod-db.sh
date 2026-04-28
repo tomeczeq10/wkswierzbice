@@ -106,7 +106,7 @@ seed_via_docker_node() {
     -v "${WKS_DEPLOY_PATH}/deploy/wks/persist:/data/wks:rw" \
     -w /app \
     node:20-bookworm \
-    bash -eo pipefail -c 'npm ci --no-audit --no-fund && \
+    bash -eo pipefail -c 'npm ci --include=dev --no-audit --no-fund && \
       npx tsx apps/cms/scripts/seed-admin.ts && \
       npx tsx apps/cms/scripts/migrate-news.ts && \
       npx tsx apps/cms/scripts/migrate-news-covers.ts && \
