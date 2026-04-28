@@ -329,21 +329,83 @@ function CollectionCard({ def, count }: { def: CollectionDef; count: number }) {
 
 // ─── ActivityRow ──────────────────────────────────────────────────────────────
 
-function ActivityRow({ Icon: IC, accent, accentLt, title, meta, time, badge }: { Icon: IconComponent; accent: string; accentLt: string; title: string; meta?: string; time: string; badge?: React.ReactNode }) {
+function ActivityRow({
+  Icon: IC,
+  accent,
+  accentLt,
+  title,
+  meta,
+  time,
+  badge,
+  href,
+}: {
+  Icon: IconComponent
+  accent: string
+  accentLt: string
+  title: string
+  meta?: string
+  time: string
+  badge?: React.ReactNode
+  href?: string
+}) {
+  const [hov, setHov] = useState(false)
+  const Tag: any = href ? 'a' : 'div'
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: `1px solid ${T.border}` }}>
-      <div style={{ width: 30, height: 30, borderRadius: T.rMd, background: accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+    <Tag
+      href={href}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '11px 0',
+        borderBottom: `1px solid ${T.border}`,
+        textDecoration: 'none',
+        cursor: href ? 'pointer' : 'default',
+        background: hov && href ? 'rgba(148,163,184,0.08)' : 'transparent',
+        transition: 'background .12s',
+      }}
+    >
+      <div
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: T.rMd,
+          background: accentLt,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+        }}
+      >
         <IC size={13} color={accent} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: T.text,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {title}
+        </div>
         {meta && <div style={{ fontSize: 11.5, color: T.muted, marginTop: 1 }}>{meta}</div>}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
         <div style={{ fontSize: 11.5, color: T.subtle, whiteSpace: 'nowrap' }}>{time}</div>
         {badge}
       </div>
-    </div>
+      {hov && href && (
+        <div style={{ marginLeft: 6, color: T.muted, flexShrink: 0 }}>
+          <IconArrow size={13} color={accent} />
+        </div>
+      )}
+    </Tag>
   )
 }
 
@@ -534,6 +596,7 @@ export default function Dashboard() {
                         meta={n.date ? fmtDate(n.date) : undefined}
                         time={rel(n.createdAt)}
                         badge={n.draft ? <Badge label="Szkic" color="amber" /> : <Badge label="Pub." color="blue" />}
+                        href={`/admin/collections/news/${n.id}`}
                       />
                     ))
                   )}
@@ -554,6 +617,7 @@ export default function Dashboard() {
                         meta={[p.position, (p.team as any)?.name].filter(Boolean).join(' · ')}
                         time={rel(p.createdAt)}
                         badge={<Badge label="Zawodnik" color="green" />}
+                        href={`/admin/collections/players/${p.id}`}
                       />
                     ))
                   )}
