@@ -1,9 +1,13 @@
 ---
+export const prerender = false;
+
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHeader from "@/components/PageHeader.astro";
-import { fetchGalleryList } from "@/lib/cms-gallery";
+import GalleryGrid from "@/components/GalleryGrid.astro";
+import { fetchGalleryIndex } from "@/lib/cms-gallery";
+import { formatDate } from "@/lib/format";
 
-const gallery = await fetchGalleryList();
+const mode = await fetchGalleryIndex();
 ---
 
 <BaseLayout
@@ -18,99 +22,71 @@ const gallery = await fetchGalleryList();
 
   <section class="section">
     <div class="container mx-auto">
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        {
-          gallery.map((item, i) => (
-            <button
-              type="button"
-              class="gallery-item group relative aspect-square overflow-hidden rounded-lg bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
-              data-index={i}
-              data-src={item.src}
-              data-alt={item.alt}
-              data-caption={item.caption ?? ""}
-              aria-label={`Otwórz: ${item.alt}`}
-            >
-              <img
-                src={item.src}
-                alt={item.alt}
-                loading="lazy"
-                class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-              <span class="absolute inset-0 bg-brand-ink/0 group-hover:bg-brand-ink/30 transition-colors" />
-            </button>
-          ))
-        }
-      </div>
+      {
+        mode.kind === "albums" ? (
+          <>
+            <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {mode.albums.map((al) => (
+                <a
+                  href={`/galeria/${al.slug}`}
+                  class="card group flex flex-col overflow-hidden p-0 no-underline text-inherit hover:no-underline focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none"
+                >
+                  <div class="relative aspect-[4/3] bg-slate-200 overflow-hidden">
+                    {al.coverSrc ? (
+                      <img
+                        src={al.coverSrc}
+                        alt=""
+                        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div class="flex h-full w-full items-center justify-center bg-slate-100 text-brand-muted font-display text-sm uppercase tracking-wider">
+                        Galeria
+                      </div>
+                    )}
+                    <span class="absolute inset-0 bg-brand-ink/0 transition-colors group-hover:bg-brand-ink/25" />
+                  </div>
+                  <div class="flex flex-1 flex-col gap-1 p-4">
+                    <h2 class="font-display text-xl uppercase tracking-tight text-brand-ink group-hover:text-brand-primary transition-colors">
+                      {al.title}
+                    </h2>
+                    {al.eventDate ? (
+                      <p class="text-sm text-brand-muted">{formatDate(al.eventDate)}</p>
+                    ) : null}
+                    {al.description ? <p class="text-sm text-slate-600 line-clamp-2">{al.description}</p> : null}
+                    <p class="mt-auto pt-2 text-sm font-medium text-brand-primary">
+                      {al.photoCount === 1 ? "1 zdjęcie" : `${al.photoCount} zdjęć`} →
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+            {mode.albums.length === 0 && mode.orphanCount === 0 ? (
+              <p class="text-center text-brand-muted py-12">
+                Wkrótce pojawią się tu albumy ze zdjęciami — sprawdź ponownie.
+              </p>
+            ) : null}
+            {mode.orphanCount > 0 ? (
+              <div class="mt-12 border-t border-slate-200 pt-10">
+                <a
+                  href="/galeria/bez-albumu"
+                  class="card flex flex-col gap-2 p-6 sm:flex-row sm:items-center sm:justify-between no-underline text-inherit hover:border-brand-primary/40 focus-visible:ring-2 focus-visible:ring-brand-primary"
+                >
+                  <div>
+                    <h2 class="font-display text-lg uppercase tracking-tight text-brand-ink">Pozostałe zdjęcia</h2>
+                    <p class="text-sm text-brand-muted">
+                      Zdjęcia bez przypisanego albumu w panelu ({mode.orphanCount})
+                    </p>
+                  </div>
+                  <span class="btn btn-outline shrink-0 self-start sm:self-center">Otwórz</span>
+                </a>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <GalleryGrid items={mode.items} />
+        )
+      }
     </div>
   </section>
-
-  <!-- Lightbox -->
-  <div
-    id="lightbox"
-    class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/90 p-4"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Podgląd zdjęcia"
-  >
-    <button
-      type="button"
-      id="lb-close"
-      class="absolute top-4 right-4 p-2 rounded-md text-white hover:bg-white/10"
-      aria-label="Zamknij"
-    >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>
-    </button>
-    <button type="button" id="lb-prev" class="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full text-white hover:bg-white/10" aria-label="Poprzednie">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg>
-    </button>
-    <button type="button" id="lb-next" class="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full text-white hover:bg-white/10" aria-label="Następne">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
-    </button>
-    <figure class="max-w-5xl w-full">
-      <img id="lb-img" class="max-h-[80vh] w-auto mx-auto rounded-lg" alt="" />
-      <figcaption id="lb-caption" class="mt-3 text-center text-sm text-slate-300"></figcaption>
-    </figure>
-  </div>
-
-  <script is:inline>
-    (() => {
-      const items = Array.from(document.querySelectorAll(".gallery-item"));
-      const lb = document.getElementById("lightbox");
-      const img = document.getElementById("lb-img");
-      const cap = document.getElementById("lb-caption");
-      const close = document.getElementById("lb-close");
-      const prev = document.getElementById("lb-prev");
-      const next = document.getElementById("lb-next");
-      let index = 0;
-
-      const open = (i) => {
-        index = i;
-        const el = items[index];
-        img.src = el.dataset.src;
-        img.alt = el.dataset.alt || "";
-        cap.textContent = el.dataset.caption || el.dataset.alt || "";
-        lb.classList.remove("hidden");
-        lb.classList.add("flex");
-        document.body.style.overflow = "hidden";
-      };
-      const closeLb = () => {
-        lb.classList.add("hidden");
-        lb.classList.remove("flex");
-        document.body.style.overflow = "";
-      };
-      const move = (dir) => open((index + dir + items.length) % items.length);
-
-      items.forEach((el, i) => el.addEventListener("click", () => open(i)));
-      close?.addEventListener("click", closeLb);
-      prev?.addEventListener("click", () => move(-1));
-      next?.addEventListener("click", () => move(1));
-      lb?.addEventListener("click", (e) => { if (e.target === lb) closeLb(); });
-      document.addEventListener("keydown", (e) => {
-        if (lb.classList.contains("hidden")) return;
-        if (e.key === "Escape") closeLb();
-        if (e.key === "ArrowRight") move(1);
-        if (e.key === "ArrowLeft") move(-1);
-      });
-    })();
-  </script>
 </BaseLayout>

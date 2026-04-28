@@ -77,7 +77,9 @@ Implementacja:
 - `/terminarz` — dynamiczny, napędzany `season.json` / CMS; tabela ligowa na
   **`/tabela`** i na home (szablon klasyk), na terminarzu skrót + linki
 - `/aktualnosci` + `/aktualnosci/[slug]` — 24 artykuły z FB
-- `/galeria` — lightbox (placeholdery SVG)
+- `/galeria` — albumy z CMS (`gallery-albums` + relacja w `gallery`), `/galeria/[slug]`,
+  `/galeria/bez-albumu` (sieroty); bez albumów w CMS — płaska siatka + lightbox;
+  fallback: `GALLERY` w `site.ts`
 - `/kontakt`, `/nabory` — formularze (nieaktywne, `FORMS.*` puste)
 - `/sponsorzy`, `/polityka-prywatnosci`, `/404`
 
@@ -221,8 +223,11 @@ Implementacja:
 - ✅ **Etap 8 (2026-04-26)** — `migrate-teams.ts` (5 drużyn + 110 zawodników),
   `migrate-team-photos.ts` (upload rastrów → Media + `Teams.photo`; SVG
   pomijane — placeholdery z YAML nadal przez enrichment w `cms-teams.ts`).
-- ✅ **Etap 9 (2026-04-26)** — kolekcja `gallery` + `cms-gallery.ts` +
-  `galeria.astro`: CMS jeśli `docs.length > 0`, inaczej `GALLERY` z `site.ts`.
+- ✅ **Etap 9 (2026-04-26 + 2026-04-28)** — kolekcje `gallery-albums` + `gallery`
+  (relacja `album`), migracja `20260428_041852`, `cms-gallery.ts` (`fetchGalleryIndex`,
+  `fetchGalleryByAlbumSlug`), `galeria.astro` (karty albumów), `galeria/[slug].astro`,
+  `galeria/bez-albumu.astro`, komponent `GalleryGrid.astro`; bez albumów w CMS —
+  płaska lista jak wcześniej; brak CMS / pusta galeria → `GALLERY` z `site.ts`.
 - ⏳ **Etapy 10–18** — następny: **Etap 10** (`Globals siteConfig` + stopniowe
   przenoszenie stałych z `site.ts`).
 
@@ -232,7 +237,8 @@ test-case do sprawdzenia lokalnie. Łączna estymata 60–80 h.
 
 **Pozostałe decyzje rozstrzygane per etap:**
 - **D7 RBAC** — w Etapie 16 (default: Wariant A — admin/redaktor/trener).
-- **D8 galeria** — w Etapie 9 (default: Wariant 1 płaska lista).
+- **D8 galeria** — Etap 9: albumy + podstrony (slug); bez rekordów `gallery-albums`
+  publicznie nadal płaska lista.
 - **D5 auth** — w Etapie 2 (default: email + password Payload built-in).
 - **D4 baza** — w Etapach 2 + 17 (SQLite dev → Postgres prod).
 - **D3 hosting** — w Etapie 17 (wstępnie: Hetzner CX22).

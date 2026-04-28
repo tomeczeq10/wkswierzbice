@@ -13,6 +13,32 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-28 — Galeria: albumy (foldery) w CMS i podstrony www
+
+### Added
+
+- **`apps/cms/src/collections/GalleryAlbums.ts`** — kolekcja `gallery-albums`
+  (tytuł, slug, opis, data wydarzenia, okładka, kolejność); **`Gallery`** —
+  pole relacji **`album`** zamiast nieużywanego tekstowego `albumId`.
+- **Migracja `20260428_041852`** — tabela `gallery_albums`, przebudowa `gallery`
+  (`album_id` INTEGER → FK), kolumna `gallery_albums_id` w
+  `payload_locked_documents_rels`.
+- **WWW:** `fetchGalleryIndex`, `fetchGalleryByAlbumSlug`, `fetchGalleryOrphans`
+  w **`apps/web/src/lib/cms-gallery.ts`**; **`GalleryGrid.astro`** (siatka +
+  lightbox); **`galeria.astro`** — karty albumów + link „Pozostałe zdjęcia”;
+  **`galeria/[slug].astro`**, **`galeria/bez-albumu.astro`**.
+- **`packages/shared`** — re-eksport typu **`GalleryAlbum`**.
+
+### Changed
+
+- Gdy w CMS jest **≥1 album** i są zdjęcia w `gallery`, strona **`/galeria`**
+  pokazuje **karty wydarzeń**; pojedyncze zdjęcia bez albumu — **`/galeria/bez-albumu`**.
+  Gdy **brak albumów** w CMS, zachowanie jak dotąd: **jedna siatka** wszystkich
+  zdjęć z `gallery` (lub fallback `GALLERY` w `site.ts`).
+- **`docs/STATE.md`** — opis galerii i Etapu 9.
+
+---
+
 ## 2026-04-27 — Deploy domowy: migracje SQLite + poprawka volume DB
 
 ### Added

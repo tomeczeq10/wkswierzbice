@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import GalleryGrid from "@/components/GalleryGrid.astro";
+import { fetchGalleryIndex, fetchGalleryOrphans } from "@/lib/cms-gallery";
+
+const mode = await fetchGalleryIndex();
+const orphans = await fetchGalleryOrphans();
+
+/** Ta strona ma sens tylko przy CMS z albumami; inaczej — przekieruj na /galeria */
+const showOrphans = mode.kind === "albums" && orphans !== null;
+if (!showOrphans) {
+  return Astro.redirect("/galeria", 302);
+}
+
+const items = orphans ?? [];
+---
+
+<BaseLayout
+  title="Pozostałe zdjęcia — Galeria"
+  description="Zdjęcia z galerii klubu bez przypisanego albumu."
+>
+  <PageHeader
+    kicker="Galeria"
+    title="Pozostałe zdjęcia"
+    description="Te zdjęcia nie są jeszcze przypisane do albumu w panelu — możesz je później przenieść do wydarzenia."
+  />
+
+  <section class="section pb-6">
+    <div class="container mx-auto">
+      <a href="/galeria" class="btn btn-outline text-sm">← Wszystkie albumy</a>
+    </div>
+  </section>
+
+  <section class="section pt-0">
+    <div class="container mx-auto">
+      <GalleryGrid items={items} />
+    </div>
+  </section>
+</BaseLayout>

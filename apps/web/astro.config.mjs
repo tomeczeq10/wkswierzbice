@@ -9,8 +9,7 @@ export default defineConfig({
   site: SITE.url,
   trailingSlash: "ignore",
   output: "server",
-  // Domyślny port 4321; jeśli zajęty — Astro kończy z błędem zamiast cicho
-  // przechodzić na 4322 (wtedy łatwo ogląda się „stary” serwer na 4321).
+  // Port 4321; `strictPort` też w `vite.server` — inaczej Vite i tak skacze na 4322+.
   server: {
     port: 4321,
     strictPort: true,
@@ -27,6 +26,12 @@ export default defineConfig({
   adapter: node({
     mode: "standalone",
   }),
+  /** Vite ignoruje czasem `server.strictPort` z poziomu Astro — wtedy i tak skacze port. */
+  vite: {
+    server: {
+      strictPort: true,
+    },
+  },
   image: {
     service: { entrypoint: "astro/assets/services/sharp" },
   },

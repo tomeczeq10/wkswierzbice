@@ -25,6 +25,7 @@ pnpm-debug.log*
 # możliwość zmiany — ignorujemy wszystkie pliki .db/.db-journal w apps/cms/.
 apps/cms/*.db
 apps/cms/*.db-journal
+apps/cms/*.db.bak.*
 apps/cms/src/*.db
 apps/cms/src/*.db-journal
 

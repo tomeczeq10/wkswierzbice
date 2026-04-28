@@ -1,0 +1,128 @@
+---
+import type { GalleryItem } from "@/lib/cms-gallery";
+
+interface Props {
+  items: GalleryItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 ? (
+    <>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {items.map((item, i) => (
+          <button
+            type="button"
+            class="gallery-item group relative aspect-square overflow-hidden rounded-lg bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
+            data-index={i}
+            data-src={item.src}
+            data-alt={item.alt}
+            data-caption={item.caption ?? ""}
+            aria-label={`Otwórz: ${item.alt}`}
+          >
+            <img
+              src={item.src}
+              alt={item.alt}
+              loading="lazy"
+              class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <span class="absolute inset-0 bg-brand-ink/0 group-hover:bg-brand-ink/30 transition-colors" />
+          </button>
+        ))}
+      </div>
+
+      <div
+        id="lightbox"
+        class="fixed inset-0 z-[100] hidden items-center justify-center bg-black/90 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Podgląd zdjęcia"
+      >
+        <button
+          type="button"
+          id="lb-close"
+          class="absolute top-4 right-4 p-2 rounded-md text-white hover:bg-white/10"
+          aria-label="Zamknij"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          id="lb-prev"
+          class="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full text-white hover:bg-white/10"
+          aria-label="Poprzednie"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M15 6l-6 6 6 6" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          id="lb-next"
+          class="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full text-white hover:bg-white/10"
+          aria-label="Następne"
+        >
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+        <figure class="max-w-5xl w-full">
+          <img id="lb-img" class="max-h-[80vh] w-auto mx-auto rounded-lg" alt="" />
+          <figcaption id="lb-caption" class="mt-3 text-center text-sm text-slate-300" />
+        </figure>
+      </div>
+
+      <script is:inline>
+        (() => {
+          const items = Array.from(document.querySelectorAll(".gallery-item"));
+          const lb = document.getElementById("lightbox");
+          const img = document.getElementById("lb-img");
+          const cap = document.getElementById("lb-caption");
+          const close = document.getElementById("lb-close");
+          const prev = document.getElementById("lb-prev");
+          const next = document.getElementById("lb-next");
+          let index = 0;
+
+          const open = (i) => {
+            index = i;
+            const el = items[index];
+            if (!el || !img || !lb) return;
+            img.src = el.dataset.src || "";
+            img.alt = el.dataset.alt || "";
+            if (cap) cap.textContent = el.dataset.caption || el.dataset.alt || "";
+            lb.classList.remove("hidden");
+            lb.classList.add("flex");
+            document.body.style.overflow = "hidden";
+          };
+          const closeLb = () => {
+            if (!lb) return;
+            lb.classList.add("hidden");
+            lb.classList.remove("flex");
+            document.body.style.overflow = "";
+          };
+          const move = (dir) => open((index + dir + items.length) % items.length);
+
+          items.forEach((el, i) => el.addEventListener("click", () => open(i)));
+          close?.addEventListener("click", closeLb);
+          prev?.addEventListener("click", () => move(-1));
+          next?.addEventListener("click", () => move(1));
+          lb?.addEventListener("click", (e) => {
+            if (e.target === lb) closeLb();
+          });
+          document.addEventListener("keydown", (e) => {
+            if (!lb || lb.classList.contains("hidden")) return;
+            if (e.key === "Escape") closeLb();
+            if (e.key === "ArrowRight") move(1);
+            if (e.key === "ArrowLeft") move(-1);
+          });
+        })();
+      </script>
+    </>
+  ) : (
+    <p class="text-brand-muted text-center py-12">Brak zdjęć w tej sekcji.</p>
+  )
+}

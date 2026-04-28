@@ -73,6 +73,7 @@ export interface Config {
     tags: Tag;
     teams: Team;
     players: Player;
+    'gallery-albums': GalleryAlbum;
     gallery: Gallery;
     board: Board;
     staff: Staff;
@@ -92,6 +93,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     players: PlayersSelect<false> | PlayersSelect<true>;
+    'gallery-albums': GalleryAlbumsSelect<false> | GalleryAlbumsSelect<true>;
     gallery: GallerySelect<false> | GallerySelect<true>;
     board: BoardSelect<false> | BoardSelect<true>;
     staff: StaffSelect<false> | StaffSelect<true>;
@@ -368,7 +370,36 @@ export interface Player {
   createdAt: string;
 }
 /**
- * Zdjęcia na /galeria. Kolejność = pole „Kolejność” (niższe = wcześniej).
+ * Wydarzenia / foldery na stronie Galeria. Do albumu przypisz zdjęcia w kolekcji „Galeria”.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery-albums".
+ */
+export interface GalleryAlbum {
+  id: number;
+  title: string;
+  /**
+   * Adres: /galeria/[slug]. Puste = z tytułu. Nie używaj slug „bez-albumu” (zarezerwowany).
+   */
+  slug?: string | null;
+  description?: string | null;
+  /**
+   * Do sortowania albumów na liście (najnowsze pierwsze).
+   */
+  eventDate?: string | null;
+  /**
+   * Miniatura na karcie albumu. Bez okładki — pierwsze zdjęcie z albumu.
+   */
+  cover?: (number | null) | Media;
+  /**
+   * Niższe = wyżej (przy tej samej dacie).
+   */
+  order?: number | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Zdjęcia w albumach: wybierz album lub zostaw puste — wtedy trafią do „Pozostałe” na /galeria.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "gallery".
@@ -382,11 +413,11 @@ export interface Gallery {
    * Sort rosnąco: 0, 1, 2…
    */
   order?: number | null;
-  category?: string | null;
   /**
-   * Rezerwa pod przyszłe albumy — na razie puste.
+   * Puste = sekcja „Pozostałe zdjęcia” na stronie galerii.
    */
-  albumId?: string | null;
+  album?: (number | null) | GalleryAlbum;
+  category?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -534,6 +565,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'players';
         value: number | Player;
+      } | null)
+    | ({
+        relationTo: 'gallery-albums';
+        value: number | GalleryAlbum;
       } | null)
     | ({
         relationTo: 'gallery';
@@ -740,6 +775,20 @@ export interface PlayersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gallery-albums_select".
+ */
+export interface GalleryAlbumsSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  description?: T;
+  eventDate?: T;
+  cover?: T;
+  order?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "gallery_select".
  */
 export interface GallerySelect<T extends boolean = true> {
@@ -747,8 +796,8 @@ export interface GallerySelect<T extends boolean = true> {
   alt?: T;
   caption?: T;
   order?: T;
+  album?: T;
   category?: T;
-  albumId?: T;
   updatedAt?: T;
   createdAt?: T;
 }

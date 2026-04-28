@@ -16,6 +16,7 @@ export type {
   Team,
   Player,
   Gallery,
+  GalleryAlbum,
   SiteConfig,
   Sponsor,
   Staff,

@@ -13,6 +13,7 @@ import { News } from './collections/News'
 import { Tags } from './collections/Tags'
 import { Teams } from './collections/Teams'
 import { Players } from './collections/Players'
+import { GalleryAlbums } from './collections/GalleryAlbums'
 import { Gallery } from './collections/Gallery'
 import { Board } from './collections/Board'
 import { Staff } from './collections/Staff'
@@ -81,6 +82,7 @@ export default buildConfig({
     Tags,
     Teams,
     Players,
+    GalleryAlbums,
     Gallery,
     Board,
     Staff,

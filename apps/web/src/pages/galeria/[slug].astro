@@ -1,0 +1,54 @@
+---
+export const prerender = false;
+
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHeader from "@/components/PageHeader.astro";
+import GalleryGrid from "@/components/GalleryGrid.astro";
+import { fetchGalleryByAlbumSlug } from "@/lib/cms-gallery";
+import { formatDate } from "@/lib/format";
+
+const slug = Astro.params.slug ?? "";
+const data = await fetchGalleryByAlbumSlug(slug);
+
+if (data === null) {
+  return Astro.redirect("/galeria", 302);
+}
+if (!data.album) {
+  return Astro.redirect("/404", 302);
+}
+
+const { album, items } = data;
+const title = album.title;
+const desc =
+  album.description ||
+  `Zdjęcia z wydarzenia: ${album.title}. Galeria WKS Wierzbice.`;
+---
+
+<BaseLayout title={title} description={desc}>
+  <PageHeader
+    kicker="Galeria"
+    title={album.title}
+    description={album.description || undefined}
+  />
+
+  <section class="section pb-6">
+    <div class="container mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="text-sm text-brand-muted">
+        {album.eventDate ? <span>{formatDate(album.eventDate)}</span> : null}
+        {album.eventDate && items.length > 0 ? <span class="mx-2">·</span> : null}
+        {items.length > 0 ? (
+          <span>
+            {items.length === 1 ? "1 zdjęcie" : `${items.length} zdjęć`}
+          </span>
+        ) : null}
+      </div>
+      <a href="/galeria" class="btn btn-outline text-sm">← Wszystkie albumy</a>
+    </div>
+  </section>
+
+  <section class="section pt-0">
+    <div class="container mx-auto">
+      <GalleryGrid items={items} />
+    </div>
+  </section>
+</BaseLayout>

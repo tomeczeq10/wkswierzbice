@@ -2,8 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { isEditorOrAdmin } from '../access'
 
 /**
- * Galeria klubu (Etap 9) — płaska lista zdjęć.
- * Opcjonalne `albumId` na przyszłość (albumy bez breaking change).
+ * Galeria klubu — zdjęcia przypisane do albumu (`gallery-albums`) lub bez albumu.
  */
 export const Gallery: CollectionConfig = {
   slug: 'gallery',
@@ -13,8 +12,9 @@ export const Gallery: CollectionConfig = {
   },
   admin: {
     useAsTitle: 'alt',
-    defaultColumns: ['alt', 'order', 'category', 'updatedAt'],
-    description: 'Zdjęcia na /galeria. Kolejność = pole „Kolejność” (niższe = wcześniej).',
+    defaultColumns: ['alt', 'album', 'order', 'category', 'updatedAt'],
+    description:
+      'Zdjęcia w albumach: wybierz album lub zostaw puste — wtedy trafią do „Pozostałe” na /galeria.',
   },
   access: {
     read: () => true,
@@ -53,19 +53,20 @@ export const Gallery: CollectionConfig = {
       },
     },
     {
+      name: 'album',
+      type: 'relationship',
+      relationTo: 'gallery-albums',
+      label: { pl: 'Album', en: 'Album' },
+      admin: {
+        position: 'sidebar',
+        description: 'Puste = sekcja „Pozostałe zdjęcia” na stronie galerii.',
+      },
+    },
+    {
       name: 'category',
       type: 'text',
       label: { pl: 'Kategoria (opcjonalnie)', en: 'Category' },
       admin: { position: 'sidebar' },
-    },
-    {
-      name: 'albumId',
-      type: 'text',
-      label: { pl: 'ID albumu (opcjonalnie)', en: 'Album ID' },
-      admin: {
-        position: 'sidebar',
-        description: 'Rezerwa pod przyszłe albumy — na razie puste.',
-      },
     },
   ],
 }

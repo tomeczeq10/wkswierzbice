@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=web",
+    "dev:fresh": "bash scripts/free-astro-dev-ports.sh && npm run dev --workspace=web",
     "dev:cms": "npm run dev --workspace=cms",
     "build": "npm run build --workspace=web",
     "build:cms": "npm run build --workspace=cms",
