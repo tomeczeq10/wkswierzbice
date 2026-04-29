@@ -171,6 +171,97 @@ export const News: CollectionConfig = {
       },
     },
     {
+      name: 'coverBadges',
+      type: 'array',
+      maxRows: 3,
+      label: {
+        pl: 'Okienka na okładce',
+        en: 'Cover badges',
+      },
+      admin: {
+        description:
+          'Opcjonalne „okienka” nakładane na zdjęcie okładkowe (np. „Zawodnik meczu”, „Z Facebooka”). Maks. 3 sztuki.',
+      },
+      fields: [
+        {
+          name: 'label',
+          type: 'text',
+          required: true,
+          label: {
+            pl: 'Tekst',
+            en: 'Label',
+          },
+        },
+        {
+          name: 'variant',
+          type: 'select',
+          required: true,
+          defaultValue: 'red',
+          label: {
+            pl: 'Kolor',
+            en: 'Variant',
+          },
+          options: [
+            { label: 'Czerwony (CTA)', value: 'red' },
+            { label: 'Niebieski', value: 'blue' },
+            { label: 'Zielony', value: 'green' },
+            { label: 'Szary', value: 'slate' },
+          ],
+        },
+        {
+          name: 'href',
+          type: 'text',
+          label: {
+            pl: 'Link (opcjonalnie)',
+            en: 'Link (optional)',
+          },
+          admin: {
+            description: 'Jeśli ustawisz, okienko będzie klikalne (np. do Facebooka).',
+          },
+          validate: (value: string | string[] | null | undefined) => {
+            if (value === null || value === undefined || value === '') return true
+            if (Array.isArray(value)) return 'Pole nie obsługuje wielu wartości.'
+            try {
+              const url = new URL(value)
+              if (!['http:', 'https:'].includes(url.protocol)) {
+                return 'URL musi zaczynać się od http:// lub https://'
+              }
+              return true
+            } catch {
+              return 'Niepoprawny URL.'
+            }
+          },
+        },
+        {
+          name: 'newTab',
+          type: 'checkbox',
+          defaultValue: true,
+          label: {
+            pl: 'Otwórz w nowej karcie',
+            en: 'Open in new tab',
+          },
+          admin: {
+            condition: (_, siblingData) => Boolean(siblingData?.href),
+          },
+        },
+        {
+          name: 'icon',
+          type: 'select',
+          label: {
+            pl: 'Ikona (opcjonalnie)',
+            en: 'Icon (optional)',
+          },
+          options: [
+            { label: 'Brak', value: 'none' },
+            { label: 'Facebook', value: 'facebook' },
+            { label: 'Gwiazdka', value: 'star' },
+            { label: 'Puchar', value: 'trophy' },
+          ],
+          defaultValue: 'none',
+        },
+      ],
+    },
+    {
       name: 'body',
       type: 'richText',
       label: {

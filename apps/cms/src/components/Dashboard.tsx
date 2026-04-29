@@ -1,29 +1,19 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
+import LiveStartModal from './LiveStartModal'
 
-// ─── Icons (inline SVG, no external deps) ────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 type IconProps = { size?: number; color?: string }
 type IconComponent = (props: IconProps) => React.ReactElement
 
 const mkIcon =
-  (d: string, extra?: string): IconComponent =>
+  (d: string): IconComponent =>
   ({ size = 18, color = 'currentColor' }) =>
     (
-      <svg
-        width={size}
-        height={size}
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d={d} />
-        {extra && <path d={extra} />}
       </svg>
     )
 
@@ -39,7 +29,7 @@ const IconUsers: IconComponent = ({ size = 18, color = 'currentColor' }) => (
     <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
   </svg>
 )
-const IconShield: IconComponent = mkIcon('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
+const IconShield    = mkIcon('M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z')
 const IconImage: IconComponent = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="9" cy="9" r="2" />
@@ -58,12 +48,7 @@ const IconTrophy: IconComponent = ({ size = 18, color = 'currentColor' }) => (
     <path d="M7 4H2v3a5 5 0 0 0 5 5M17 4h5v3a5 5 0 0 1-5 5M7 4a5 5 0 0 0 5 5 5 5 0 0 0 5-5z" />
   </svg>
 )
-const IconStar: IconComponent = mkIcon('M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z')
-const IconLayout: IconComponent = ({ size = 18, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="18" height="18" x="3" y="3" rx="2" /><path d="M3 9h18M9 21V9" />
-  </svg>
-)
+const IconStar      = mkIcon('M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z')
 const IconSettings: IconComponent = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="3" />
@@ -96,11 +81,7 @@ const IconPlus: IconComponent = ({ size = 16, color = 'currentColor' }) => (
     <path d="M5 12h14M12 5v14" />
   </svg>
 )
-const IconArrow: IconComponent = ({ size = 14, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M5 12h14m-7-7 7 7-7 7" />
-  </svg>
-)
+const IconArrow     = mkIcon('M5 12h14m-7-7 7 7-7 7')
 const IconRefresh: IconComponent = ({ size = 15, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5" />
@@ -111,11 +92,7 @@ const IconCheck: IconComponent = ({ size = 14, color = 'currentColor' }) => (
     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M9 11l3 3L22 4" />
   </svg>
 )
-const IconAlert: IconComponent = ({ size = 14, color = 'currentColor' }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y2="12" /><line x1="12" x2="12.01" y1="16" y2="16" />
-  </svg>
-)
+const IconAlert     = mkIcon('M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01')
 const IconClock: IconComponent = ({ size = 14, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
@@ -125,6 +102,41 @@ const IconGlobe: IconComponent = ({ size = 18, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10" /><line x1="2" x2="22" y1="12" y2="12" />
     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+  </svg>
+)
+// Football-specific icons
+const IconBall: IconComponent = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 2C9.5 5.5 9.5 8 12 12c2.5 4 2.5 6.5 0 10" />
+    <path d="M2 12h20" />
+    <path d="M12 2c2.5 3.5 2.5 6 0 10-2.5 4-2.5 6.5 0 10" />
+  </svg>
+)
+const IconCalendar: IconComponent = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+    <line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" />
+    <line x1="3" x2="21" y1="10" y2="10" />
+  </svg>
+)
+const IconHome: IconComponent = ({ size = 16, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+)
+const IconBus       = mkIcon('M8 6v6M16 6v6M2 12h20M7 18h2a2 2 0 0 0 0-4H7v4zm8 0h2a2 2 0 0 0 0-4h-2v4zM5 6h14a1 1 0 0 1 1 1v5H4V7a1 1 0 0 1 1-1zM4 18l-1 3M20 18l1 3')
+const IconListCheck: IconComponent = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M11 12H3M16 6H3M16 18H3" /><path d="m19 10-4 4 2 2 4-4-2-2z" />
+  </svg>
+)
+const IconBolt      = mkIcon('M13 2L3 14h7l-1 8 10-12h-7l1-8z')
+const IconScore: IconComponent = ({ size = 18, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="6" width="18" height="12" rx="2" />
+    <path d="M8 10h2M8 14h2M14 10h2M14 14h2" />
   </svg>
 )
 
@@ -138,11 +150,15 @@ const T = {
   text: '#0f172a',
   muted: '#64748b',
   subtle: '#94a3b8',
-  // accent = club green
-  green: '#16a34a',
-  greenDk: '#15803d',
+  // WKS brand
+  green: '#166534',
+  greenDk: '#14532d',
   greenLt: '#f0fdf4',
-  // other palette
+  ink: '#0f2a1c',
+  red: '#dc2626',
+  redLt: '#fef2f2',
+  redDk: '#b91c1c',
+  // palette
   blue: '#3b82f6',
   blueLt: '#eff6ff',
   amber: '#d97706',
@@ -165,9 +181,28 @@ const T = {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+type WksMatch = {
+  round: number
+  date: string | null
+  time: string | null
+  venue: 'home' | 'away'
+  opponent: string
+  played: boolean
+  result: { ours: number; theirs: number; outcome: 'win' | 'draw' | 'loss'; scoreLabel: string } | null
+}
+type Standing = { position: number; team: string; played: number; points: number; wins: number; draws: number; losses: number; goals: string }
+type SeasonData = {
+  wks?: { played?: WksMatch[]; upcoming?: WksMatch[] }
+  standings?: Standing[]
+}
+type SeasonGlobal = {
+  lastSync?: string | null
+  lastSyncStatus?: 'idle' | 'running' | 'success' | 'error'
+  lastSyncError?: string | null
+  data?: SeasonData | null
+}
 type NewsDoc = { id: string; title: string; date?: string; draft?: boolean; createdAt: string }
-type PlayerDoc = { id: string; name: string; position?: string; number?: number; team?: { name: string } | null; createdAt: string }
-type SeasonGlobal = { lastSync?: string | null; lastSyncStatus?: 'idle' | 'running' | 'success' | 'error'; lastSyncError?: string | null }
+type PlayerDoc = { id: string; name: string; position?: string; team?: { name: string } | null; createdAt: string }
 type CollectionDef = { slug: string; label: string; Icon: IconComponent; accent: string; accentLt: string }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
@@ -177,9 +212,7 @@ async function getCount(slug: string): Promise<number> {
     const r = await fetch(`/api/${slug}?limit=1&depth=0`, { credentials: 'include' })
     if (!r.ok) return 0
     return ((await r.json()).totalDocs as number) ?? 0
-  } catch {
-    return 0
-  }
+  } catch { return 0 }
 }
 
 async function getRecent<T>(slug: string, limit: number, sort = '-createdAt'): Promise<T[]> {
@@ -187,9 +220,7 @@ async function getRecent<T>(slug: string, limit: number, sort = '-createdAt'): P
     const r = await fetch(`/api/${slug}?limit=${limit}&depth=1&sort=${sort}`, { credentials: 'include' })
     if (!r.ok) return []
     return ((await r.json()).docs as T[]) ?? []
-  } catch {
-    return []
-  }
+  } catch { return [] }
 }
 
 // ─── Formatters ───────────────────────────────────────────────────────────────
@@ -215,6 +246,26 @@ function fmtDate(iso: string | null | undefined): string {
   return d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+function fmtMatchDate(dateStr: string | null, timeStr: string | null): string {
+  if (!dateStr) return 'Data nieznana'
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  const day = d.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })
+  return timeStr ? `${day}, ${timeStr}` : day
+}
+
+function daysUntil(dateStr: string | null, timeStr: string | null): string {
+  if (!dateStr) return ''
+  const dt = new Date(`${dateStr}T${timeStr ?? '12:00'}:00+02:00`)
+  if (isNaN(dt.getTime())) return ''
+  const diff = dt.getTime() - Date.now()
+  if (diff <= 0) return 'dzisiaj / trwa'
+  const days = Math.floor(diff / 86400000)
+  if (days === 0) return 'dzisiaj'
+  if (days === 1) return 'jutro'
+  return `za ${days} dni`
+}
+
 function pluralWpisow(n: number): string {
   if (n === 0) return 'brak wpisów'
   if (n === 1) return '1 wpis'
@@ -222,30 +273,28 @@ function pluralWpisow(n: number): string {
   return `${n} wpisów`
 }
 
-// ─── Collection groups config ─────────────────────────────────────────────────
+// ─── Collections config ───────────────────────────────────────────────────────
 
 const CONTENT: CollectionDef[] = [
-  { slug: 'news', label: 'Aktualności', Icon: IconNewspaper, accent: T.blue, accentLt: T.blueLt },
-  { slug: 'tags', label: 'Tagi', Icon: IconTag, accent: T.purple, accentLt: T.purpleLt },
-  { slug: 'staticPages', label: 'Strony statyczne', Icon: IconGlobe, accent: T.slate, accentLt: T.slateLt },
-  { slug: 'heroSlides', label: 'Slajdy hero', Icon: IconSlides, accent: T.amber, accentLt: T.amberLt },
+  { slug: 'news',        label: 'Aktualności',      Icon: IconNewspaper, accent: T.blue,   accentLt: T.blueLt   },
+  { slug: 'tags',        label: 'Tagi',              Icon: IconTag,       accent: T.purple, accentLt: T.purpleLt },
+  { slug: 'staticPages', label: 'Strony statyczne',  Icon: IconGlobe,     accent: T.slate,  accentLt: T.slateLt  },
+  { slug: 'heroSlides',  label: 'Slajdy hero',       Icon: IconSlides,    accent: T.amber,  accentLt: T.amberLt  },
 ]
-
 const CLUB: CollectionDef[] = [
-  { slug: 'teams', label: 'Drużyny', Icon: IconShield, accent: T.green, accentLt: T.greenLt },
-  { slug: 'players', label: 'Zawodnicy', Icon: IconUsers, accent: T.green, accentLt: T.greenLt },
-  { slug: 'staff', label: 'Sztab szkoleniowy', Icon: IconUserCheck, accent: T.blue, accentLt: T.blueLt },
-  { slug: 'board', label: 'Zarząd', Icon: IconTrophy, accent: T.amber, accentLt: T.amberLt },
-  { slug: 'sponsors', label: 'Sponsorzy', Icon: IconHandshake, accent: T.purple, accentLt: T.purpleLt },
-  { slug: 'gallery', label: 'Galeria', Icon: IconImage, accent: T.rose, accentLt: T.roseLt },
+  { slug: 'teams',    label: 'Drużyny',            Icon: IconShield,    accent: T.green,  accentLt: T.greenLt  },
+  { slug: 'players',  label: 'Zawodnicy',           Icon: IconUsers,     accent: T.green,  accentLt: T.greenLt  },
+  { slug: 'staff',    label: 'Sztab szkoleniowy',   Icon: IconUserCheck, accent: T.blue,   accentLt: T.blueLt   },
+  { slug: 'board',    label: 'Zarząd',              Icon: IconTrophy,    accent: T.amber,  accentLt: T.amberLt  },
+  { slug: 'sponsors', label: 'Sponsorzy',           Icon: IconHandshake, accent: T.purple, accentLt: T.purpleLt },
+  { slug: 'gallery',  label: 'Galeria',             Icon: IconImage,     accent: T.rose,   accentLt: T.roseLt   },
 ]
-
 const SYSTEM: CollectionDef[] = [
   { slug: 'users', label: 'Użytkownicy', Icon: IconSettings, accent: T.slate, accentLt: T.slateLt },
-  { slug: 'media', label: 'Media', Icon: IconDatabase, accent: T.slate, accentLt: T.slateLt },
+  { slug: 'media', label: 'Media',       Icon: IconDatabase, accent: T.slate, accentLt: T.slateLt },
 ]
 
-// ─── Primitive components ─────────────────────────────────────────────────────
+// ─── Shared primitives ────────────────────────────────────────────────────────
 
 function Card({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -263,8 +312,8 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   )
 }
 
-function Badge({ label, color }: { label: string; color: 'green' | 'amber' | 'blue' }) {
-  const map = { green: [T.greenLt, T.green], amber: [T.amberLt, T.amber], blue: [T.blueLt, T.blue] }
+function Badge({ label, color }: { label: string; color: 'green' | 'amber' | 'blue' | 'red' }) {
+  const map = { green: [T.greenLt, T.green], amber: [T.amberLt, T.amber], blue: [T.blueLt, T.blue], red: [T.redLt, T.red] }
   const [bg, fg] = map[color]
   return (
     <span style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', padding: '2px 7px', borderRadius: 99, background: bg, color: fg, whiteSpace: 'nowrap' }}>
@@ -273,31 +322,283 @@ function Badge({ label, color }: { label: string; color: 'green' | 'amber' | 'bl
   )
 }
 
-// ─── StatCard ─────────────────────────────────────────────────────────────────
+// ─── Football: Match strip ────────────────────────────────────────────────────
 
-function StatCard({ label, value, Icon: IC, accent, accentLt, sub }: { label: string; value: number | string; Icon: IconComponent; accent: string; accentLt: string; sub?: string }) {
-  const [hov, setHov] = useState(false)
+function NextMatchCard({ match }: { match: WksMatch | null }) {
+  const countdown = match ? daysUntil(match.date, match.time) : ''
+  const isHome = match?.venue === 'home'
   return (
-    <div
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{ flex: 1, minWidth: 180, background: T.surface, border: `1px solid ${hov ? T.borderHover : T.border}`, borderRadius: T.r2xl, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 16, boxShadow: hov ? T.md : T.sm, transform: hov ? 'translateY(-1px)' : 'none', transition: 'box-shadow .15s,transform .15s,border-color .15s' }}
-    >
-      <div style={{ width: 44, height: 44, borderRadius: T.rXl, background: accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <IC size={20} color={accent} />
-      </div>
-      <div>
-        <div style={{ fontSize: 12.5, fontWeight: 500, color: T.muted, letterSpacing: '.01em' }}>{label}</div>
-        <div style={{ fontSize: 28, fontWeight: 800, color: T.text, lineHeight: 1.15, marginTop: 1, letterSpacing: '-0.02em' }}>
-          {typeof value === 'number' ? value.toLocaleString('pl-PL') : value}
+    <Card style={{ flex: 1, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: T.greenLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IconCalendar size={13} color={T.green} />
         </div>
-        {sub && <div style={{ fontSize: 11.5, color: T.subtle, marginTop: 2 }}>{sub}</div>}
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.subtle }}>
+          Następny mecz
+        </span>
+      </div>
+
+      {match ? (
+        <>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
+              {match.opponent}
+            </div>
+            <div style={{ fontSize: 12, color: T.muted, marginTop: 3 }}>
+              {fmtMatchDate(match.date, match.time)}
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              fontSize: 11, fontWeight: 700, padding: '3px 9px', borderRadius: 99,
+              background: isHome ? T.greenLt : T.blueLt,
+              color: isHome ? T.green : T.blue,
+            }}>
+              {isHome ? <IconHome size={11} color={T.green} /> : <IconBus size={11} color={T.blue} />}
+              {isHome ? 'Domowy' : 'Wyjazdowy'}
+            </span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: T.muted }}>Runda {match.round}</span>
+          </div>
+          {countdown && (
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.green }}>{countdown}</div>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 13, color: T.subtle, marginTop: 4 }}>Brak zaplanowanych meczów</div>
+      )}
+    </Card>
+  )
+}
+
+function LastResultCard({ match, onAddNews }: { match: WksMatch | null; onAddNews: () => void }) {
+  if (!match?.result) {
+    return (
+      <Card style={{ flex: 1, padding: '18px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 7, background: T.slateLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <IconBall size={13} color={T.slate} />
+          </div>
+          <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.subtle }}>Ostatni wynik</span>
+        </div>
+        <div style={{ fontSize: 13, color: T.subtle }}>Brak danych</div>
+      </Card>
+    )
+  }
+
+  const { outcome, ours, theirs } = match.result
+  const outcomeMap = {
+    win:  { label: 'Wygrana',  bg: T.greenLt, color: T.green,  border: 'rgba(22,101,52,0.2)'  },
+    draw: { label: 'Remis',    bg: T.amberLt, color: T.amber,  border: 'rgba(217,119,6,0.2)'  },
+    loss: { label: 'Porażka',  bg: T.redLt,   color: T.red,    border: 'rgba(220,38,38,0.2)'  },
+  }
+  const oc = outcomeMap[outcome]
+  const isHome = match.venue === 'home'
+
+  return (
+    <Card style={{ flex: 1, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10, border: `1px solid ${oc.border}`, background: oc.bg }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IconBall size={13} color={oc.color} />
+        </div>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: oc.color }}>
+          Ostatni wynik
+        </span>
+      </div>
+
+      <div>
+        <div style={{ fontSize: 13, color: T.muted, marginBottom: 4 }}>{fmtMatchDate(match.date, match.time)}</div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 8 }}>
+          {isHome ? `WKS vs ${match.opponent}` : `${match.opponent} vs WKS`}
+        </div>
+        {/* Score */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 32, fontWeight: 900, color: oc.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {isHome ? ours : theirs}
+          </span>
+          <span style={{ fontSize: 20, color: T.muted, fontWeight: 300 }}>:</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: oc.color, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            {isHome ? theirs : ours}
+          </span>
+          <span style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 99, background: 'rgba(255,255,255,0.7)', color: oc.color }}>
+            {oc.label}
+          </span>
+        </div>
+      </div>
+
+      <button
+        onClick={onAddNews}
+        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: T.rLg, background: 'rgba(255,255,255,0.8)', border: `1px solid ${oc.border}`, fontSize: 12, fontWeight: 600, color: oc.color, cursor: 'pointer', width: 'fit-content' }}
+      >
+        <IconNewspaper size={12} color={oc.color} />
+        Dodaj relację
+      </button>
+    </Card>
+  )
+}
+
+function TableCard({ standings, wksPosition }: { standings: Standing[]; wksPosition: Standing | null }) {
+  const leader = standings[0]
+  const gap = wksPosition && leader ? wksPosition.points - leader.points : null
+
+  return (
+    <Card style={{ flex: 1, padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: T.amberLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IconTrophy size={13} color={T.amber} />
+        </div>
+        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.subtle }}>
+          Tabela
+        </span>
+      </div>
+
+      {wksPosition ? (
+        <>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}>
+            <span style={{ fontSize: 44, fontWeight: 900, color: T.text, letterSpacing: '-0.04em', lineHeight: 1 }}>
+              {wksPosition.position}.
+            </span>
+            <span style={{ fontSize: 14, color: T.muted, marginBottom: 6, fontWeight: 500 }}>miejsce</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: T.green }}>{wksPosition.points}</div>
+              <div style={{ fontSize: 11, color: T.muted }}>punktów</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: T.text }}>{wksPosition.goals}</div>
+              <div style={{ fontSize: 11, color: T.muted }}>gole</div>
+            </div>
+          </div>
+          {gap !== null && gap < 0 && (
+            <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>
+              {Math.abs(gap)} pkt do lidera ({leader?.team?.split(' ')[0]})
+            </div>
+          )}
+          {gap === 0 && (
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: T.green }}>🏆 Lider tabeli!</div>
+          )}
+        </>
+      ) : (
+        <div style={{ fontSize: 13, color: T.subtle }}>Brak danych tabeli</div>
+      )}
+    </Card>
+  )
+}
+
+// ─── Football: Form strip ─────────────────────────────────────────────────────
+
+function FormStrip({ matches }: { matches: WksMatch[] }) {
+  const last5 = matches.slice(-5)
+  if (last5.length === 0) return null
+
+  const outcomeStyle: Record<string, { bg: string; color: string; label: string }> = {
+    win:  { bg: T.green, color: '#fff', label: 'W' },
+    draw: { bg: T.amber, color: '#fff', label: 'R' },
+    loss: { bg: T.red,   color: '#fff', label: 'P' },
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.r2xl, boxShadow: T.sm, marginBottom: 20 }}>
+      <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.07em', color: T.subtle, whiteSpace: 'nowrap' }}>
+        Ostatnie 5:
+      </span>
+      <div style={{ display: 'flex', gap: 6 }}>
+        {last5.map((m, i) => {
+          const outcome = m.result?.outcome ?? 'draw'
+          const s = outcomeStyle[outcome]
+          return (
+            <div
+              key={i}
+              title={`${m.opponent} ${m.result?.scoreLabel ?? ''}`}
+              style={{ width: 30, height: 30, borderRadius: 8, background: s.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: s.color, cursor: 'default' }}
+            >
+              {s.label}
+            </div>
+          )
+        })}
+      </div>
+      <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+        {(['win', 'draw', 'loss'] as const).map((o) => {
+          const count = last5.filter(m => m.result?.outcome === o).length
+          const labels = { win: 'wygr.', draw: 'remis', loss: 'por.' }
+          return (
+            <div key={o} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: outcomeStyle[o].bg }}>{count}</div>
+              <div style={{ fontSize: 10, color: T.subtle }}>{labels[o]}</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ─── CollectionCard ───────────────────────────────────────────────────────────
+// ─── Post-match checklist ─────────────────────────────────────────────────────
+
+function PostMatchPanel({ lastMatch, onSync }: { lastMatch: WksMatch | null; onSync: () => void }) {
+  const isRecent = lastMatch?.date
+    ? (Date.now() - new Date(lastMatch.date).getTime()) < 7 * 86400000
+    : false
+
+  const tasks = [
+    { label: 'Dodaj relację z meczu do Aktualności', href: '/admin/collections/news/create',   Icon: IconNewspaper,  key: 'news' },
+    { label: 'Wgraj zdjęcia do Galerii',              href: '/admin/collections/gallery/create', Icon: IconImage,      key: 'gallery' },
+    { label: 'Zaktualizuj slajdy hero (jeśli trzeba)', href: '/admin/collections/heroSlides',    Icon: IconSlides,     key: 'hero' },
+    { label: 'Zsynchronizuj wyniki (90minut)',         href: null,                                Icon: IconRefresh,    key: 'sync', action: onSync },
+  ]
+
+  return (
+    <Card style={{ padding: '18px 18px 14px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <div style={{ width: 28, height: 28, borderRadius: 7, background: isRecent ? T.amberLt : T.slateLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <IconListCheck size={13} color={isRecent ? T.amber : T.slate} />
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>Po meczu — co zrobić?</div>
+          {isRecent && lastMatch && (
+            <div style={{ fontSize: 11, color: T.amber, marginTop: 1 }}>Ostatni mecz: {fmtMatchDate(lastMatch.date, null)}</div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {tasks.map((t) => {
+          const el = t.href ? (
+            <a
+              key={t.key}
+              href={t.href}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: T.rLg, textDecoration: 'none', color: T.text, transition: 'background .12s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = T.bg)}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: T.greenLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <t.Icon size={12} color={T.green} />
+              </div>
+              <span style={{ fontSize: 12.5, fontWeight: 500, color: T.text }}>{t.label}</span>
+            </a>
+          ) : (
+            <button
+              key={t.key}
+              type="button"
+              onClick={t.action}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: T.rLg, background: 'transparent', border: 'none', cursor: 'pointer', width: '100%', transition: 'background .12s' }}
+              onMouseEnter={e => (e.currentTarget.style.background = T.bg)}
+              onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+              <div style={{ width: 22, height: 22, borderRadius: 6, background: T.greenLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <t.Icon size={12} color={T.green} />
+              </div>
+              <span style={{ fontSize: 12.5, fontWeight: 500, color: T.text }}>{t.label}</span>
+            </button>
+          )
+          return el
+        })}
+      </div>
+    </Card>
+  )
+}
+
+// ─── Collection card ──────────────────────────────────────────────────────────
 
 function CollectionCard({ def, count }: { def: CollectionDef; count: number }) {
   const [hov, setHov] = useState(false)
@@ -306,28 +607,43 @@ function CollectionCard({ def, count }: { def: CollectionDef; count: number }) {
       href={`/admin/collections/${def.slug}`}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: hov ? T.bg : T.surface, border: `1px solid ${hov ? T.borderHover : T.border}`, borderRadius: T.rXl, textDecoration: 'none', transition: 'all .12s', boxShadow: hov ? '0 2px 8px rgba(0,0,0,0.07)' : 'none', position: 'relative' }}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 13px', background: hov ? T.bg : T.surface, border: `1px solid ${hov ? T.borderHover : T.border}`, borderRadius: T.rXl, textDecoration: 'none', transition: 'all .12s', boxShadow: hov ? '0 2px 8px rgba(0,0,0,0.07)' : 'none', position: 'relative' }}
     >
-      <div style={{ width: 34, height: 34, borderRadius: T.rMd, background: def.accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <def.Icon size={15} color={def.accent} />
+      <div style={{ width: 32, height: 32, borderRadius: T.rMd, background: def.accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <def.Icon size={14} color={def.accent} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{def.label}</div>
-        <div style={{ fontSize: 11.5, color: T.muted, marginTop: 1 }}>{pluralWpisow(count)}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{def.label}</div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{pluralWpisow(count)}</div>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: hov ? def.accent : T.subtle, marginRight: hov ? 18 : 0, transition: 'all .12s' }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: hov ? def.accent : T.subtle, marginRight: hov ? 16 : 0, transition: 'all .12s' }}>
         {count}
       </div>
-      {hov && (
-        <div style={{ position: 'absolute', right: 14, color: T.muted }}>
-          <IconArrow size={13} color={def.accent} />
-        </div>
-      )}
+      {hov && <div style={{ position: 'absolute', right: 13, color: def.accent }}><IconArrow size={13} color={def.accent} /></div>}
     </a>
   )
 }
 
-// ─── ActivityRow ──────────────────────────────────────────────────────────────
+// ─── Quick btn ────────────────────────────────────────────────────────────────
+
+function QuickBtn({ href, label, Icon: IC, accent, accentLt, primary, onClick }: { href?: string; label: string; Icon: IconComponent; accent: string; accentLt: string; primary?: boolean; onClick?: () => void }) {
+  const [hov, setHov] = useState(false)
+  const style: React.CSSProperties = { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: T.rLg, background: primary ? (hov ? T.greenDk : T.green) : hov ? accentLt : 'transparent', border: primary ? 'none' : `1px solid ${hov ? T.borderHover : T.border}`, textDecoration: 'none', transition: 'all .12s', width: '100%', cursor: 'pointer' }
+  const inner = (
+    <>
+      <div style={{ width: 26, height: 26, borderRadius: 6, background: primary ? 'rgba(255,255,255,0.18)' : accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <IC size={13} color={primary ? '#fff' : accent} />
+      </div>
+      <span style={{ fontSize: 13, fontWeight: 600, color: primary ? '#fff' : T.text }}>{label}</span>
+    </>
+  )
+  if (onClick) {
+    return <button type="button" onClick={onClick} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={{ ...style, background: hov ? T.bg : 'transparent' }}>{inner}</button>
+  }
+  return <a href={href} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)} style={style}>{inner}</a>
+}
+
+// ─── Activity row ─────────────────────────────────────────────────────────────
 
 function ActivityRow({
   Icon: IC,
@@ -349,102 +665,66 @@ function ActivityRow({
   href?: string
 }) {
   const [hov, setHov] = useState(false)
-  const Tag: any = href ? 'a' : 'div'
-  return (
-    <Tag
-      href={href}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '11px 0',
-        borderBottom: `1px solid ${T.border}`,
-        textDecoration: 'none',
-        cursor: href ? 'pointer' : 'default',
-        background: hov && href ? 'rgba(148,163,184,0.08)' : 'transparent',
-        transition: 'background .12s',
-      }}
-    >
-      <div
-        style={{
-          width: 30,
-          height: 30,
-          borderRadius: T.rMd,
-          background: accentLt,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <IC size={13} color={accent} />
+
+  const style: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    padding: '10px 0',
+    borderBottom: `1px solid ${T.border}`,
+    textDecoration: 'none',
+    color: T.text,
+    background: hov ? T.bg : 'transparent',
+    borderRadius: 10,
+    margin: '0 -10px',
+    paddingLeft: 10,
+    paddingRight: 10,
+    cursor: href ? 'pointer' : 'default',
+    transition: 'background .12s',
+  }
+
+  const inner = (
+    <>
+      <div style={{ width: 29, height: 29, borderRadius: T.rMd, background: accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <IC size={12} color={accent} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div
-          style={{
-            fontSize: 13,
-            fontWeight: 600,
-            color: T.text,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {title}
-        </div>
-        {meta && <div style={{ fontSize: 11.5, color: T.muted, marginTop: 1 }}>{meta}</div>}
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{title}</div>
+        {meta && <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{meta}</div>}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-        <div style={{ fontSize: 11.5, color: T.subtle, whiteSpace: 'nowrap' }}>{time}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+        <div style={{ fontSize: 11, color: T.subtle }}>{time}</div>
         {badge}
       </div>
-      {hov && href && (
-        <div style={{ marginLeft: 6, color: T.muted, flexShrink: 0 }}>
-          <IconArrow size={13} color={accent} />
-        </div>
-      )}
-    </Tag>
+    </>
   )
-}
 
-// ─── QuickActionBtn ───────────────────────────────────────────────────────────
+  if (href) {
+    return (
+      <a href={href} style={style} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+        {inner}
+      </a>
+    )
+  }
 
-function QuickBtn({ href, label, Icon: IC, accent, accentLt, primary }: { href: string; label: string; Icon: IconComponent; accent: string; accentLt: string; primary?: boolean }) {
-  const [hov, setHov] = useState(false)
   return (
-    <a
-      href={href}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderRadius: T.rLg, background: primary ? (hov ? T.greenDk : T.green) : hov ? accentLt : 'transparent', border: primary ? 'none' : `1px solid ${hov ? T.borderHover : T.border}`, textDecoration: 'none', transition: 'all .12s', width: '100%' }}
-    >
-      <div style={{ width: 26, height: 26, borderRadius: 6, background: primary ? 'rgba(255,255,255,0.18)' : accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <IC size={13} color={primary ? '#fff' : accent} />
-      </div>
-      <span style={{ fontSize: 13, fontWeight: 600, color: primary ? '#fff' : T.text }}>{label}</span>
-    </a>
+    <div style={style} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}>
+      {inner}
+    </div>
   )
 }
-
-// ─── GlobalCard ───────────────────────────────────────────────────────────────
 
 function GlobalCard({ href, label, sub, Icon: IC, accent, accentLt }: { href: string; label: string; sub: string; Icon: IconComponent; accent: string; accentLt: string }) {
   const [hov, setHov] = useState(false)
   return (
-    <a
-      href={href}
-      onMouseEnter={() => setHov(true)}
-      onMouseLeave={() => setHov(false)}
-      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', background: hov ? T.bg : T.surface, border: `1px solid ${hov ? T.borderHover : T.border}`, borderRadius: T.rXl, textDecoration: 'none', transition: 'all .12s' }}
-    >
-      <div style={{ width: 34, height: 34, borderRadius: T.rMd, background: accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        <IC size={15} color={accent} />
+    <a href={href} onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 13px', background: hov ? T.bg : T.surface, border: `1px solid ${hov ? T.borderHover : T.border}`, borderRadius: T.rXl, textDecoration: 'none', transition: 'all .12s' }}>
+      <div style={{ width: 32, height: 32, borderRadius: T.rMd, background: accentLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <IC size={14} color={accent} />
       </div>
       <div>
-        <div style={{ fontSize: 13.5, fontWeight: 600, color: T.text }}>{label}</div>
-        <div style={{ fontSize: 11.5, color: T.muted, marginTop: 1 }}>{sub}</div>
+        <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{label}</div>
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{sub}</div>
       </div>
     </a>
   )
@@ -453,13 +733,14 @@ function GlobalCard({ href, label, sub, Icon: IC, accent, accentLt }: { href: st
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [counts, setCounts] = useState<Record<string, number>>({})
-  const [news, setNews] = useState<NewsDoc[]>([])
+  const [counts,  setCounts]  = useState<Record<string, number>>({})
+  const [news,    setNews]    = useState<NewsDoc[]>([])
   const [players, setPlayers] = useState<PlayerDoc[]>([])
-  const [season, setSeason] = useState<SeasonGlobal | null>(null)
+  const [season,  setSeason]  = useState<SeasonGlobal | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
+  const [startLiveOpen, setStartLiveOpen] = useState(false)
 
   useEffect(() => {
     const slugs = ['news', 'players', 'teams', 'media', 'users', 'gallery', 'sponsors', 'staff', 'board', 'tags', 'heroSlides', 'staticPages']
@@ -467,9 +748,7 @@ export default function Dashboard() {
       ...slugs.map((s) => getCount(s).then((n) => ({ s, n }))),
       getRecent<NewsDoc>('news', 6, '-date'),
       getRecent<PlayerDoc>('players', 5, '-createdAt'),
-      fetch('/api/globals/season', { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null),
+      fetch('/api/globals/season', { credentials: 'include' }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
     ]).then((res) => {
       const map: Record<string, number> = {}
       for (let i = 0; i < slugs.length; i++) {
@@ -505,242 +784,250 @@ export default function Dashboard() {
     }
   }, [syncing])
 
-  const today = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  // Derived season data
+  const sd         = season?.data
+  const played     = sd?.wks?.played    ?? []
+  const upcoming   = sd?.wks?.upcoming  ?? []
+  const standings  = sd?.standings      ?? []
+  const lastMatch  = played.length > 0 ? played[played.length - 1] : null
+  const nextMatch  = upcoming.find(m => m.date) ?? upcoming[0] ?? null
+  const wksPos     = standings.find((s) => s.team?.includes('Wierzbice')) ?? null
 
   const syncStatus = season?.lastSyncStatus ?? 'idle'
-  const isBusy = syncing || syncStatus === 'running'
-  const syncColor = syncStatus === 'success' ? T.green : syncStatus === 'error' ? T.rose : T.muted
-  const syncLabel = isBusy ? 'Synchronizuję…' : syncStatus === 'success' ? 'Zsynchronizowano' : syncStatus === 'error' ? 'Błąd synchronizacji' : 'Nie zsynchronizowano'
-
-  const skeleton = loading ? '…' : undefined
+  const isBusy     = syncing || syncStatus === 'running'
+  const today      = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: T.bg,
-        fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif',
-        color: T.text,
-        padding: '36px 40px 60px',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div style={{ minHeight: '100vh', background: T.bg, fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif', color: T.text, padding: '32px 36px 60px', boxSizing: 'border-box' }}>
+
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 36, flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: '-0.025em', color: T.text }}>
-              WKS Wierzbice
-            </h1>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: T.green, background: T.greenLt, padding: '3px 10px', borderRadius: 99, letterSpacing: '0.03em' }}>
-              Panel admina
-            </span>
+      <div style={{ background: T.ink, borderRadius: T.r2xl, padding: '22px 26px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -40, right: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(22,101,52,0.3)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -30, right: 160, width: 90, height: 90, borderRadius: '50%', background: 'rgba(220,38,38,0.1)', pointerEvents: 'none' }} />
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, position: 'relative' }}>
+          <img src="/herb-wks.png" alt="Herb WKS" style={{ width: 48, height: 48, objectFit: 'contain', flexShrink: 0 }} />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <h1 style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-0.02em', color: '#ffffff' }}>WKS Wierzbice</h1>
+              <span style={{ fontSize: 10, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.12)', padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Panel admina</span>
+            </div>
+            <p style={{ margin: '3px 0 0', fontSize: 11.5, color: 'rgba(255,255,255,0.45)', textTransform: 'capitalize' }}>{today}</p>
           </div>
-          <p style={{ margin: '6px 0 0', fontSize: 12.5, color: T.muted, textTransform: 'capitalize' }}>{today}</p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <a
-            href="/admin/collections/news/create"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: T.green, color: '#fff', borderRadius: T.rLg, textDecoration: 'none', fontSize: 13, fontWeight: 700, boxShadow: '0 1px 4px rgba(22,163,74,0.35)', letterSpacing: '0.01em' }}
-          >
-            <IconPlus size={14} color="#fff" /> Nowy news
+
+        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+          <a href="/admin/collections/news/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.green, color: '#fff', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 8px rgba(22,101,52,0.5)' }}>
+            <IconPlus size={13} color="#fff" /> Nowy news
           </a>
-          <a
-            href="/admin/collections/players/create"
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', background: T.surface, color: T.text, border: `1px solid ${T.border}`, borderRadius: T.rLg, textDecoration: 'none', fontSize: 13, fontWeight: 600, boxShadow: T.sm }}
-          >
-            <IconPlus size={14} color={T.muted} /> Nowy zawodnik
+          <a href="/admin/collections/players/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(255,255,255,0.09)', color: '#fff', border: '1px solid rgba(255,255,255,0.14)', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 600 }}>
+            <IconPlus size={13} color="rgba(255,255,255,0.6)" /> Nowy zawodnik
           </a>
         </div>
       </div>
 
-      {/* ── Stats row ──────────────────────────────────────────────────────── */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 24, flexWrap: 'wrap' }}>
-        <StatCard label="Aktualności" value={skeleton ?? counts.news ?? 0} Icon={IconNewspaper} accent={T.blue} accentLt={T.blueLt} sub={`${counts.tags ?? 0} tagów`} />
-        <StatCard label="Zawodnicy" value={skeleton ?? counts.players ?? 0} Icon={IconUsers} accent={T.green} accentLt={T.greenLt} sub={`w ${counts.teams ?? 0} drużynach`} />
-        <StatCard label="Galeria" value={skeleton ?? counts.gallery ?? 0} Icon={IconImage} accent={T.rose} accentLt={T.roseLt} sub={`${counts.media ?? 0} pliki media`} />
-        <StatCard label="Sponsorzy" value={skeleton ?? counts.sponsors ?? 0} Icon={IconStar} accent={T.amber} accentLt={T.amberLt} sub={`${counts.staff ?? 0} sz. + ${counts.board ?? 0} zarząd`} />
+      {/* ── Match strip ────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 14, marginBottom: 16, flexWrap: 'wrap' }}>
+        <NextMatchCard match={nextMatch} />
+        <LastResultCard match={lastMatch} onAddNews={() => { window.location.href = '/admin/collections/news/create' }} />
+        <TableCard standings={standings} wksPosition={wksPos} />
       </div>
+
+      {/* ── Form strip ─────────────────────────────────────────────────────── */}
+      {played.length > 0 && <FormStrip matches={played} />}
 
       {/* ── Main grid (2/3 + 1/3) ─────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 18, marginBottom: 20 }}>
-        {/* Activity feed */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: 16, marginBottom: 18 }}>
+
+        {/* Left: recent news */}
         <Card>
-          <div style={{ padding: '20px 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ padding: '18px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Ostatnia aktywność</div>
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Niedawno dodane newsy i zawodnicy</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Ostatnie aktualności</div>
+              <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>Niedawno dodane i zaktualizowane</div>
             </div>
-            <a href="/admin/collections/news" style={{ fontSize: 12, fontWeight: 600, color: T.green, textDecoration: 'none' }}>
-              Wszystkie newsy →
-            </a>
+            <a href="/admin/collections/news" style={{ fontSize: 12, fontWeight: 600, color: T.green, textDecoration: 'none' }}>Wszystkie →</a>
           </div>
-
-          <div style={{ padding: '8px 22px 6px' }}>
+          <div style={{ padding: '4px 20px' }}>
             {loading ? (
-              <div style={{ padding: '36px 0', textAlign: 'center', color: T.subtle, fontSize: 13 }}>Ładowanie…</div>
+              <div style={{ padding: '28px 0', textAlign: 'center', color: T.subtle, fontSize: 13 }}>Ładowanie…</div>
+            ) : news.length === 0 ? (
+              <div style={{ padding: '28px 0', textAlign: 'center', color: T.subtle, fontSize: 13 }}>Brak aktualności</div>
             ) : (
-              <>
-                <div style={{ marginTop: 12 }}>
-                  <SectionLabel>Aktualności</SectionLabel>
-                  {news.length === 0 ? (
-                    <div style={{ fontSize: 13, color: T.subtle, padding: '10px 0' }}>Brak aktualności</div>
-                  ) : (
-                    news.slice(0, 5).map((n) => (
-                      <ActivityRow
-                        key={n.id}
-                        Icon={IconNewspaper}
-                        accent={T.blue}
-                        accentLt={T.blueLt}
-                        title={n.title}
-                        meta={n.date ? fmtDate(n.date) : undefined}
-                        time={rel(n.createdAt)}
-                        badge={n.draft ? <Badge label="Szkic" color="amber" /> : <Badge label="Pub." color="blue" />}
-                        href={`/admin/collections/news/${n.id}`}
-                      />
-                    ))
-                  )}
-                </div>
-
-                <div style={{ marginTop: 18 }}>
-                  <SectionLabel>Ostatnio dodani zawodnicy</SectionLabel>
-                  {players.length === 0 ? (
-                    <div style={{ fontSize: 13, color: T.subtle, padding: '10px 0' }}>Brak zawodników</div>
-                  ) : (
-                    players.slice(0, 4).map((p) => (
-                      <ActivityRow
-                        key={p.id}
-                        Icon={IconUsers}
-                        accent={T.green}
-                        accentLt={T.greenLt}
-                        title={p.name}
-                        meta={[p.position, (p.team as any)?.name].filter(Boolean).join(' · ')}
-                        time={rel(p.createdAt)}
-                        badge={<Badge label="Zawodnik" color="green" />}
-                        href={`/admin/collections/players/${p.id}`}
-                      />
-                    ))
-                  )}
-                </div>
-              </>
+              news.slice(0, 6).map((n) => (
+                <ActivityRow
+                  key={n.id}
+                  Icon={IconNewspaper}
+                  accent={T.blue}
+                  accentLt={T.blueLt}
+                  title={n.title}
+                  meta={n.date ? fmtDate(n.date) : undefined}
+                  time={rel(n.createdAt)}
+                  badge={n.draft ? <Badge label="Szkic" color="amber" /> : <Badge label="Pub." color="blue" />}
+                  href={`/admin/collections/news/${n.id}`}
+                />
+              ))
             )}
           </div>
-          <div style={{ height: 14 }} />
+
+          {/* Recent players below */}
+          {players.length > 0 && (
+            <>
+              <div style={{ padding: '4px 20px 0' }}>
+                <SectionLabel>Ostatnio dodani zawodnicy</SectionLabel>
+                {players.slice(0, 3).map((p) => (
+                  <ActivityRow
+                    key={p.id}
+                    Icon={IconUsers}
+                    accent={T.green}
+                    accentLt={T.greenLt}
+                    title={p.name}
+                    meta={[p.position, (p.team as any)?.name].filter(Boolean).join(' · ')}
+                    time={rel(p.createdAt)}
+                    badge={<Badge label="Zawodnik" color="green" />}
+                    href={`/admin/collections/players/${p.id}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          <div style={{ height: 12 }} />
         </Card>
 
-        {/* Right sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Quick actions */}
+        {/* Right: quick actions + post-match + sync */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+
           <Card>
-            <div style={{ padding: '18px 16px 6px' }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: T.text, marginBottom: 12 }}>Szybkie akcje</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <QuickBtn href="/admin/collections/news/create" label="Dodaj aktualność" Icon={IconNewspaper} accent={T.green} accentLt={T.greenLt} primary />
-                <QuickBtn href="/admin/collections/players/create" label="Dodaj zawodnika" Icon={IconUsers} accent={T.green} accentLt={T.greenLt} />
-                <QuickBtn href="/admin/collections/gallery/create" label="Dodaj zdjęcie" Icon={IconImage} accent={T.rose} accentLt={T.roseLt} />
-                <QuickBtn href="/admin/collections/teams/create" label="Nowa drużyna" Icon={IconShield} accent={T.green} accentLt={T.greenLt} />
-                <QuickBtn href="/admin/globals/siteConfig" label="Konfiguracja strony" Icon={IconSettings} accent={T.slate} accentLt={T.slateLt} />
-              </div>
-            </div>
-            <div style={{ height: 14 }} />
-          </Card>
-
-          {/* Season sync */}
-          <Card>
-            <div style={{ padding: 18 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Wyniki 90minut</div>
-                  <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>Tabela i plan meczów</div>
+            <div style={{ padding: '16px 15px 14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 28, height: 28, borderRadius: 7, background: T.greenLt, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IconBolt size={13} color={T.green} />
                 </div>
-                <div style={{ width: 32, height: 32, borderRadius: T.rMd, background: T.greenLt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <IconRefresh size={14} color={T.green} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: T.text }}>Mecz na żywo</div>
+                  <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>Szybki start relacji + przejście do Studia</div>
                 </div>
               </div>
-
-              {/* Status pill */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: T.bg, borderRadius: T.rLg, marginBottom: 12 }}>
-                {syncStatus === 'success' ? <IconCheck size={13} color={T.green} /> : syncStatus === 'error' ? <IconAlert size={13} color={T.rose} /> : <IconClock size={13} color={T.muted} />}
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: syncColor }}>{syncLabel}</div>
-                  {season?.lastSync && (
-                    <div style={{ fontSize: 11, color: T.subtle, marginTop: 1 }}>{rel(season.lastSync)}</div>
-                  )}
-                </div>
-              </div>
-
-              {(syncError || season?.lastSyncError) && (
-                <div style={{ padding: '8px 10px', background: T.roseLt, borderRadius: T.rMd, fontSize: 11.5, color: T.rose, marginBottom: 12, lineHeight: 1.5 }}>
-                  {syncError || season?.lastSyncError}
-                </div>
-              )}
-
               <button
                 type="button"
-                onClick={handleSync}
-                disabled={isBusy}
-                style={{ width: '100%', padding: '9px 0', background: isBusy ? T.bg : T.surface, border: `1px solid ${T.border}`, borderRadius: T.rLg, fontSize: 13, fontWeight: 600, color: isBusy ? T.subtle : T.text, cursor: isBusy ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all .12s' }}
+                onClick={() => setStartLiveOpen(true)}
+                style={{
+                  marginTop: 12,
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  padding: '10px 12px',
+                  borderRadius: T.rLg,
+                  background: T.green,
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  fontSize: 12.5,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(22,101,52,0.35)',
+                }}
               >
-                <IconRefresh size={13} color={isBusy ? T.subtle : T.muted} />
-                {isBusy ? 'Synchronizuję…' : 'Odśwież teraz'}
+                Rozpocznij mecz live <IconArrow size={14} color="#fff" />
               </button>
             </div>
           </Card>
+
+          {/* Quick actions */}
+          <Card>
+            <div style={{ padding: '16px 15px 8px' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>Szybkie akcje</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <QuickBtn href="/admin/collections/news/create"   label="Dodaj aktualność"    Icon={IconNewspaper}  accent={T.green}  accentLt={T.greenLt}  primary />
+                <QuickBtn href="/admin/collections/players/create" label="Dodaj zawodnika"     Icon={IconUsers}      accent={T.green}  accentLt={T.greenLt}  />
+                <QuickBtn href="/admin/collections/gallery/create" label="Dodaj zdjęcie"       Icon={IconImage}      accent={T.rose}   accentLt={T.roseLt}   />
+                <QuickBtn href="/admin/collections/teams/create"   label="Nowa drużyna"        Icon={IconShield}     accent={T.green}  accentLt={T.greenLt}  />
+                <QuickBtn onClick={handleSync}                     label={isBusy ? 'Synchronizuję…' : 'Sync wyników 90minut'} Icon={IconRefresh} accent={T.blue} accentLt={T.blueLt} />
+              </div>
+            </div>
+            <div style={{ height: 8 }} />
+          </Card>
+
+          {/* Post-match checklist */}
+          <PostMatchPanel lastMatch={lastMatch} onSync={handleSync} />
+
+          {/* Sync status mini */}
+          {(syncError || season?.lastSyncError || syncStatus === 'success') && (
+            <div style={{ padding: '10px 14px', borderRadius: T.rXl, border: `1px solid ${syncStatus === 'error' || syncError ? T.redLt : T.greenLt}`, background: syncStatus === 'error' || syncError ? T.redLt : T.greenLt, fontSize: 12 }}>
+              {syncStatus === 'success' && !syncError && (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', color: T.green }}>
+                  <IconCheck size={13} color={T.green} />
+                  <span style={{ fontWeight: 600 }}>Wyniki zsynchronizowane</span>
+                  <span style={{ color: T.muted, marginLeft: 'auto' }}>{rel(season?.lastSync)}</span>
+                </div>
+              )}
+              {(syncError || season?.lastSyncError) && (
+                <div style={{ color: T.red, fontWeight: 500 }}>{syncError || season?.lastSyncError}</div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
+      <LiveStartModal open={startLiveOpen} onClose={() => setStartLiveOpen(false)} />
+
       {/* ── Collections grid ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
         {/* Treści */}
-        <Card style={{ padding: '18px 16px 16px' }}>
+        <Card style={{ padding: '16px 14px' }}>
           <SectionLabel>Treści</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {CONTENT.map((def) => (
-              <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {CONTENT.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
           </div>
         </Card>
 
-        {/* Klub */}
-        <Card style={{ padding: '18px 16px 16px' }}>
-          <SectionLabel>Klub</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {CLUB.map((def) => (
-              <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />
-            ))}
+        {/* Kadra & Klub */}
+        <Card style={{ padding: '16px 14px' }}>
+          <SectionLabel>Kadra i Klub</SectionLabel>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {CLUB.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
           </div>
         </Card>
 
-        {/* System + Globals */}
-        <Card style={{ padding: '18px 16px 16px' }}>
+        {/* System + stats */}
+        <Card style={{ padding: '16px 14px' }}>
           <SectionLabel>System</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-            {SYSTEM.map((def) => (
-              <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />
-            ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {SYSTEM.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
           </div>
 
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 16 }}>
             <SectionLabel>Globale</SectionLabel>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <GlobalCard href="/admin/globals/siteConfig" label="Konfiguracja strony" sub="Nawigacja, kontakt, social" Icon={IconSettings} accent={T.slate} accentLt={T.slateLt} />
-              <GlobalCard href="/admin/globals/season" label="Sezon 2025/2026" sub="Tabela · mecze · sync" Icon={IconTrophy} accent={T.amber} accentLt={T.amberLt} />
+              <GlobalCard href="/admin/globals/season"     label="Sezon 2025/2026"     sub="Tabela · mecze · sync"    Icon={IconTrophy}   accent={T.amber} accentLt={T.amberLt} />
+              <GlobalCard href="/admin/live-studio"       label="Studio Live"        sub="Relacja na żywo (sterowanie)" Icon={IconBolt}   accent={T.green} accentLt={T.greenLt} />
+              <GlobalCard href="/admin/globals/liveMatch" label="LiveMatch"          sub="Ustawienia relacji + szybki start" Icon={IconScore} accent={T.rose}  accentLt={T.roseLt} />
             </div>
           </div>
 
-          {/* Club stats summary */}
-          <div style={{ marginTop: 20, padding: '14px', background: T.greenLt, borderRadius: T.rXl, border: `1px solid rgba(22,163,74,0.15)` }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: T.green, marginBottom: 10 }}>Sezon 2025/26</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {/* Season mini-stats */}
+          <div style={{ marginTop: 16, borderRadius: T.rXl, overflow: 'hidden', border: `1px solid rgba(15,42,28,0.12)` }}>
+            <div style={{ background: T.ink, padding: '10px 13px', display: 'flex', alignItems: 'center', gap: 9 }}>
+              <img src="/herb-wks.png" alt="" style={{ width: 20, height: 20, objectFit: 'contain' }} />
+              <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#fff' }}>Sezon 2025/26</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 2 }}>
+                {(['green', 'white', 'red'] as const).map((c, i) => (
+                  <div key={i} style={{ width: 8, height: 8, borderRadius: 2, background: c === 'green' ? T.green : c === 'red' ? T.red : '#ffffff', border: c === 'white' ? '1px solid rgba(255,255,255,0.2)' : 'none' }} />
+                ))}
+              </div>
+            </div>
+            <div style={{ background: T.greenLt, padding: '10px 13px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
-                { label: 'Drużyny', val: counts.teams ?? 0 },
-                { label: 'Zawodnicy', val: counts.players ?? 0 },
-                { label: 'Aktualności', val: counts.news ?? 0 },
-                { label: 'Pliki media', val: counts.media ?? 0 },
+                { label: 'Drużyny',    val: counts.teams   ?? 0 },
+                { label: 'Zawodnicy',  val: counts.players ?? 0 },
+                { label: 'Aktualności', val: counts.news   ?? 0 },
+                { label: 'Media',      val: counts.media   ?? 0 },
               ].map(({ label, val }) => (
                 <div key={label}>
-                  <div style={{ fontSize: 19, fontWeight: 800, color: T.green, letterSpacing: '-0.02em' }}>{loading ? '…' : val}</div>
-                  <div style={{ fontSize: 11, color: T.greenDk, opacity: 0.8 }}>{label}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: T.green, letterSpacing: '-0.02em' }}>{loading ? '…' : val}</div>
+                  <div style={{ fontSize: 10.5, color: T.greenDk, fontWeight: 500 }}>{label}</div>
                 </div>
               ))}
             </div>

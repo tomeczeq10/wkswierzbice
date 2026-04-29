@@ -21,7 +21,13 @@ import { StrikethroughFeatureClient as StrikethroughFeatureClient_e70f5e05f09f93
 import { UnderlineFeatureClient as UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
+import { default as default_f21db45ba10046010964c41d132e09a8 } from '../../../components/MatchLineupGroupedField'
 import { default as default_d98c3aae9f3cad9b03320c1dfd0f4a32 } from '../../../components/SeasonSyncWidget.tsx'
+import { default as default_8f5a9b67699578b4e2257cc1049cdc6c } from '../../../components/LiveMatchWidget.tsx'
+import { default as default_32d15b2b13e1e9f604c74e03d9ff8022 } from '../../../components/Icon'
+import { default as default_2396ffa5fcb8566707b31b0d1917b213 } from '../../../components/Logo'
+import { default as default_419a8da2bc438d88facd06b1b2091c5d } from '../../../components/BeforeLogin'
+import { default as default_2d3aea1b1434069e75dc4eb52c01db3f } from '../../../components/LiveStudioNavLink'
 import { default as default_c22c6ded068ed0e94e9b6d1c50d7f3ee } from '../../../components/Dashboard'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -50,7 +56,13 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#UnderlineFeatureClient": UnderlineFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
+  "./components/MatchLineupGroupedField#default": default_f21db45ba10046010964c41d132e09a8,
   "./components/SeasonSyncWidget.tsx#default": default_d98c3aae9f3cad9b03320c1dfd0f4a32,
+  "./components/LiveMatchWidget.tsx#default": default_8f5a9b67699578b4e2257cc1049cdc6c,
+  "./components/Icon#default": default_32d15b2b13e1e9f604c74e03d9ff8022,
+  "./components/Logo#default": default_2396ffa5fcb8566707b31b0d1917b213,
+  "./components/BeforeLogin#default": default_419a8da2bc438d88facd06b1b2091c5d,
+  "./components/LiveStudioNavLink#default": default_2d3aea1b1434069e75dc4eb52c01db3f,
   "./components/Dashboard#default": default_c22c6ded068ed0e94e9b6d1c50d7f3ee,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

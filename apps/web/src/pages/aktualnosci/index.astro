@@ -33,7 +33,8 @@ const posts = await fetchNewsList();
                 cover={pickCoverUrl(post.data.cover, "card")}
                 coverAlt={resolveCoverAlt(post)}
                 tags={post.data.tags}
-                facebookUrl={post.data.facebookUrl}
+                showBadges={true}
+                coverBadges={post.data.coverBadges}
               />
             ))}
           </div>

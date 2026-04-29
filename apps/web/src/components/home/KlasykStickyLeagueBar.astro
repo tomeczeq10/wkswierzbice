@@ -90,12 +90,8 @@ const outcomeLabel: Record<Outcome, string> = { win: "W", draw: "R", loss: "P" }
 
   <div class="container mx-auto flex flex-wrap items-center gap-x-6 gap-y-2 text-xs py-2.5">
     <div class="flex items-center gap-3">
-      <div class="flex items-center gap-1.5 px-2 py-0.5 bg-brand-secondary text-white text-[9px] uppercase tracking-[0.3em] font-display rounded-sm">
-        <span class="w-1 h-1 bg-white rounded-full marka-pulse"></span>
-        Live
-      </div>
       <span class="font-display text-brand-secondary text-base">{position ?? "–"}.</span>
-      <span class="font-display uppercase">{points ?? 0} pkt</span>
+      <span class="font-display uppercase text-white/85">miejsce w tabeli</span>
     </div>
 
     {lastMatch && (

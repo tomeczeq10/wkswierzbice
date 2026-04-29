@@ -73,6 +73,7 @@ export interface Config {
     tags: Tag;
     teams: Team;
     players: Player;
+    matches: Match;
     'gallery-albums': GalleryAlbum;
     gallery: Gallery;
     board: Board;
@@ -93,6 +94,7 @@ export interface Config {
     tags: TagsSelect<false> | TagsSelect<true>;
     teams: TeamsSelect<false> | TeamsSelect<true>;
     players: PlayersSelect<false> | PlayersSelect<true>;
+    matches: MatchesSelect<false> | MatchesSelect<true>;
     'gallery-albums': GalleryAlbumsSelect<false> | GalleryAlbumsSelect<true>;
     gallery: GallerySelect<false> | GallerySelect<true>;
     board: BoardSelect<false> | BoardSelect<true>;
@@ -112,10 +114,12 @@ export interface Config {
   globals: {
     siteConfig: SiteConfig;
     season: Season;
+    liveMatch: LiveMatch;
   };
   globalsSelect: {
     siteConfig: SiteConfigSelect<false> | SiteConfigSelect<true>;
     season: SeasonSelect<false> | SeasonSelect<true>;
+    liveMatch: LiveMatchSelect<false> | LiveMatchSelect<true>;
   };
   locale: null;
   widgets: {
@@ -305,6 +309,22 @@ export interface News {
    * Opcjonalnie nadpisuje `alt` z pliku Media w kontekście tego newsa. Jeśli puste — używamy `alt` z Media.
    */
   coverAlt?: string | null;
+  /**
+   * Opcjonalne „okienka” nakładane na zdjęcie okładkowe (np. „Zawodnik meczu”, „Z Facebooka”). Maks. 3 sztuki.
+   */
+  coverBadges?:
+    | {
+        label: string;
+        variant: 'red' | 'blue' | 'green' | 'slate';
+        /**
+         * Jeśli ustawisz, okienko będzie klikalne (np. do Facebooka).
+         */
+        href?: string | null;
+        newTab?: boolean | null;
+        icon?: ('none' | 'facebook' | 'star' | 'trophy') | null;
+        id?: string | null;
+      }[]
+    | null;
   body?: {
     root: {
       type: string;
@@ -366,6 +386,47 @@ export interface Player {
    * Opcjonalny portret. Jeśli brak, karta pokaże watermark z herbem.
    */
   photo?: (number | null) | Media;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Terminarz w CMS (liga / sparing / puchar). Źródło propozycji dla relacji live oraz docelowo dla stron terminarza.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "matches".
+ */
+export interface Match {
+  id: number;
+  competitionType: 'league' | 'friendly' | 'cup';
+  /**
+   * Np. „Klasa okręgowa · K24”, „Puchar Polski”.
+   */
+  competitionLabel?: string | null;
+  kickoffPlanned: string;
+  /**
+   * Jeśli mecz zaczął się później, ustaw realny start — relacja live może liczyć minuty względem tej wartości.
+   */
+  kickoffReal?: string | null;
+  venue: 'home' | 'away' | 'neutral';
+  /**
+   * Np. „Wierzbice”, „Stadion XYZ”.
+   */
+  locationLabel?: string | null;
+  homeTeamLabel: string;
+  awayTeamLabel: string;
+  wksSide: 'home' | 'away';
+  /**
+   * Jeśli ustawione, relacja live może filtrować zawodników po tej drużynie.
+   */
+  wksTeam?: (number | null) | Team;
+  /**
+   * Wybierz kadrę na mecz. Lista jest pogrupowana po pozycjach dla szybkiej weryfikacji. Ustaw „Drużyna WKS”, żeby zawęzić listę, a potem użyj przycisku „Uzupełnij z drużyny WKS”, jeśli chcesz szybko zaznaczyć całą kadrę.
+   */
+  lineup?: (number | Player)[] | null;
+  /**
+   * Pomocniczy tytuł w liście meczów (generowany).
+   */
+  label?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -567,6 +628,10 @@ export interface PayloadLockedDocument {
         value: number | Player;
       } | null)
     | ({
+        relationTo: 'matches';
+        value: number | Match;
+      } | null)
+    | ({
         relationTo: 'gallery-albums';
         value: number | GalleryAlbum;
       } | null)
@@ -726,6 +791,16 @@ export interface NewsSelect<T extends boolean = true> {
   excerpt?: T;
   cover?: T;
   coverAlt?: T;
+  coverBadges?:
+    | T
+    | {
+        label?: T;
+        variant?: T;
+        href?: T;
+        newTab?: T;
+        icon?: T;
+        id?: T;
+      };
   body?: T;
   facebookUrl?: T;
   truncated?: T;
@@ -770,6 +845,26 @@ export interface PlayersSelect<T extends boolean = true> {
   position?: T;
   team?: T;
   photo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "matches_select".
+ */
+export interface MatchesSelect<T extends boolean = true> {
+  competitionType?: T;
+  competitionLabel?: T;
+  kickoffPlanned?: T;
+  kickoffReal?: T;
+  venue?: T;
+  locationLabel?: T;
+  homeTeamLabel?: T;
+  awayTeamLabel?: T;
+  wksSide?: T;
+  wksTeam?: T;
+  lineup?: T;
+  label?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -993,6 +1088,87 @@ export interface Season {
   createdAt?: string | null;
 }
 /**
+ * Relacja na żywo w hero na stronie głównej. Włącz tylko podczas meczu — kibice zobaczą wynik i zdarzenia (realtime przez SSE, z bezpiecznym fallbackiem).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "liveMatch".
+ */
+export interface LiveMatch {
+  id: number;
+  enabled?: boolean | null;
+  status: 'pre' | 'live' | 'ht' | 'live2' | 'ft';
+  mode: 'fromMatch' | 'manual';
+  /**
+   * Wpływa na sugestię meczu oraz etykietę rozgrywek.
+   */
+  kind: 'league' | 'friendly' | 'cup' | 'custom';
+  /**
+   * Wybierz mecz z terminarza (liga/sparing/puchar). Studio i widget mogą sugerować najbliższy.
+   */
+  match?: (number | null) | Match;
+  /**
+   * Np. „Sparing · Trening”, „Puchar Polski”, „Turniej”.
+   */
+  competitionCustomLabel?: string | null;
+  /**
+   * Np. „Klasa okręgowa · K24”, „Puchar Polski”, „Sparing”.
+   */
+  competitionLabel?: string | null;
+  /**
+   * Używane w zapowiedzi pre‑match na stronie głównej („Relacja na żywo od HH:MM”). Gdy tryb = terminarz, możesz zostawić puste.
+   */
+  kickoffPlanned?: string | null;
+  /**
+   * Od tego czasu liczona jest minuta w relacji (auto-clock).
+   */
+  kickoffReal?: string | null;
+  addedTime1?: number | null;
+  addedTime2?: number | null;
+  /**
+   * Ustawiane przez widget przy przejściu do przerwy.
+   */
+  pauseAt?: string | null;
+  /**
+   * Ustawiane przez widget przy starcie 2. połowy.
+   */
+  resumeAt?: string | null;
+  homeLabel?: string | null;
+  awayLabel?: string | null;
+  manualCompetitionLabel?: string | null;
+  manualHomeLabel?: string | null;
+  manualAwayLabel?: string | null;
+  scoreHome?: number | null;
+  scoreAway?: number | null;
+  /**
+   * Najpierw najnowsze. Dla WKS wybieraj zawodników z listy (bez literówek), dla rywala wpisz tekst ręcznie.
+   */
+  events?:
+    | {
+        minute?: number | null;
+        half?: ('1' | '2') | null;
+        type: 'goal' | 'card' | 'sub' | 'info';
+        team?: ('wks' | 'opponent') | null;
+        ownGoal?: boolean | null;
+        scorerWks?: (number | null) | Player;
+        assistWks?: (number | null) | Player;
+        /**
+         * Użyj, jeśli strzelec nie jest na liście kadry.
+         */
+        scorerText?: string | null;
+        /**
+         * Opcjonalnie, jeśli nie wybierasz zawodnika.
+         */
+        assistText?: string | null;
+        scorerOpponentText?: string | null;
+        assistOpponentText?: string | null;
+        text?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "siteConfig_select".
  */
@@ -1066,6 +1242,52 @@ export interface SeasonSelect<T extends boolean = true> {
   lastSyncStatus?: T;
   lastSyncError?: T;
   data?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "liveMatch_select".
+ */
+export interface LiveMatchSelect<T extends boolean = true> {
+  enabled?: T;
+  status?: T;
+  mode?: T;
+  kind?: T;
+  match?: T;
+  competitionCustomLabel?: T;
+  competitionLabel?: T;
+  kickoffPlanned?: T;
+  kickoffReal?: T;
+  addedTime1?: T;
+  addedTime2?: T;
+  pauseAt?: T;
+  resumeAt?: T;
+  homeLabel?: T;
+  awayLabel?: T;
+  manualCompetitionLabel?: T;
+  manualHomeLabel?: T;
+  manualAwayLabel?: T;
+  scoreHome?: T;
+  scoreAway?: T;
+  events?:
+    | T
+    | {
+        minute?: T;
+        half?: T;
+        type?: T;
+        team?: T;
+        ownGoal?: T;
+        scorerWks?: T;
+        assistWks?: T;
+        scorerText?: T;
+        assistText?: T;
+        scorerOpponentText?: T;
+        assistOpponentText?: T;
+        text?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

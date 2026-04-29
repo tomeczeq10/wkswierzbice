@@ -20,12 +20,15 @@ import { Staff } from './collections/Staff'
 import { Sponsors } from './collections/Sponsors'
 import { HeroSlides } from './collections/HeroSlides'
 import { StaticPages } from './collections/StaticPages'
+import { Matches } from './collections/Matches'
 import { SiteConfig } from './globals/SiteConfig'
 import { Season } from './globals/Season'
+import { LiveMatch } from './globals/LiveMatch'
 
 import cron from 'node-cron'
 import { syncSeason } from './lib/sync-season'
 import { migrations } from './migrations'
+import { livePubSub } from './live/pubsub'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -63,6 +66,12 @@ export default buildConfig({
       titleSuffix: '— WKS Wierzbice',
     },
     components: {
+      graphics: {
+        Logo: './components/Logo#default',
+        Icon: './components/Icon#default',
+      },
+      beforeLogin: ['./components/BeforeLogin#default'],
+      beforeNavLinks: ['./components/LiveStudioNavLink#default'],
       views: {
         dashboard: {
           Component: './components/Dashboard#default',
@@ -82,6 +91,7 @@ export default buildConfig({
     Tags,
     Teams,
     Players,
+    Matches,
     GalleryAlbums,
     Gallery,
     Board,
@@ -90,7 +100,7 @@ export default buildConfig({
     HeroSlides,
     StaticPages,
   ],
-  globals: [SiteConfig, Season],
+  globals: [SiteConfig, Season, LiveMatch],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -153,8 +163,125 @@ export default buildConfig({
         }
       },
     },
+    {
+      path: '/live-match/stream',
+      method: 'get',
+      handler: async (req) => {
+        const headers = new Headers({
+          'content-type': 'text/event-stream; charset=utf-8',
+          'cache-control': 'no-store, no-transform',
+          connection: 'keep-alive',
+        })
+
+        const encoder = new TextEncoder()
+
+        let closed = false
+        let heartbeat: ReturnType<typeof setInterval> | null = null
+        let unsub: null | (() => void) = null
+
+        const stream = new ReadableStream<Uint8Array>({
+          start(controller) {
+            const cleanup = () => {
+              closed = true
+              if (heartbeat) clearInterval(heartbeat)
+              heartbeat = null
+              try {
+                unsub?.()
+              } finally {
+                unsub = null
+              }
+            }
+
+            const safeEnqueue = (chunk: Uint8Array) => {
+              if (closed) return
+              try {
+                controller.enqueue(chunk)
+              } catch {
+                cleanup()
+              }
+            }
+
+            const send = (payload: unknown) => {
+              if (closed) return
+              try {
+                safeEnqueue(encoder.encode(`data: ${JSON.stringify(payload)}\n\n`))
+              } catch {
+                cleanup()
+              }
+            }
+
+            // initial snapshot
+            req.payload
+              .findGlobal({ slug: 'liveMatch', depth: 1 })
+              .then((doc) => send(doc))
+              .catch(() => {
+                // ignore
+              })
+
+            unsub = livePubSub.subscribe((msg) => {
+              try {
+                if (msg.type === 'liveMatch') send(msg.data)
+              } catch {
+                cleanup()
+              }
+            })
+
+            heartbeat = setInterval(() => {
+              try {
+                safeEnqueue(encoder.encode(`event: ping\ndata: {}\n\n`))
+              } catch {
+                cleanup()
+              }
+            }, 15000)
+          },
+          cancel(reason) {
+            closed = true
+            if (heartbeat) clearInterval(heartbeat)
+            heartbeat = null
+            try {
+              unsub?.()
+            } finally {
+              unsub = null
+            }
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            ;(reason as any)
+          },
+        })
+
+        return new Response(stream, { headers })
+      },
+    },
   ],
   onInit: async (payload) => {
+    // ── LiveMatch watchdog (auto-end) ───────────────────────────────────────
+    // Zabezpieczenie: jeśli operator zapomni kliknąć „Koniec meczu”,
+    // kończymy relację automatycznie po ~180 min (+ zapas).
+    ;(globalThis as any).__wksLiveMatchWatchdogStarted ||= false
+    if (!(globalThis as any).__wksLiveMatchWatchdogStarted) {
+      ;(globalThis as any).__wksLiveMatchWatchdogStarted = true
+      const HARD_END_MS = (180 + 20) * 60_000
+      setInterval(async () => {
+        try {
+          const doc: any = await payload.findGlobal({ slug: 'liveMatch', depth: 0 })
+          if (!doc?.enabled) return
+          const st = String(doc?.status ?? 'pre')
+          if (st === 'ft') return
+          const kickoff = doc?.kickoffReal ? new Date(String(doc.kickoffReal)).getTime() : NaN
+          if (!Number.isFinite(kickoff)) return
+          if (Date.now() - kickoff < HARD_END_MS) return
+          await payload.updateGlobal({
+            slug: 'liveMatch',
+            data: {
+              enabled: false,
+              status: 'ft',
+            },
+          })
+        } catch {
+          // ignore (next tick)
+        }
+      }, 60_000)
+    }
+
     // Cron jest opcjonalny — w dev domyślnie wyłączony.
     if (process.env.ENABLE_SEASON_CRON !== 'true') return
     const schedule = process.env.SEASON_CRON_SCHEDULE || '0 6 * * *'

@@ -43,6 +43,16 @@ export type LexicalBody = NonNullable<News['body']>;
 
 export type CoverVariant = 'thumbnail' | 'card' | 'hero';
 
+export type CoverBadgeVariant = 'red' | 'blue' | 'green' | 'slate'
+export type CoverBadgeIcon = 'none' | 'facebook' | 'star' | 'trophy'
+export type CoverBadge = {
+  label: string
+  variant: CoverBadgeVariant
+  href?: string
+  newTab?: boolean
+  icon?: CoverBadgeIcon
+}
+
 /**
  * Cover obrazka — abstrakcja na 2 źródła:
  *   - CMS: faktyczny upload z relacji `News.cover -> Media`. URL-e absolute,
@@ -83,6 +93,7 @@ export type NewsItem = {
     draft: boolean;
     facebookUrl?: string;
     truncated: boolean;
+    coverBadges?: CoverBadge[];
   };
   body:
     | { type: 'lexical'; value: LexicalBody }
@@ -159,6 +170,18 @@ function adaptCmsNews(item: News): NewsItem {
     .map((t) => (typeof t === 'object' && t !== null ? (t as Tag).name : null))
     .filter((s): s is string => typeof s === 'string' && s.length > 0);
 
+  const coverBadges: CoverBadge[] | undefined = Array.isArray(item.coverBadges)
+    ? item.coverBadges
+        .filter((b): b is NonNullable<typeof b> => Boolean(b && b.label && b.variant))
+        .map((b) => ({
+          label: b.label,
+          variant: b.variant,
+          href: b.href ?? undefined,
+          newTab: b.newTab ?? undefined,
+          icon: (b.icon ?? undefined) as CoverBadgeIcon | undefined,
+        }))
+    : undefined
+
   return {
     id: item.id,
     slug: item.slug ?? String(item.id),
@@ -174,6 +197,7 @@ function adaptCmsNews(item: News): NewsItem {
       draft: item.draft ?? false,
       facebookUrl: item.facebookUrl ?? undefined,
       truncated: item.truncated ?? false,
+      coverBadges,
     },
     body: item.body ? { type: 'lexical', value: item.body } : { type: 'empty' },
   };
@@ -195,6 +219,7 @@ function adaptMdEntry(entry: CollectionEntry<'news'>): NewsItem {
       draft: entry.data.draft,
       facebookUrl: entry.data.facebookUrl,
       truncated: entry.data.truncated,
+      coverBadges: undefined,
     },
     body: { type: 'md', entry },
   };

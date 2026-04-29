@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-27 — Demo deploy **web + CMS** na serwerze
+> **Ostatnia aktualizacja:** 2026-04-29 — LiveMatch v3.1 (Studio Live, pre‑match hero, kadra meczowa) + UX Studio/home (pauza/wznów, freeze zegara po `ft`, szybszy widget)
 > domowym (`wkswierzbice.tmielczarek.pl`): Docker (`wks-web` SSR + `wks-cms`),
 > SQLite z **migracjami w prod** (`prodMigrations`), persist przez mount
 > katalogu `./persist` (nie samego pliku `cms.db`). Instrukcja:
@@ -20,7 +20,7 @@
 - **Deploy (demo domowe):** Docker Compose w `deploy/wks/` + Caddy — opis w
   [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md). **Aktualizacja kodu na
   serwerze:** preferowane przez Git — [`docs/DEPLOY-GIT-WORKFLOW.md`](DEPLOY-GIT-WORKFLOW.md)
-  (`npm run deploy:home` po `git push`). **Pusta baza na serwerze a pełna strona:**
+  (`npm run deploy:home` po `git push`, host SSH: `root@192.168.0.5`). **Pusta baza na serwerze a pełna strona:**
   front ma fallback do `.md` / `public/` — wypełnienie panelu: `npm run seed:cms-on-server`
   (§8 w DEPLOY-HOME-SERVER).
 - **Deploy (stary opis statyczny, ręczny):** `npm run build` → rsync/SFTP z
@@ -68,6 +68,19 @@ Implementacja:
 [`docs/REVIEW-2026-04-20.md`](REVIEW-2026-04-20.md).
 
 ## Co jest zrobione
+
+### Relacja na żywo (LiveMatch)
+
+- **Studio Live:** `/admin/live-studio` — sterowanie relacją w czasie meczu:
+  - stany: `pre` → `live` → `ht` → `live2` → `ft` (blokady nielogicznych przejść),
+  - szybkie dodawanie zdarzeń + modal „Gol WKS” (strzelec/asysta, samobój, minuta auto),
+  - lista zdarzeń z **cofnij / edytuj / usuń** (z korektą wyniku).
+  - **Pauza / Wznów** (zegar bez resetu 2. połowy) + po `ft` **zatrzymany podgląd czasu** w Studio.
+- **Strona główna:** gdy `LiveMatch.enabled=true` i `status=pre`, hero pokazuje **zapowiedź pre‑match**
+  („Relacja na żywo od HH:MM”); po starcie przechodzi w widget live (szybsze pierwsze renderowanie + spójny layout jak w Studio).
+- **Dane:** relacja może korzystać z meczu z terminarza (`matches`) lub trybu manualnego;
+  mecz ma **`lineup[]`** (kadra) dla list zawodników w Studio.
+- **Dashboard:** szybki start relacji (modal) + linki do Studio / `LiveMatch`.
 
 ### Strony
 - `/` — home z karuzelą, aktualnościami, countdown najbliższego meczu,
@@ -228,6 +241,9 @@ Implementacja:
   `fetchGalleryByAlbumSlug`), `galeria.astro` (karty albumów), `galeria/[slug].astro`,
   `galeria/bez-albumu.astro`, komponent `GalleryGrid.astro`; bez albumów w CMS —
   płaska lista jak wcześniej; brak CMS / pusta galeria → `GALLERY` z `site.ts`.
+- ✅ **LiveMatch v3.1 (2026-04-29)** — relacja na żywo w hero + Studio Live w panelu,
+  realtime przez SSE (`/api/live-match/stream`), `matches.lineup[]` (kadra) i UX do prowadzenia relacji
+  (gole modalem, cofanie/edycja/usuwanie zdarzeń, pre‑match zapowiedź).
 - ⏳ **Etapy 10–18** — następny: **Etap 10** (`Globals siteConfig` + stopniowe
   przenoszenie stałych z `site.ts`).
 

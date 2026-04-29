@@ -13,6 +13,42 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-04-29 — LiveMatch v3.1: Studio Live + pre‑match hero + kadra meczowa
+
+### Added
+
+- **Relacja na żywo v3.1 (Payload + Astro):**
+  - **Studio Live** w panelu: `/admin/live-studio` — sterowanie stanami (pre/live/ht/live2/ft),
+    autosave, lista zdarzeń z **cofnij / edytuj / usuń**, szybkie akcje i modal „Gol WKS”.
+  - **`matches.lineup[]`** — kadra na mecz (relacja many→`players`) z auto-prefillem z `wksTeam`.
+  - **Wybór kadry pogrupowany** (bramkarze/obrońcy/pomocnicy/napastnicy) w edycji meczu
+    dla szybkiej weryfikacji.
+  - **Zapowiedź pre‑match na stronie głównej** — gdy relacja włączona i `status=pre`,
+    hero jest zastępowane panelem „Relacja na żywo od HH:MM”.
+  - **Quick start z Dashboardu** — modal „Rozpocznij mecz live” (match + `liveMatch` + redirect do Studio).
+  - **Pauza / Wznów** w Studio (zegar bez resetu 2. połowy) + komunikat **„Wstrzymany”** na stronie głównej.
+- **Migracje SQLite (CMS):** nowe migracje dla `matches.lineup` oraz dodatkowych pól w LiveMatch
+  (kickoff planowany, tekstowe pola strzelca/asysty dla WKS).
+
+### Changed
+
+- **LiveMatch global** działa jako kontroler relacji: tryb z terminarza (`match`) lub manualny,
+  wspiera różne rodzaje meczu (liga/sparing/puchar/własny tekst).
+- **Dashboard (`/admin`)** — dodane szybkie linki do **Studio Live** i `LiveMatch`.
+- **Widget na stronie głównej** — szybsze pierwsze renderowanie relacji (bez „pustego hero”),
+  spójny layout jak w Studio, ikony zdarzeń, sortowanie zdarzeń rosnąco, lepsze oznaczenie **LIVE**.
+
+### Fixed
+
+- **Payload globals update:** Studio/Widget zapisują zmiany przez **`POST /api/globals/liveMatch`**
+  (Payload nie wspiera `PATCH` dla globals).
+- **Studio:** po **„Koniec meczu”** zegar w podglądzie **nie tyka dalej** (freeze UI dla `ft`).
+- **Walidacje zdarzeń:** dopuszczone gole bez pola `events[].text` (które dotyczy tylko `info`);
+  znormalizowany zapis `half` dla zdarzeń (`'1'|'2'`) i bezpieczniejszy heartbeat SSE
+  (bez enqueue na zamkniętym strumieniu).
+
+---
+
 ## 2026-04-28 — Galeria: albumy (foldery) w CMS i podstrony www
 
 ### Added
@@ -28,6 +64,8 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
   lightbox); **`galeria.astro`** — karty albumów + link „Pozostałe zdjęcia”;
   **`galeria/[slug].astro`**, **`galeria/bez-albumu.astro`**.
 - **`packages/shared`** — re-eksport typu **`GalleryAlbum`**.
+- **Dev UX:** `npm run dev:fresh` + `scripts/free-astro-dev-ports.sh` — zwalnia porty
+  Astro (4321–4325), żeby uniknąć „martwego” `localhost:4321` po cichym skoku portu.
 
 ### Changed
 
@@ -36,6 +74,13 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
   Gdy **brak albumów** w CMS, zachowanie jak dotąd: **jedna siatka** wszystkich
   zdjęć z `gallery` (lub fallback `GALLERY` w `site.ts`).
 - **`docs/STATE.md`** — opis galerii i Etapu 9.
+
+### Fixed
+
+- **Seed CMS na serwerze (Docker, Node 20)**: `gray-matter` nie znajdowane podczas
+  `npm run seed:cms-on-server` (kontener seedujący miał `NODE_ENV=production`, więc
+  `npm ci` pomijał devDependencies). W `scripts/wks-cms-seed-prod-db.sh` wymuszono
+  `npm ci --include=dev`.
 
 ---
 

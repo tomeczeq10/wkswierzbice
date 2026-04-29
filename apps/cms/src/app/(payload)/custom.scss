@@ -1,0 +1,52 @@
+// ── WKS Wierzbice — Admin Theme ───────────────────────────────────────────────
+// Styles tu są poza @layer, więc mają wyższy priorytet niż @layer payload-default.
+
+// ── Strona logowania ─────────────────────────────────────────────────────────
+
+// Ciemnozielone tło — barwy WKS
+.template-minimal {
+  background-color: #0f2a1c;
+  background-image: linear-gradient(155deg, #0a1e13 0%, #0f2a1c 40%, #166534 100%);
+}
+
+// Biała karta formularza
+.template-minimal__wrap {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.45),
+    0 8px 24px rgba(0, 0, 0, 0.2);
+  padding: 40px 44px;
+  position: relative;
+  overflow: hidden;
+
+  // Pasek barw klubowych na górze karty
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #166534 0%, #166534 40%, #ffffff 40%, #ffffff 60%, #dc2626 60%, #dc2626 100%);
+  }
+}
+
+// ── Przyciski primary → zieleń WKS ───────────────────────────────────────────
+
+// Payload używa zmiennych CSS do kolorowania przycisku primary.
+// Nadpisanie tutaj działa bo jesteśmy poza @layer.
+.btn--style-primary {
+  --bg-color: #166534;
+  --hover-bg: #14532d;
+  --color: #ffffff;
+}
+
+// ── Nawigacja ─────────────────────────────────────────────────────────────────
+
+// Delikatna zielona obwódka pod logo w navbarze
+.nav__logo-container,
+[class*="nav__header"] {
+  border-bottom: 1px solid rgba(22, 101, 52, 0.12);
+}
+

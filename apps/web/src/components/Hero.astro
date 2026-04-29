@@ -1,6 +1,7 @@
 ---
 import { SITE, SOCIAL } from "@/config/site";
 import { fetchHeroSlides } from "@/lib/cms-hero";
+import { fetchLiveMatch, type LiveMatchUi } from "@/lib/cms-live";
 
 interface Props {
   image?: string;
@@ -26,6 +27,29 @@ const {
 
 const heightClass = variant === "home" ? "min-h-[80vh]" : "min-h-[40vh]";
 const slides = variant === "home" ? await fetchHeroSlides() : [{ image, kicker, title, subtitle }];
+const liveMatch: LiveMatchUi | null = variant === "home" ? await fetchLiveMatch() : null;
+const isPre = Boolean(liveMatch?.enabled && liveMatch?.state === "pre");
+const isLive = Boolean(
+  liveMatch?.enabled && (liveMatch?.state === "live" || liveMatch?.state === "ht" || liveMatch?.state === "live2"),
+);
+const isLiveOrPre = isLive || isPre;
+const heroSlides = isLiveOrPre && slides.length > 0 ? [slides[0]] : slides;
+const liveLayoutClass = isLiveOrPre ? "lg:grid-cols-1 place-items-center text-center" : "lg:grid-cols-[auto,1fr]";
+
+function formatKickoff(iso: string | undefined): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+}
+
+function stateLabel(state: LiveMatchUi["state"]): string {
+  if (state === "ht") return "Przerwa";
+  if (state === "live2") return "2. połowa";
+  if (state === "live") return "1. połowa";
+  if (state === "ft") return "Koniec";
+  return "Przed meczem";
+}
 
 function pointsLabel(n: number): string {
   // PL: 1 punkt, 2–4 punkty (z wyjątkami 12–14), reszta punktów
@@ -52,7 +76,7 @@ function seasonSubtitle(): string | null {
   ]}
   id="hero-section"
 >
-  {slides.map((slide, i) => (
+  {heroSlides.map((slide, i) => (
     <div
       class:list={[
         "hero-slide absolute inset-0 transition-opacity duration-1000",
@@ -71,8 +95,8 @@ function seasonSubtitle(): string | null {
       )}
       <div class="absolute inset-0 bg-gradient-to-tr from-brand-ink via-brand-primary-dark/80 to-brand-ink/60"></div>
 
-      <div class="relative container mx-auto py-16 sm:py-24 lg:py-28 h-full grid lg:grid-cols-[auto,1fr] gap-10 lg:gap-14 items-center">
-        {variant === "home" && (
+      <div class={`relative container mx-auto py-16 sm:py-24 lg:py-28 h-full grid ${liveLayoutClass} gap-10 lg:gap-14 items-center`}>
+        {variant === "home" && !isLiveOrPre && (
           <div class="flex justify-center lg:justify-start">
             <img
               src="/herb-wks.png"
@@ -83,47 +107,199 @@ function seasonSubtitle(): string | null {
             />
           </div>
         )}
-        <div>
-          {slide.kicker && (
+        <div class={isLiveOrPre ? "w-full flex flex-col items-center" : ""}>
+          {!isPre && slide.kicker && (
             <div class="inline-flex items-center gap-2 mb-4 px-3 py-1 rounded-full bg-brand-primary/90 text-xs uppercase tracking-widest font-display">
               {slide.kicker}
             </div>
           )}
-          <h1 class="font-display uppercase tracking-tight max-w-4xl animate-fade-up">
-            {slide.title ?? title}
-          </h1>
-          {(() => {
-            const dynamic =
-              variant === "home" &&
-              slide.title?.trim() === "Walczymy o awans" &&
-              seasonSubtitle();
-            const effective = dynamic ?? slide.subtitle ?? null;
-            return effective ? (
-              <p class="mt-4 max-w-2xl text-lg sm:text-xl text-slate-100/90 animate-fade-up">
-                {effective}
-              </p>
-            ) : null;
-          })()}
-          {variant === "home" && i === 0 && (
-            <div class="mt-8 flex flex-wrap gap-3 animate-fade-up">
-              <a href="/terminarz" class="btn-primary">Terminarz meczów</a>
-              <a href="/nabory" class="btn-secondary">Zapisz dziecko do klubu</a>
-              <a
-                href={SOCIAL.facebook}
-                target="_blank"
-                rel="noopener"
-                class="btn-outline text-white border-white hover:bg-white hover:text-brand-ink"
-              >
-                Facebook ({SOCIAL.facebookFollowers.toLocaleString("pl-PL")} obs.)
-              </a>
+
+          {isPre ? (
+            <div class="mt-4 w-full max-w-2xl rounded-2xl border border-white/15 bg-black/25 backdrop-blur px-6 py-6 animate-fade-up">
+              <div class="text-xs uppercase tracking-[0.25em] font-display text-slate-100/80">
+                Relacja na żywo
+              </div>
+              <div class="mt-3 text-2xl sm:text-3xl font-display uppercase tracking-tight">
+                {liveMatch?.homeLabel ?? "WKS Wierzbice"} <span class="opacity-60 mx-2">vs</span>{" "}
+                {liveMatch?.awayLabel ?? "—"}
+              </div>
+              <div class="mt-2 text-sm uppercase tracking-widest text-slate-100/75">
+                {(liveMatch?.competitionLabel ?? "").trim() || "Mecz"}
+              </div>
+              <div class="mt-4 text-lg sm:text-xl text-slate-100/90">
+                {(() => {
+                  const hhmm = formatKickoff(liveMatch?.kickoffPlanned);
+                  return hhmm ? (
+                    <span>
+                      Relacja na żywo od <strong class="font-semibold">{hhmm}</strong>.
+                    </span>
+                  ) : (
+                    <span>Relacja na żywo wkrótce.</span>
+                  );
+                })()}
+              </div>
+              <div class="mt-3 text-sm text-slate-100/75">
+                Mecz jeszcze nie wystartował — relacja ruszy po kliknięciu <strong>Start meczu</strong> w Studio.
+              </div>
             </div>
+          ) : (
+            <>
+              <h1 class="font-display uppercase tracking-tight max-w-4xl animate-fade-up">
+                {slide.title ?? title}
+              </h1>
+              {(() => {
+                const dynamic =
+                  variant === "home" &&
+                  slide.title?.trim() === "Walczymy o awans" &&
+                  seasonSubtitle();
+                const effective = dynamic ?? slide.subtitle ?? null;
+                return effective ? (
+                  <p class="mt-4 max-w-2xl text-lg sm:text-xl text-slate-100/90 animate-fade-up">
+                    {effective}
+                  </p>
+                ) : null;
+              })()}
+            </>
           )}
+                  {variant === "home" && i === 0 ? (
+            <div
+              class:list={[
+                "mt-8 w-full max-w-xl rounded-2xl border border-white/15 bg-black/25 backdrop-blur px-5 py-4 animate-fade-up",
+                isLive ? "" : "hidden",
+              ]}
+              id="live-match-widget"
+              data-live-match="1"
+              data-poll-url="/api/live-match"
+              data-stream-url="/api/live-match/stream"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-brand-secondary/25 px-2.5 py-1 text-[10px] uppercase tracking-[0.28em] text-white font-display">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-secondary animate-pulse" aria-hidden="true"></span>
+                    <span class="font-black">LIVE</span>
+                    <span class="text-white/80">Relacja</span>
+                  </div>
+                  {liveMatch?.competitionLabel && (
+                    <div class="mt-2 text-[11px] text-white/70 uppercase tracking-wider">
+                      {liveMatch.competitionLabel}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-3 items-end gap-4">
+                <div class="text-left min-w-0">
+                  <div class="font-display uppercase text-white/90 text-base sm:text-lg truncate" data-live-home>
+                    {liveMatch?.homeLabel ?? "WKS Wierzbice"}
+                  </div>
+                </div>
+
+                <div class="flex items-end justify-center gap-4">
+                  <span class="font-display text-6xl sm:text-7xl leading-none text-white tabular-nums" data-live-score-home>
+                    {liveMatch?.scoreHome ?? 0}
+                  </span>
+                  <div class="flex flex-col items-center -mb-1">
+                    <span class="font-display uppercase tracking-[0.22em] text-[10px] text-white/70" data-live-state-2>
+                      {stateLabel(liveMatch?.state ?? "pre")}
+                    </span>
+                    <span class="font-display tabular-nums text-white text-2xl sm:text-3xl leading-none" data-live-time-2>
+                      {liveMatch?.clock?.time ?? "--:--"}
+                    </span>
+                  </div>
+                  <span class="font-display text-6xl sm:text-7xl leading-none text-white tabular-nums" data-live-score-away>
+                    {liveMatch?.scoreAway ?? 0}
+                  </span>
+                </div>
+
+                <div class="text-right min-w-0">
+                  <div class="font-display uppercase text-white/90 text-base sm:text-lg truncate" data-live-away>
+                    {liveMatch?.awayLabel ?? "—"}
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-4 border-t border-white/10 pt-3" data-live-events-wrap>
+                {(() => {
+                  const home = (liveMatch?.events ?? []).filter(e => e.side === "home").sort((a, b) => (a.minute ?? 9999) - (b.minute ?? 9999)).slice(-5)
+                  const away = (liveMatch?.events ?? []).filter(e => e.side === "away").sort((a, b) => (a.minute ?? 9999) - (b.minute ?? 9999)).slice(-5)
+                  const any = home.length > 0 || away.length > 0
+                  if (!any) return null
+                  const icon = (e: any) => e.type === "goal" ? "⚽" : e.type === "card" ? (String(e.text || "").toLowerCase().includes("czerwona") ? "🟥" : "🟨") : e.type === "sub" ? "🔁" : "ℹ️"
+                  return (
+                    <>
+                      <div class="text-[10px] uppercase tracking-[0.25em] text-white/60 font-display">
+                        Zdarzenia
+                      </div>
+                      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-white/85">
+                        <ul class="space-y-1.5" data-live-events-home>
+                          {home.map((e) => (
+                            <li class="flex gap-2">
+                              <span class="text-white/60 tabular-nums w-10 shrink-0">
+                                {typeof e.minute === "number" ? `${e.minute}'` : ""}
+                              </span>
+                              <span class="shrink-0">{icon(e)}</span>
+                              <span class="min-w-0">{e.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <ul class="space-y-1.5" data-live-events-away>
+                          {away.map((e) => (
+                            <li class="flex gap-2">
+                              <span class="text-white/60 tabular-nums w-10 shrink-0">
+                                {typeof e.minute === "number" ? `${e.minute}'` : ""}
+                              </span>
+                              <span class="shrink-0">{icon(e)}</span>
+                              <span class="min-w-0">{e.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  )
+                })()}
+              </div>
+            </div>
+          ) : variant === "home" ? (
+            <div class="mt-8 inline-flex flex-col gap-3 animate-fade-up">
+              <div class="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-white/70 font-display">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-secondary" aria-hidden="true"></span>
+                Skróty
+              </div>
+              <div class="flex flex-wrap gap-3">
+                <a href="/tabela" class="btn-outline text-white border-white/70 hover:bg-white hover:text-brand-ink">
+                  Tabela
+                </a>
+                <a href="/terminarz" class="btn-outline text-white border-white/70 hover:bg-white hover:text-brand-ink">
+                  Terminarz
+                </a>
+                <a href="/aktualnosci" class="btn-outline text-white border-white/70 hover:bg-white hover:text-brand-ink">
+                  Aktualności
+                </a>
+                <a href="/nabory" class="btn-secondary">
+                  Nabory
+                </a>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-white/80">
+                <a href="/kontakt" class="hover:text-white hover:underline underline-offset-4">
+                  Kontakt
+                </a>
+                <a
+                  href={SOCIAL.facebook}
+                  target="_blank"
+                  rel="noopener"
+                  class="hover:text-white hover:underline underline-offset-4"
+                >
+                  Facebook ({SOCIAL.facebookFollowers.toLocaleString("pl-PL")} obs.)
+                </a>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
   ))}
 
-  {variant === "home" && slides.length > 1 && (
+  {variant === "home" && heroSlides.length > 1 && (
     <>
       <button
         id="hero-prev"
@@ -145,7 +321,7 @@ function seasonSubtitle(): string | null {
       </button>
 
       <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2" id="hero-dots" role="tablist">
-        {slides.map((_, i) => (
+        {heroSlides.map((_, i) => (
           <button
             class:list={[
               "hero-dot w-2.5 h-2.5 rounded-full transition-all duration-300",
@@ -162,44 +338,277 @@ function seasonSubtitle(): string | null {
   )}
 </section>
 
-{variant === "home" && slides.length > 1 && (
+{variant === "home" && heroSlides.length > 1 && (
   <script>
     const slides = document.querySelectorAll<HTMLElement>(".hero-slide");
     const dots = document.querySelectorAll<HTMLButtonElement>(".hero-dot");
-    let current = 0;
-    let timer: ReturnType<typeof setInterval>;
+    // Dev/HMR safety: jeśli markup i skrypt się rozjadą, nie chowaj hero.
+    if (slides.length <= 1 || dots.length !== slides.length) {
+      // nothing to rotate
+      if (location.hostname === "localhost") {
+        console.debug(
+          "[hero] carousel disabled (slides=%d, dots=%d)",
+          slides.length,
+          dots.length,
+        );
+      }
+    } else {
+      let current = 0;
+      let timer: ReturnType<typeof setInterval>;
 
-    function goTo(index: number) {
-      slides[current].classList.replace("opacity-100", "opacity-0");
-      slides[current].setAttribute("aria-hidden", "true");
-      dots[current].classList.remove("bg-white", "scale-110");
-      dots[current].classList.add("bg-white/40");
-      dots[current].setAttribute("aria-selected", "false");
+      function goTo(index: number) {
+        // HMR/dev safety: w razie rozjazdu DOM nie wywalaj konsoli co 5s.
+        if (!Number.isFinite(index)) return;
+        if (!slides[current]) return;
 
-      current = (index + slides.length) % slides.length;
+        slides[current].classList.replace("opacity-100", "opacity-0");
+        slides[current].setAttribute("aria-hidden", "true");
+        dots[current]?.classList.remove("bg-white", "scale-110");
+        dots[current]?.classList.add("bg-white/40");
+        dots[current]?.setAttribute("aria-selected", "false");
 
-      slides[current].classList.replace("opacity-0", "opacity-100");
-      slides[current].setAttribute("aria-hidden", "false");
-      dots[current].classList.add("bg-white", "scale-110");
-      dots[current].classList.remove("bg-white/40");
-      dots[current].setAttribute("aria-selected", "true");
-    }
+        current = (index + slides.length) % slides.length;
+        if (!slides[current]) return;
 
-    function startTimer() {
-      timer = setInterval(() => goTo(current + 1), 5000);
-    }
+        slides[current].classList.replace("opacity-0", "opacity-100");
+        slides[current].setAttribute("aria-hidden", "false");
+        dots[current]?.classList.add("bg-white", "scale-110");
+        dots[current]?.classList.remove("bg-white/40");
+        dots[current]?.setAttribute("aria-selected", "true");
+      }
 
-    function resetTimer() {
-      clearInterval(timer);
+      function startTimer() {
+        timer = setInterval(() => goTo(current + 1), 5000);
+      }
+
+      function resetTimer() {
+        clearInterval(timer);
+        startTimer();
+      }
+
+      document.getElementById("hero-prev")?.addEventListener("click", () => { goTo(current - 1); resetTimer(); });
+      document.getElementById("hero-next")?.addEventListener("click", () => { goTo(current + 1); resetTimer(); });
+      dots.forEach((dot) => {
+        dot.addEventListener("click", () => { goTo(Number(dot.dataset.index)); resetTimer(); });
+      });
+
       startTimer();
     }
+  </script>
+)}
 
-    document.getElementById("hero-prev")?.addEventListener("click", () => { goTo(current - 1); resetTimer(); });
-    document.getElementById("hero-next")?.addEventListener("click", () => { goTo(current + 1); resetTimer(); });
-    dots.forEach((dot) => {
-      dot.addEventListener("click", () => { goTo(Number(dot.dataset.index)); resetTimer(); });
-    });
+{variant === "home" && (
+  <script is:inline>
+    const widget = document.getElementById("live-match-widget");
+    if (widget) {
+      const pollUrl = widget.getAttribute("data-poll-url") || "/api/live-match";
+      const streamUrl = widget.getAttribute("data-stream-url") || "/api/live-match/stream";
+      const elHome = widget.querySelector("[data-live-home]");
+      const elAway = widget.querySelector("[data-live-away]");
+      const elScoreHome = widget.querySelector("[data-live-score-home]");
+      const elScoreAway = widget.querySelector("[data-live-score-away]");
+      const elState2 = widget.querySelector("[data-live-state-2]");
+      const elTime2 = widget.querySelector("[data-live-time-2]");
+      const elEventsHome = widget.querySelector("[data-live-events-home]");
+      const elEventsAway = widget.querySelector("[data-live-events-away]");
+      const elEventsWrap = widget.querySelector("[data-live-events-wrap]");
 
-    startTimer();
+      let live = null;
+      let tickTimer = null;
+      const setVisible = (on) => {
+        widget.classList.toggle("hidden", !on);
+      };
+      // During LIVE we prefer showing the widget immediately (no 2–3s gap on first visit),
+      // then the first fetch/SSE will fill in real values. If there's no live match,
+      // tick() will hide it back.
+      setVisible(true);
+      if (elState2) elState2.textContent = "Ładowanie…";
+      if (elTime2) elTime2.textContent = "--:--";
+      if (elEventsWrap) elEventsWrap.style.display = "none";
+
+      const clamp100 = (seconds) => Math.min(100 * 60, Math.max(0, Math.trunc(seconds || 0)));
+      const fmtMmss = (seconds) => {
+        const s = clamp100(seconds);
+        const mm = Math.floor(s / 60);
+        const ss = s % 60;
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${pad(mm)}:${pad(ss)}`;
+      };
+
+      const parseMs = (iso) => {
+        if (!iso) return null;
+        const t = new Date(iso).getTime();
+        return Number.isFinite(t) ? t : null;
+      };
+
+      const computeElapsedSeconds = (data) => {
+        if (!data || !data.enabled) return null;
+        if (!["live", "ht", "live2"].includes(data.state)) return null;
+        const kickoff = parseMs(data.kickoffReal);
+        if (!kickoff) return null;
+        const now = Date.now();
+        const pause = parseMs(data.pauseAt);
+        const end = pause ?? now;
+        if (data.state === "ht") {
+          return (end - kickoff) / 1000;
+        }
+        if (data.state === "live2") {
+          const resume = parseMs(data.resumeAt);
+          if (!resume) return (end - kickoff) / 1000;
+          return (45 * 60) + (end - resume) / 1000;
+        }
+        // live (pauseAt freezes)
+        return (end - kickoff) / 1000;
+      };
+
+      const startTicker = () => {
+        if (tickTimer) return;
+        tickTimer = setInterval(() => {
+          if (!live) return;
+          const elapsed = computeElapsedSeconds(live);
+          if (elapsed == null) return;
+          const t = fmtMmss(elapsed);
+          if (elTime2) elTime2.textContent = t;
+        }, 250);
+      };
+      const stopTicker = () => {
+        if (!tickTimer) return;
+        clearInterval(tickTimer);
+        tickTimer = null;
+      };
+
+      const stateLabel = (state) => {
+        if (live?.pauseAt && (state === "live" || state === "live2")) return "Wstrzymany";
+        if (state === "ht") return "Przerwa";
+        if (state === "live2") return "2. połowa";
+        if (state === "live") return "1. połowa";
+        if (state === "ft") return "Koniec";
+        return "Przed meczem";
+      };
+
+      const fmtTime = (iso) => {
+        try {
+          const d = new Date(iso);
+          if (Number.isNaN(d.getTime())) return "—";
+          return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+        } catch {
+          return "—";
+        }
+      };
+
+      const renderEvents = (events) => {
+        const iconFor = (e) => {
+          const type = String(e?.type || "info");
+          if (type === "goal") return "⚽";
+          if (type === "card") return String(e?.text || "").toLowerCase().includes("czerwona") ? "🟥" : "🟨";
+          if (type === "sub") return "🔁";
+          return "ℹ️";
+        };
+        const renderSide = (el, side) => {
+          if (!el) return;
+          el.innerHTML = "";
+          const list = Array.isArray(events)
+            ? events
+                .filter((e) => e && e.side === side)
+                .sort((a, b) => ((typeof a?.minute === "number" ? a.minute : 9999) - (typeof b?.minute === "number" ? b.minute : 9999)))
+                .slice(-5)
+            : [];
+          list.forEach((e) => {
+            const li = document.createElement("li");
+            li.className = "flex gap-2";
+            const min = document.createElement("span");
+            min.className = "text-white/60 tabular-nums w-10 shrink-0";
+            min.textContent = typeof e.minute === "number" ? `${e.minute}'` : "";
+            const ico = document.createElement("span");
+            ico.className = "shrink-0";
+            ico.textContent = iconFor(e);
+            const txt = document.createElement("span");
+            txt.className = "min-w-0";
+            txt.textContent = String(e.text || "");
+            li.appendChild(min);
+            li.appendChild(ico);
+            li.appendChild(txt);
+            el.appendChild(li);
+          });
+        };
+        const homeList = Array.isArray(events) ? events.filter((e) => e && e.side === "home") : [];
+        const awayList = Array.isArray(events) ? events.filter((e) => e && e.side === "away") : [];
+        const any = homeList.length > 0 || awayList.length > 0;
+        if (elEventsWrap) elEventsWrap.style.display = any ? "" : "none";
+        renderSide(elEventsHome, "home");
+        renderSide(elEventsAway, "away");
+      };
+
+      let inFlight = false;
+      async function tick() {
+        if (inFlight) return;
+        inFlight = true;
+        try {
+          const res = await fetch(pollUrl, { cache: "no-store" });
+          const data = await res.json();
+          // jeśli relacja wyłączona lub nie-live → ukryj widget
+          if (!data || !data.enabled || !["live", "ht", "live2"].includes(data.state)) {
+            live = null;
+            stopTicker();
+            setVisible(false);
+            return;
+          }
+          setVisible(true);
+          if (elHome) elHome.textContent = data.homeLabel || "WKS Wierzbice";
+          if (elAway) elAway.textContent = data.awayLabel || "—";
+          if (elScoreHome) elScoreHome.textContent = String(data.scoreHome ?? 0);
+          if (elScoreAway) elScoreAway.textContent = String(data.scoreAway ?? 0);
+          live = data;
+          const stLabel = stateLabel(data.state);
+          if (elState2) elState2.textContent = stLabel;
+          startTicker();
+          // fallback initial paint (ticker will keep it moving)
+          if (elTime2) elTime2.textContent = data.clock?.time || elTime2.textContent || "--:--";
+          renderEvents(data.events);
+        } catch {
+          // ignore (kolejny tick spróbuje ponownie)
+        } finally {
+          inFlight = false;
+        }
+      }
+
+      // first refresh immediately, then every 15s
+      tick();
+      setInterval(tick, 15000);
+
+      // Realtime: SSE (fallback to polling if unavailable)
+      try {
+        const es = new EventSource(streamUrl);
+        es.onmessage = (ev) => {
+          try {
+            const data = JSON.parse(ev.data);
+            if (!data || !data.enabled || !["live", "ht", "live2"].includes(data.state)) {
+              live = null;
+              stopTicker();
+              setVisible(false);
+              return;
+            }
+            setVisible(true);
+            if (elHome) elHome.textContent = data.homeLabel || "WKS Wierzbice";
+            if (elAway) elAway.textContent = data.awayLabel || "—";
+            if (elScoreHome) elScoreHome.textContent = String(data.scoreHome ?? 0);
+            if (elScoreAway) elScoreAway.textContent = String(data.scoreAway ?? 0);
+            live = data;
+            const stLabel = stateLabel(data.state);
+            if (elState2) elState2.textContent = stLabel;
+            startTicker();
+            if (elTime2) elTime2.textContent = data.clock?.time || elTime2.textContent || "--:--";
+            renderEvents(data.events);
+          } catch {
+            // ignore
+          }
+        };
+        es.onerror = () => {
+          // keep polling as fallback
+        };
+      } catch {
+        // ignore
+      }
+    }
   </script>
 )}

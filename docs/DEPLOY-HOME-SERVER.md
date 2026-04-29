@@ -61,6 +61,16 @@ Najważniejsze:
 Pełny opis (jednorazowy `git clone` na serwerze, zmienne `WKS_SSH_HOST`, skrypt `npm run deploy:home`):
 [`docs/DEPLOY-GIT-WORKFLOW.md`](DEPLOY-GIT-WORKFLOW.md).
 
+### Konkretnie dla serwera domowego (LAN)
+
+Z laptopa / tej maszyny:
+
+```bash
+export WKS_SSH_HOST=root@192.168.0.5
+export WKS_DEPLOY_PATH=/srv/wks/wks_cms
+npm run deploy:home
+```
+
 ### Awaryjnie: tar + scp (duży transfer)
 
 Gdy nie masz jeszcze zdalnego repozytorium albo chcesz jednorazowo wysłać całość:
@@ -191,6 +201,12 @@ curl -I -m 10 https://wkswierzbice.tmielczarek.pl/admin | head -20
 curl -I -m 10 https://wkswierzbice.tmielczarek.pl/_next/static/chunks/0tek4j.6.fhq8.css | head -20
 ```
 
+### LiveMatch / Studio Live (opcjonalnie)
+
+- **Studio Live:** `https://wkswierzbice.tmielczarek.pl/admin/live-studio`
+- **SSE (CMS):** `https://wkswierzbice.tmielczarek.pl/api/live-match/stream`
+  (długie połączenie; powinno przechodzić przez Caddy tak jak reszta `/api/*`).
+
 ### Wewnątrz sieci `web` (z kontenera Caddy)
 
 ```bash
@@ -215,6 +231,10 @@ docker exec salon-caddy wget -S -qO- http://wks-cms:3000/admin 2>&1 | head -10
   `python3 -c "import sqlite3;c=sqlite3.connect('deploy/wks/persist/cms.db');c.execute('DELETE FROM payload_migrations WHERE batch=-1');c.commit()"`,  
   potem `cd deploy/wks && docker compose restart wks-cms`.
   Aktualny `npm run seed:cms-on-server` ustawia już **`NODE_ENV=production`** w kontenerze seedującym.
+- **Seed na serwerze (Docker) wywala `ERR_MODULE_NOT_FOUND: gray-matter`**:
+  kontener seedujący działa z `NODE_ENV=production`, więc standardowe `npm ci`
+  pomija devDependencies. Skrypty seedujące (np. `migrate-news.ts`) używają
+  paczek dev — skrypt seedujący wykonuje `npm ci --include=dev`.
 - **Web kontener restartuje się (np. `ERR_MODULE_NOT_FOUND piccolore`)**:
   w obrazie brakuje runtime `node_modules`. W naszym obrazie docelowo kopiujemy
   `node_modules` do runtime.

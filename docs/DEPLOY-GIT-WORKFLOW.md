@@ -14,6 +14,14 @@ Pełny kontekst infrastruktury (Caddy, persist, compose): [`DEPLOY-HOME-SERVER.m
    - Adres **`192.168.0.5` działa tylko w tej samej sieci LAN** co serwer.
    - Z Niemiec bez VPN: użyj **publicznego hosta**, **Tailscale**, **WireGuard** albo **jump hosta** — wtedy ustaw np. `WKS_SSH_HOST=root@twoj-serwer.example.com`.
 
+### Domyślne wartości dla WKS (serwer domowy)
+
+Jeśli deployujesz na maszynę użytkownika w LAN:
+
+- **Host SSH**: `root@192.168.0.5`
+- **Ścieżka repo**: `/srv/wks/wks_cms`
+- **Compose**: `deploy/wks/docker-compose.yml` (uruchamiane przez `npm run deploy:home`)
+
 ---
 
 ## 1) Jednorazowo: serwer jako klon tego samego repozytorium
