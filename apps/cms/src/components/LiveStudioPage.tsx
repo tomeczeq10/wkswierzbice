@@ -388,7 +388,7 @@ export default function LiveStudioPage() {
               if (!id || !name) return null
               return { id, name }
             })
-            .filter(Boolean)
+            .filter((p): p is { id: string; name: string } => p !== null)
         : []
       setLineup(normalized)
       if (!goalScorerId && normalized[0]?.id) setGoalScorerId(normalized[0].id)

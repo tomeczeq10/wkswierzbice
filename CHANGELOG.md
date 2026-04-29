@@ -43,6 +43,8 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 - **Payload globals update:** Studio/Widget zapisują zmiany przez **`POST /api/globals/liveMatch`**
   (Payload nie wspiera `PATCH` dla globals).
 - **Studio:** po **„Koniec meczu”** zegar w podglądzie **nie tyka dalej** (freeze UI dla `ft`).
+- **Build produkcyjny (Docker / `next build`):** poprawki TypeScript w `matches`, Studio (normalizacja kadry)
+  oraz polu custom `MatchLineupGroupedField` + usunięcie niedozwolonego `label` na `row` w `LiveMatch`.
 - **Walidacje zdarzeń:** dopuszczone gole bez pola `events[].text` (które dotyczy tylko `info`);
   znormalizowany zapis `half` dla zdarzeń (`'1'|'2'`) i bezpieczniejszy heartbeat SSE
   (bez enqueue na zamkniętym strumieniu).

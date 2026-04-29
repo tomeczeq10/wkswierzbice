@@ -1,8 +1,12 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import type { FieldProps } from 'payload'
 import { useField } from '@payloadcms/ui'
+
+type MatchLineupGroupedFieldProps = {
+  path: string
+  data?: Record<string, unknown>
+}
 
 type PlayerLite = {
   id: string
@@ -31,7 +35,7 @@ const GROUPS: Array<{ key: ReturnType<typeof groupKeyFromPosition>; label: strin
   { key: 'other', label: 'Inni' },
 ]
 
-export default function MatchLineupGroupedField(props: FieldProps) {
+export default function MatchLineupGroupedField(props: MatchLineupGroupedFieldProps) {
   const path = props.path
   const { value, setValue } = useField<string[] | null>({ path })
 

@@ -233,7 +233,6 @@ export const LiveMatch: GlobalConfig = {
           admin: { width: '50%' },
         },
       ],
-      label: { pl: 'Wynik', en: 'Score' },
     },
     {
       name: 'events',

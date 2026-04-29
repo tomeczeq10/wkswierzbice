@@ -1,8 +1,8 @@
-import type { CollectionConfig } from 'payload'
+import type { Access, CollectionConfig } from 'payload'
 
 import { getRole } from '../access'
 
-const canEditMatches: CollectionConfig['access']['update'] = ({ req }) => {
+const canEditMatches: Access = ({ req }) => {
   const r = getRole(req)
   return r === 'admin' || r === 'redaktor' || r === 'trener'
 }
