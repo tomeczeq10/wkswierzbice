@@ -242,7 +242,7 @@ Implementacja:
   `galeria/bez-albumu.astro`, komponent `GalleryGrid.astro`; bez albumów w CMS —
   płaska lista jak wcześniej; brak CMS / pusta galeria → `GALLERY` z `site.ts`.
 - ✅ **LiveMatch v3.1 (2026-04-29)** — relacja na żywo w hero + Studio Live w panelu,
-  realtime przez SSE (`/api/live-match/stream`), `matches.lineup[]` (kadra) i UX do prowadzenia relacji
+  realtime przez SSE (`/api/live-match/stream` na CMS), publiczny odczyt snapshotu na stronie przez `/wks-live-match` (Astro), `matches.lineup[]` (kadra) i UX do prowadzenia relacji
   (gole modalem, cofanie/edycja/usuwanie zdarzeń, pre‑match zapowiedź).
 - ⏳ **Etapy 10–18** — następny: **Etap 10** (`Globals siteConfig` + stopniowe
   przenoszenie stałych z `site.ts`).

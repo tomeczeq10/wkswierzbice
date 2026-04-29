@@ -164,7 +164,8 @@ export default buildConfig({
       },
     },
     {
-      path: '/live-match/stream',
+      // Pod `/api/*` żeby publiczny reverse proxy (Caddy: /api* → CMS) widział SSE tak jak resztę API Payload.
+      path: '/api/live-match/stream',
       method: 'get',
       handler: async (req) => {
         const headers = new Headers({

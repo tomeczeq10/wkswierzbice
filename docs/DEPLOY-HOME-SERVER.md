@@ -204,8 +204,8 @@ curl -I -m 10 https://wkswierzbice.tmielczarek.pl/_next/static/chunks/0tek4j.6.f
 ### LiveMatch / Studio Live (opcjonalnie)
 
 - **Studio Live:** `https://wkswierzbice.tmielczarek.pl/admin/live-studio`
-- **SSE (CMS):** `https://wkswierzbice.tmielczarek.pl/api/live-match/stream`
-  (długie połączenie; powinno przechodzić przez Caddy tak jak reszta `/api/*`).
+- **SSE (Payload, przez Caddy `/api*` → CMS):** `https://wkswierzbice.tmielczarek.pl/api/live-match/stream`
+- **JSON dla frontu (Astro — poza `/api*`, bo `/api*` idzie do CMS):** `https://wkswierzbice.tmielczarek.pl/wks-live-match`
 
 ### Wewnątrz sieci `web` (z kontenera Caddy)
 

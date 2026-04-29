@@ -169,8 +169,8 @@ function seasonSubtitle(): string | null {
               ]}
               id="live-match-widget"
               data-live-match="1"
-              data-poll-url="/api/live-match"
-              data-stream-url="/api/live-match/stream"
+              data-poll-url="/wks-live-match"
+              data-stream-url="/wks-live-match/stream"
             >
               <div class="flex items-start justify-between gap-4">
                 <div>
@@ -401,8 +401,8 @@ function seasonSubtitle(): string | null {
   <script is:inline>
     const widget = document.getElementById("live-match-widget");
     if (widget) {
-      const pollUrl = widget.getAttribute("data-poll-url") || "/api/live-match";
-      const streamUrl = widget.getAttribute("data-stream-url") || "/api/live-match/stream";
+      const pollUrl = widget.getAttribute("data-poll-url") || "/wks-live-match";
+      const streamUrl = widget.getAttribute("data-stream-url") || "/wks-live-match/stream";
       const elHome = widget.querySelector("[data-live-home]");
       const elAway = widget.querySelector("[data-live-away]");
       const elScoreHome = widget.querySelector("[data-live-score-home]");
@@ -418,13 +418,11 @@ function seasonSubtitle(): string | null {
       const setVisible = (on) => {
         widget.classList.toggle("hidden", !on);
       };
-      // During LIVE we prefer showing the widget immediately (no 2–3s gap on first visit),
-      // then the first fetch/SSE will fill in real values. If there's no live match,
-      // tick() will hide it back.
-      setVisible(true);
-      if (elState2) elState2.textContent = "Ładowanie…";
-      if (elTime2) elTime2.textContent = "--:--";
-      if (elEventsWrap) elEventsWrap.style.display = "none";
+      // SSR dodaje `hidden`, gdy nie ma LIVE — nie pokazuj szkieletu „Ładowanie…” na siłę.
+      const ssrLive = !widget.classList.contains("hidden");
+      setVisible(ssrLive);
+      // Przy SSR=LIVE zostawiamy już wyrenderowany stan/czas z serwera (bez migania „Ładowanie…”).
+      if (!ssrLive && elEventsWrap) elEventsWrap.style.display = "none";
 
       const clamp100 = (seconds) => Math.min(100 * 60, Math.max(0, Math.trunc(seconds || 0)));
       const fmtMmss = (seconds) => {
@@ -566,7 +564,7 @@ function seasonSubtitle(): string | null {
           if (elTime2) elTime2.textContent = data.clock?.time || elTime2.textContent || "--:--";
           renderEvents(data.events);
         } catch {
-          // ignore (kolejny tick spróbuje ponownie)
+          if (ssrLive && elState2) elState2.textContent = "Brak połączenia…";
         } finally {
           inFlight = false;
         }

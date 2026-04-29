@@ -45,6 +45,7 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 - **Studio:** po **„Koniec meczu”** zegar w podglądzie **nie tyka dalej** (freeze UI dla `ft`).
 - **Build produkcyjny (Docker / `next build`):** poprawki TypeScript w `matches`, Studio (normalizacja kadry)
   oraz polu custom `MatchLineupGroupedField` + usunięcie niedozwolonego `label` na `row` w `LiveMatch`.
+- **Deploy / Caddy:** widget LIVE na home wołał `/api/live-match`, ale **`/api*` jest proxy do Payload** — przeglądarka dostawała odpowiedź z CMS zamiast z Astro i zostawała na „Ładowanie…”. Snapshot JSON jest teraz pod **`/wks-live-match`**, SSE Payload pod **`/api/live-match/stream`** (wcześniej było pod `/live-match/stream` i omijało regułę Caddy).
 - **Walidacje zdarzeń:** dopuszczone gole bez pola `events[].text` (które dotyczy tylko `info`);
   znormalizowany zapis `half` dla zdarzeń (`'1'|'2'`) i bezpieczniejszy heartbeat SSE
   (bez enqueue na zamkniętym strumieniu).

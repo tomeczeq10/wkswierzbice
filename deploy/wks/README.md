@@ -35,6 +35,6 @@ docker compose logs wks-web --tail 60
 
 W Caddyfile dodaj routing:
 - `/admin*`, `/api*`, `/_next*` → `wks-cms:3000` (assety Next muszą iść do CMS)
-- reszta → `wks-web:4321`
+- reszta → `wks-web:4321` (m.in. **`/wks-live-match`** — snapshot relacji na home; nie dawaj tego pod `/api/*`)
 
 Po zmianie: validate + reload.

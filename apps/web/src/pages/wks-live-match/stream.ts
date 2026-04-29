@@ -7,12 +7,14 @@ const CMS_INTERNAL_URL: string =
   import.meta.env.CMS_URL ||
   'http://localhost:3000'
 
+/**
+ * Proxy SSE z CMS — ścieżka poza `/api/*` (Caddy → Astro), upstream pod `/api/...` na kontenerze CMS.
+ */
 export const GET: APIRoute = async ({ request }) => {
   const upstream = new URL('/api/live-match/stream', CMS_INTERNAL_URL)
 
   const res = await fetch(upstream.toString(), {
     headers: {
-      // forward cookies for auth (admin stream requires login)
       cookie: request.headers.get('cookie') ?? '',
       accept: 'text/event-stream',
     },
@@ -34,4 +36,3 @@ export const GET: APIRoute = async ({ request }) => {
     },
   })
 }
-
