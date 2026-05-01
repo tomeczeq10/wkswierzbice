@@ -2,6 +2,7 @@ import * as migration_20260427_190451_init from './20260427_190451_init';
 import * as migration_20260428_041852 from './20260428_041852';
 import * as migration_20260428_194800_news_cover_badges from './20260428_194800_news_cover_badges';
 import * as migration_20260428_231000_matches from './20260428_231000_matches';
+import * as migration_20260428_231400_live_match_v1 from './20260428_231400_live_match_v1';
 import * as migration_20260428_231500_live_match_v2 from './20260428_231500_live_match_v2';
 import * as migration_20260429_202200_live_match_kind_custom_label from './20260429_202200_live_match_kind_custom_label';
 import * as migration_20260429_203900_matches_lineup from './20260429_203900_matches_lineup';
@@ -28,6 +29,11 @@ export const migrations = [
     up: migration_20260428_231000_matches.up,
     down: migration_20260428_231000_matches.down,
     name: '20260428_231000_matches',
+  },
+  {
+    up: migration_20260428_231400_live_match_v1.up,
+    down: migration_20260428_231400_live_match_v1.down,
+    name: '20260428_231400_live_match_v1',
   },
   {
     up: migration_20260428_231500_live_match_v2.up,
