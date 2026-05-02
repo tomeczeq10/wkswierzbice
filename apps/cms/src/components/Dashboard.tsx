@@ -1,7 +1,20 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
-import LiveStartModal from './LiveStartModal'
+import MobileDashboard from './MobileDashboard'
+
+// Hook: prawda gdy viewport ≤ 768px. SSR-safe (start od `false`, refresh po mount).
+function useIsMobile(breakpoint = 768): boolean {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [breakpoint])
+  return isMobile
+}
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -733,6 +746,13 @@ function GlobalCard({ href, label, sub, Icon: IC, accent, accentLt }: { href: st
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
+  const isMobile = useIsMobile()
+  if (isMobile) return <MobileDashboard />
+
+  return <DashboardDesktop />
+}
+
+function DashboardDesktop() {
   const [counts,  setCounts]  = useState<Record<string, number>>({})
   const [news,    setNews]    = useState<NewsDoc[]>([])
   const [players, setPlayers] = useState<PlayerDoc[]>([])
@@ -740,7 +760,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
-  const [startLiveOpen, setStartLiveOpen] = useState(false)
 
   useEffect(() => {
     const slugs = ['news', 'players', 'teams', 'media', 'users', 'gallery', 'sponsors', 'staff', 'board', 'tags', 'heroSlides', 'staticPages']
@@ -798,7 +817,7 @@ export default function Dashboard() {
   const today      = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif', color: T.text, padding: '32px 36px 60px', boxSizing: 'border-box' }}>
+    <div className="wks-dashboard" style={{ minHeight: '100vh', background: T.bg, fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif', color: T.text, padding: '32px 36px 60px', boxSizing: 'border-box' }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div style={{ background: T.ink, borderRadius: T.r2xl, padding: '22px 26px', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, position: 'relative', overflow: 'hidden' }}>
@@ -908,9 +927,8 @@ export default function Dashboard() {
                   <div style={{ fontSize: 11.5, color: T.muted, marginTop: 2 }}>Szybki start relacji + przejście do Studia</div>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setStartLiveOpen(true)}
+              <a
+                href="/admin/live-setup"
                 style={{
                   marginTop: 12,
                   width: '100%',
@@ -925,12 +943,13 @@ export default function Dashboard() {
                   border: '1px solid rgba(255,255,255,0.10)',
                   fontSize: 12.5,
                   fontWeight: 800,
-                  cursor: 'pointer',
+                  textDecoration: 'none',
                   boxShadow: '0 2px 8px rgba(22,101,52,0.35)',
+                  boxSizing: 'border-box',
                 }}
               >
-                Rozpocznij mecz live <IconArrow size={14} color="#fff" />
-              </button>
+                ⚡ Utwórz mecz live <IconArrow size={14} color="#fff" />
+              </a>
             </div>
           </Card>
 
@@ -970,7 +989,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <LiveStartModal open={startLiveOpen} onClose={() => setStartLiveOpen(false)} />
 
       {/* ── Collections grid ───────────────────────────────────────────────── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>

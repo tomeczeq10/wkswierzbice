@@ -21,6 +21,7 @@ import { Sponsors } from './collections/Sponsors'
 import { HeroSlides } from './collections/HeroSlides'
 import { StaticPages } from './collections/StaticPages'
 import { Matches } from './collections/Matches'
+import { LiveArchives } from './collections/LiveArchives'
 import { SiteConfig } from './globals/SiteConfig'
 import { Season } from './globals/Season'
 import { LiveMatch } from './globals/LiveMatch'
@@ -92,6 +93,7 @@ export default buildConfig({
     Teams,
     Players,
     Matches,
+    LiveArchives,
     GalleryAlbums,
     Gallery,
     Board,
@@ -164,8 +166,9 @@ export default buildConfig({
       },
     },
     {
-      // Pod `/api/*` żeby publiczny reverse proxy (Caddy: /api* → CMS) widział SSE tak jak resztę API Payload.
-      path: '/api/live-match/stream',
+      // Payload sam dodaje prefix `/api`, więc path `/live-match/stream` daje URL `/api/live-match/stream`.
+      // (Caddy w prod proxuje całe `/api*` → CMS, więc ta sama ścieżka działa publicznie i lokalnie.)
+      path: '/live-match/stream',
       method: 'get',
       handler: async (req) => {
         const headers = new Headers({

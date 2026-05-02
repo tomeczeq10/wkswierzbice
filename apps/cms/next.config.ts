@@ -8,6 +8,9 @@ const dirname = path.dirname(__filename)
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Pozwala wchodzić w dev z innych urządzeń w LAN (telefon → http://192.168.x.x:3000/admin).
+  // Bez tego Next.js 15+ blokuje requesty z hostów spoza localhost (cross-origin warning + HMR fail).
+  allowedDevOrigins: ['192.168.0.19', '*.local', '192.168.0.*'],
   async headers() {
     return [
       {

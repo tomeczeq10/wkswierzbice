@@ -13,8 +13,11 @@ export const LiveMatch: GlobalConfig = {
     },
   },
   admin: {
+    // Schowane z sidebara — wszystko robi się przez /admin/live-setup i /admin/live-studio.
+    // Globala zostawiamy w schemie (przechowuje stan relacji), ale userzy nie wchodzą tu bezpośrednio.
+    hidden: true,
     description:
-      'Relacja na żywo w hero na stronie głównej. Włącz tylko podczas meczu — kibice zobaczą wynik i zdarzenia (realtime przez SSE, z bezpiecznym fallbackiem).',
+      'Relacja na żywo w hero na stronie głównej. Edycja przez „Utwórz mecz live” + Studio Live. Bezpośrednia edycja tutaj jest schowana, żeby nie mylić.',
     components: {
       elements: {
         beforeDocumentControls: ['./components/LiveMatchWidget.tsx#default'],
@@ -22,10 +25,106 @@ export const LiveMatch: GlobalConfig = {
     },
   },
   hooks: {
+    beforeChange: [
+      ({ data }) => {
+        // Czyszczenie: competitionCustomLabel ma sens TYLKO przy kind='custom'.
+        // Bez tego label „TEST2” wpisany kiedyś przy kind='custom' wyciekał na stronę publiczną
+        // nawet gdy admin przełączył mecz na kind='league'.
+        if (data && (data as any).kind && (data as any).kind !== 'custom') {
+          ;(data as any).competitionCustomLabel = null
+        }
+        return data
+      },
+    ],
     afterChange: [
-      async ({ doc }) => {
-        // Publish latest snapshot for SSE subscribers.
+      async ({ doc, previousDoc, req }) => {
+        // 1. Publish latest snapshot for SSE subscribers.
         livePubSub.publish({ type: 'liveMatch', data: doc })
+
+        // 2. When status transitions → 'ft', archive a snapshot to liveArchives
+        //    so the editor can later write a news article from it.
+        try {
+          const prevStatus = (previousDoc as any)?.status
+          const nextStatus = (doc as any)?.status
+          if (nextStatus === 'ft' && prevStatus !== 'ft') {
+            const home = (doc as any)?.homeLabel || 'Gospodarz'
+            const away = (doc as any)?.awayLabel || 'Gość'
+            const sh = Number((doc as any)?.scoreHome ?? 0)
+            const sa = Number((doc as any)?.scoreAway ?? 0)
+            const finishedAt = new Date()
+            const dateLabel = finishedAt.toLocaleDateString('pl-PL', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })
+            const title = `${home} ${sh}:${sa} ${away} · ${dateLabel}`
+
+            // Compute duration: between kickoffReal and now (best-effort)
+            let durationMinutes: number | undefined
+            const kickoff = (doc as any)?.kickoffReal
+            if (kickoff) {
+              const ms = finishedAt.getTime() - new Date(kickoff).getTime()
+              if (Number.isFinite(ms) && ms > 0) durationMinutes = Math.round(ms / 60000)
+            }
+
+            const matchRel = (doc as any)?.match
+            const matchId =
+              typeof matchRel === 'number' || typeof matchRel === 'string'
+                ? matchRel
+                : matchRel && typeof matchRel === 'object' && 'id' in matchRel
+                  ? (matchRel as any).id
+                  : undefined
+
+            // Pull lineup from the linked match (if any)
+            let lineupIds: number[] = []
+            if (matchId) {
+              try {
+                const m = await req.payload.findByID({
+                  collection: 'matches',
+                  id: matchId as any,
+                  depth: 0,
+                })
+                const raw = (m as any)?.lineup
+                if (Array.isArray(raw)) {
+                  lineupIds = raw
+                    .map((x: any) => (typeof x === 'number' ? x : Number(x?.id ?? x)))
+                    .filter((n: number) => Number.isFinite(n) && n > 0)
+                }
+              } catch {
+                // ignore — archive without lineup if match fetch fails
+              }
+            }
+
+            const customLabel = String((doc as any)?.competitionCustomLabel ?? '').trim() || null
+            const competitionLabel =
+              customLabel || String((doc as any)?.competitionLabel ?? '').trim() || null
+
+            await req.payload.create({
+              collection: 'liveArchives',
+              data: {
+                title,
+                finishedAt: finishedAt.toISOString(),
+                match: matchId as any,
+                kind: ((doc as any)?.kind ?? 'league') as any,
+                competitionLabel,
+                homeLabel: home,
+                awayLabel: away,
+                scoreHome: sh,
+                scoreAway: sa,
+                finalScore: `${sh}:${sa}`,
+                wksSide: home === 'WKS Wierzbice' ? 'home' : 'away',
+                events: Array.isArray((doc as any)?.events) ? (doc as any).events : [],
+                lineup: lineupIds,
+                durationMinutes,
+                usedForArticle: false,
+              } as any,
+            })
+          }
+        } catch (e) {
+          // Don't break the live-match update if archiving fails — just log.
+          // eslint-disable-next-line no-console
+          console.error('[liveMatch] Nie udało się zarchiwizować zakończonej relacji:', e)
+        }
       },
     ],
   },

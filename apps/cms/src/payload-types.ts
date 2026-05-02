@@ -74,6 +74,7 @@ export interface Config {
     teams: Team;
     players: Player;
     matches: Match;
+    liveArchives: LiveArchive;
     'gallery-albums': GalleryAlbum;
     gallery: Gallery;
     board: Board;
@@ -95,6 +96,7 @@ export interface Config {
     teams: TeamsSelect<false> | TeamsSelect<true>;
     players: PlayersSelect<false> | PlayersSelect<true>;
     matches: MatchesSelect<false> | MatchesSelect<true>;
+    liveArchives: LiveArchivesSelect<false> | LiveArchivesSelect<true>;
     'gallery-albums': GalleryAlbumsSelect<false> | GalleryAlbumsSelect<true>;
     gallery: GallerySelect<false> | GallerySelect<true>;
     board: BoardSelect<false> | BoardSelect<true>;
@@ -431,6 +433,59 @@ export interface Match {
   createdAt: string;
 }
 /**
+ * Snapshoty zakończonych relacji live (status=ft). Służą do późniejszego napisania artykułu w aktualnościach. Wyniki w terminarzu uzupełniaj osobno.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "liveArchives".
+ */
+export interface LiveArchive {
+  id: number;
+  /**
+   * Auto: „Gospodarz vs Gość · DD miesiąc YYYY”.
+   */
+  title: string;
+  finishedAt: string;
+  match?: (number | null) | Match;
+  kind?: ('league' | 'friendly' | 'cup' | 'custom') | null;
+  competitionLabel?: string | null;
+  homeLabel: string;
+  awayLabel: string;
+  scoreHome: number;
+  scoreAway: number;
+  /**
+   * Auto: „X:Y”. Wygodne do listy.
+   */
+  finalScore?: string | null;
+  wksSide?: ('home' | 'away') | null;
+  /**
+   * Pełna lista zdarzeń z relacji w momencie zakończenia (gole, kartki, asysty, minuty). Format JSON — używaj do napisania artykułu.
+   */
+  events?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Skopiowana z meczu w terminarzu.
+   */
+  lineup?: (number | Player)[] | null;
+  durationMinutes?: number | null;
+  /**
+   * Zaznacz po napisaniu relacji w sekcji Aktualności, żeby wiedzieć co jest „do zrobienia”.
+   */
+  usedForArticle?: boolean | null;
+  /**
+   * Pomocnicze notatki dla osoby piszącej relację.
+   */
+  articleNote?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Wydarzenia / foldery na stronie Galeria. Do albumu przypisz zdjęcia w kolekcji „Galeria”.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -630,6 +685,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'matches';
         value: number | Match;
+      } | null)
+    | ({
+        relationTo: 'liveArchives';
+        value: number | LiveArchive;
       } | null)
     | ({
         relationTo: 'gallery-albums';
@@ -870,6 +929,30 @@ export interface MatchesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "liveArchives_select".
+ */
+export interface LiveArchivesSelect<T extends boolean = true> {
+  title?: T;
+  finishedAt?: T;
+  match?: T;
+  kind?: T;
+  competitionLabel?: T;
+  homeLabel?: T;
+  awayLabel?: T;
+  scoreHome?: T;
+  scoreAway?: T;
+  finalScore?: T;
+  wksSide?: T;
+  events?: T;
+  lineup?: T;
+  durationMinutes?: T;
+  usedForArticle?: T;
+  articleNote?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "gallery-albums_select".
  */
 export interface GalleryAlbumsSelect<T extends boolean = true> {
@@ -1088,7 +1171,7 @@ export interface Season {
   createdAt?: string | null;
 }
 /**
- * Relacja na żywo w hero na stronie głównej. Włącz tylko podczas meczu — kibice zobaczą wynik i zdarzenia (realtime przez SSE, z bezpiecznym fallbackiem).
+ * Relacja na żywo w hero na stronie głównej. Edycja przez „Utwórz mecz live” + Studio Live. Bezpośrednia edycja tutaj jest schowana, żeby nie mylić.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "liveMatch".

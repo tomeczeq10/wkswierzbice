@@ -1,6 +1,20 @@
 'use client'
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import MobileLiveStudio from './MobileLiveStudio'
+
+// Hook: prawda gdy viewport ≤ 768px. SSR-safe.
+function useIsMobile(breakpoint = 768): boolean {
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint}px)`)
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [breakpoint])
+  return isMobile
+}
 
 type LiveMatchState = 'pre' | 'live' | 'ht' | 'live2' | 'ft'
 type LiveMatchMode = 'fromMatch' | 'manual'
@@ -379,7 +393,7 @@ export default function LiveStudioPage() {
     if (matchId) {
       const m = await fetchMatch(matchId)
       const rawLineup = (m as any)?.lineup
-      const normalized: Array<{ id: string; name: string }> = Array.isArray(rawLineup)
+      let normalized: Array<{ id: string; name: string }> = Array.isArray(rawLineup)
         ? rawLineup
             .map((p: any) => {
               if (typeof p === 'string' || typeof p === 'number') return null
@@ -390,6 +404,65 @@ export default function LiveStudioPage() {
             })
             .filter((p): p is { id: string; name: string } => p !== null)
         : []
+
+      // Fallback 1: lineup zapisany jako tablica numeric ID (depth=0). Pobierz nazwy.
+      if (
+        normalized.length === 0 &&
+        Array.isArray(rawLineup) &&
+        rawLineup.length > 0 &&
+        rawLineup.every((x: any) => typeof x === 'number' || typeof x === 'string')
+      ) {
+        try {
+          const idsCsv = rawLineup.join(',')
+          const r = await fetch(
+            `${baseUrl}/api/players?limit=200&depth=0&where[id][in]=${encodeURIComponent(idsCsv)}`,
+            { credentials: 'include' },
+          )
+          if (r.ok) {
+            const json = await r.json()
+            const docs = (Array.isArray(json?.docs) ? json.docs : []) as any[]
+            normalized = docs
+              .map((d) => ({ id: String(d?.id ?? '').trim(), name: String(d?.name ?? '').trim() }))
+              .filter((x) => x.id && x.name)
+          }
+        } catch {
+          // ignore — fallback 2 below
+        }
+      }
+
+      // Fallback 2: lineup pusty → pokaż całą drużynę WKS przypisaną do meczu.
+      if (normalized.length === 0) {
+        const wt = (m as any)?.wksTeam
+        const wksTeamId =
+          typeof wt === 'number' || typeof wt === 'string'
+            ? wt
+            : wt && typeof wt === 'object' && wt.id != null
+              ? wt.id
+              : null
+        if (wksTeamId != null) {
+          try {
+            const r = await fetch(
+              `${baseUrl}/api/players?limit=200&depth=0&sort=number&where[team][equals]=${encodeURIComponent(String(wksTeamId))}`,
+              { credentials: 'include' },
+            )
+            if (r.ok) {
+              const json = await r.json()
+              const docs = (Array.isArray(json?.docs) ? json.docs : []) as any[]
+              normalized = docs
+                .map((d) => ({ id: String(d?.id ?? '').trim(), name: String(d?.name ?? '').trim() }))
+                .filter((x) => x.id && x.name)
+            }
+          } catch {
+            // ignore
+          }
+        }
+      }
+
+      if (normalized.length === 0) {
+        // eslint-disable-next-line no-console
+        console.warn('[live-studio] openGoalModal: brak kadry meczowej. raw lineup:', rawLineup, 'match:', m)
+      }
+
       setLineup(normalized)
       if (!goalScorerId && normalized[0]?.id) setGoalScorerId(normalized[0].id)
       if (m) setMatch(m)
@@ -406,7 +479,7 @@ export default function LiveStudioPage() {
     setGoalAssistText('')
     setGoalScorerText('')
     setGoalModalOpen(true)
-  }, [clock, fetchLive, fetchMatch, goalScorerId, live, matchId])
+  }, [baseUrl, clock, fetchLive, fetchMatch, goalScorerId, live, matchId])
 
   const submitGoalWks = useCallback(async () => {
     const current = live ?? (await fetchLive())
@@ -427,10 +500,13 @@ export default function LiveStudioPage() {
       assistText: goalAssistText.trim() || undefined,
     }
 
-    await patch({
-      scoreHome: clampInt(current?.scoreHome, 0) + 1,
+    // WKS gol: gdy WKS gra u siebie → zwiększ scoreHome; gdy na wyjeździe → scoreAway
+    const next: Partial<LiveMatchDoc> = {
       events: [event, ...events].slice(0, 30),
-    })
+    }
+    if (wksIsHome) next.scoreHome = clampInt(current?.scoreHome, 0) + 1
+    else next.scoreAway = clampInt(current?.scoreAway, 0) + 1
+    await patch(next)
     setGoalModalOpen(false)
   }, [
     fetchLive,
@@ -442,6 +518,7 @@ export default function LiveStudioPage() {
     goalScorerText,
     live,
     patch,
+    wksIsHome,
   ])
 
   const quickGoalOpponent = useCallback(async () => {
@@ -456,11 +533,12 @@ export default function LiveStudioPage() {
       half,
       minute: minuteAuto,
     }
-    await patch({
-      scoreAway: clampInt(current?.scoreAway, 0) + 1,
-      events: [event, ...events].slice(0, 30),
-    })
-  }, [clock, fetchLive, live, patch])
+    // Gol rywala: jeśli WKS u siebie → rywal=away → scoreAway++; jeśli WKS na wyjeździe → rywal=home → scoreHome++
+    const next: Partial<LiveMatchDoc> = { events: [event, ...events].slice(0, 30) }
+    if (wksIsHome) next.scoreAway = clampInt(current?.scoreAway, 0) + 1
+    else next.scoreHome = clampInt(current?.scoreHome, 0) + 1
+    await patch(next)
+  }, [clock, fetchLive, live, patch, wksIsHome])
 
   const quickGoalWksFromPlus = useCallback(async () => {
     const current = live ?? (await fetchLive())
@@ -474,11 +552,11 @@ export default function LiveStudioPage() {
       half,
       minute: minuteAuto,
     }
-    await patch({
-      scoreHome: clampInt(current?.scoreHome, 0) + 1,
-      events: [event, ...events].slice(0, 30),
-    })
-  }, [clock, fetchLive, live, patch])
+    const next: Partial<LiveMatchDoc> = { events: [event, ...events].slice(0, 30) }
+    if (wksIsHome) next.scoreHome = clampInt(current?.scoreHome, 0) + 1
+    else next.scoreAway = clampInt(current?.scoreAway, 0) + 1
+    await patch(next)
+  }, [clock, fetchLive, live, patch, wksIsHome])
 
   const quickGoalOpponentFromPlus = useCallback(async () => {
     // alias (żeby +1 zachowywało się jak gol z minutą)
@@ -492,11 +570,14 @@ export default function LiveStudioPage() {
       const idx = events.findIndex((e) => e?.type === 'goal' && String(e?.team ?? '') === team)
       const nextEvents = idx >= 0 ? events.filter((_, i) => i !== idx) : events
       const next: Partial<LiveMatchDoc> = { events: nextEvents }
-      if (team === 'wks') next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
-      if (team === 'opponent') next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
+      // wksSide-aware: dekrementuj odpowiednią stronę punktacji
+      const wksScored = team === 'wks'
+      const decrementHome = (wksScored && wksIsHome) || (!wksScored && !wksIsHome)
+      if (decrementHome) next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
+      else next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
       await patch(next)
     },
-    [fetchLive, live, patch],
+    [fetchLive, live, patch, wksIsHome],
   )
 
   const undoLast = useCallback(async () => {
@@ -510,12 +591,14 @@ export default function LiveStudioPage() {
     const team = String(last?.team ?? '')
 
     const next: Partial<LiveMatchDoc> = { events: nextEvents }
-    if (isGoal) {
-      if (team === 'wks') next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
-      if (team === 'opponent') next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
+    if (isGoal && (team === 'wks' || team === 'opponent')) {
+      const wksScored = team === 'wks'
+      const decrementHome = (wksScored && wksIsHome) || (!wksScored && !wksIsHome)
+      if (decrementHome) next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
+      else next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
     }
     await patch(next)
-  }, [fetchLive, live, patch])
+  }, [fetchLive, live, patch, wksIsHome])
 
   const deleteEventAt = useCallback(
     async (idx: number) => {
@@ -537,12 +620,14 @@ export default function LiveStudioPage() {
       const nextEvents = events.filter((_, i) => i !== idx)
       const next: Partial<LiveMatchDoc> = { events: nextEvents }
       if (revertScore) {
-        if (team === 'wks') next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
-        if (team === 'opponent') next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
+        const wksScored = team === 'wks'
+        const decrementHome = (wksScored && wksIsHome) || (!wksScored && !wksIsHome)
+        if (decrementHome) next.scoreHome = Math.max(0, clampInt(current?.scoreHome, 0) - 1)
+        else next.scoreAway = Math.max(0, clampInt(current?.scoreAway, 0) - 1)
       }
       await patch(next)
     },
-    [fetchLive, live, patch],
+    [fetchLive, live, patch, wksIsHome],
   )
 
   const openEdit = useCallback(
@@ -790,8 +875,102 @@ export default function LiveStudioPage() {
       }
     : null
 
+  const isMobile = useIsMobile()
+
+  // Gate: Studio Live ma sens TYLKO gdy trwa aktywna relacja.
+  // - live === null  → wciąż się ładuje (pokazujemy spinner)
+  // - !live.enabled lub status='ft' → poprzedni mecz zakończony lub brak relacji.
+  //   Pokazujemy przyjazny komunikat z CTA do "Utwórz mecz live", zamiast pustego interfejsu sterowania.
+  const liveActive = Boolean(live?.enabled && live?.status && live.status !== 'ft')
+  if (live === null) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: '#0b1f14',
+          color: '#fff',
+          display: 'grid',
+          placeItems: 'center',
+          fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif',
+        }}
+      >
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>Wczytuję relację…</div>
+      </div>
+    )
+  }
+  if (!liveActive) {
+    return <NoActiveLive endedRecently={live?.status === 'ft'} />
+  }
+
+  if (isMobile) {
+    return (
+      <MobileLiveStudio
+        live={live}
+        clock={clock}
+        busy={busy}
+        err={err}
+        preview={preview}
+        currentState={currentState}
+        canStartMatch={canStartMatch}
+        canEndFirstHalf={canEndFirstHalf}
+        canStartSecondHalf={canStartSecondHalf}
+        canEndMatch={canEndMatch}
+        match={match}
+        lineup={lineup}
+        setState={setState}
+        patch={patch}
+        pauseMatch={pauseMatch}
+        resumeMatch={resumeMatch}
+        quickGoalWksFromPlus={quickGoalWksFromPlus}
+        quickGoalOpponent={quickGoalOpponent}
+        undoLastGoalFor={undoLastGoalFor}
+        openGoalModal={openGoalModal}
+        addCard={addCard}
+        undoLast={undoLast}
+        deleteEventAt={deleteEventAt}
+        openEdit={openEdit}
+        pickSuggestedLeagueMatch={pickSuggestedLeagueMatch}
+        fmtEventText={fmtEventText}
+        eventSide={eventSide}
+        goalModalOpen={goalModalOpen}
+        goalMinute={goalMinute}
+        goalScorerId={goalScorerId}
+        goalAssistId={goalAssistId}
+        goalScorerText={goalScorerText}
+        goalAssistText={goalAssistText}
+        goalOwnGoal={goalOwnGoal}
+        setGoalModalOpen={setGoalModalOpen}
+        setGoalMinute={setGoalMinute}
+        setGoalScorerId={setGoalScorerId}
+        setGoalAssistId={setGoalAssistId}
+        setGoalScorerText={setGoalScorerText}
+        setGoalAssistText={setGoalAssistText}
+        setGoalOwnGoal={setGoalOwnGoal}
+        submitGoalWks={submitGoalWks}
+        editOpen={editOpen}
+        editIndex={editIndex}
+        editMinute={editMinute}
+        editOwnGoal={editOwnGoal}
+        editScorerText={editScorerText}
+        editAssistText={editAssistText}
+        editScorerOpponentText={editScorerOpponentText}
+        editAssistOpponentText={editAssistOpponentText}
+        editText={editText}
+        setEditOpen={setEditOpen}
+        setEditMinute={setEditMinute}
+        setEditOwnGoal={setEditOwnGoal}
+        setEditScorerText={setEditScorerText}
+        setEditAssistText={setEditAssistText}
+        setEditScorerOpponentText={setEditScorerOpponentText}
+        setEditAssistOpponentText={setEditAssistOpponentText}
+        setEditText={setEditText}
+        saveEdit={saveEdit}
+      />
+    )
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0b1f14', color: T.text, padding: 18, boxSizing: 'border-box' }}>
+    <div className="wks-live-studio" style={{ minHeight: '100vh', background: '#0b1f14', color: T.text, padding: 18, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
         <a href="/admin/globals/liveMatch" style={{ color: T.muted, textDecoration: 'none', fontWeight: 600 }}>
           ← LiveMatch
@@ -1415,6 +1594,140 @@ export default function LiveStudioPage() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/**
+ * Ekran "brak aktywnej relacji". Pokazuje się gdy ktoś wejdzie do /admin/live-studio
+ * a nie ma aktualnie aktywnego live (poprzedni mecz zakończony albo nigdy nie był utworzony).
+ * Mobile-first, single column, jasny przekaz: "tu nic teraz nie sterujesz, idź utworzyć mecz".
+ */
+function NoActiveLive({ endedRecently }: { endedRecently?: boolean }) {
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#0b1f14',
+        color: '#fff',
+        fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 16,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: 460,
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 18,
+          padding: 24,
+          textAlign: 'center',
+        }}
+      >
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 56,
+            height: 56,
+            borderRadius: 14,
+            background: 'rgba(255,255,255,0.06)',
+            marginBottom: 14,
+            fontSize: 28,
+          }}
+        >
+          {endedRecently ? '🏁' : '⚪'}
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            letterSpacing: '0.18em',
+            textTransform: 'uppercase',
+            color: 'rgba(255,255,255,0.55)',
+          }}
+        >
+          Studio Live
+        </div>
+        <h1 style={{ fontSize: 22, fontWeight: 900, margin: '6px 0 10px', letterSpacing: '-0.01em' }}>
+          {endedRecently ? 'Mecz zakończony' : 'Brak aktywnej relacji'}
+        </h1>
+        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.72)', margin: '0 0 20px', lineHeight: 1.5 }}>
+          {endedRecently
+            ? 'Ostatnia relacja została zamknięta. Snapshot meczu trafił do Archiwum relacji — możesz tam wrócić, żeby napisać artykuł.'
+            : 'Aby uruchomić Studio Live, najpierw utwórz nową relację z meczu (skonfiguruj rywala, godzinę i kadrę).'}
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <a
+            href="/admin/live-setup"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '14px 18px',
+              background: 'linear-gradient(135deg, #166534 0%, #14532d 100%)',
+              color: '#fff',
+              borderRadius: 12,
+              fontWeight: 800,
+              fontSize: 15,
+              textDecoration: 'none',
+              boxShadow: '0 4px 14px rgba(22,101,52,0.40)',
+              minHeight: 50,
+              boxSizing: 'border-box',
+            }}
+          >
+            ⚡ Utwórz mecz live
+          </a>
+          {endedRecently && (
+            <a
+              href="/admin/collections/liveArchives"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                padding: '12px 16px',
+                background: 'rgba(255,255,255,0.06)',
+                color: '#fff',
+                borderRadius: 12,
+                fontWeight: 700,
+                fontSize: 14,
+                textDecoration: 'none',
+                border: '1px solid rgba(255,255,255,0.12)',
+                minHeight: 46,
+                boxSizing: 'border-box',
+              }}
+            >
+              📋 Archiwum relacji
+            </a>
+          )}
+          <a
+            href="/admin"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              padding: '12px 16px',
+              background: 'transparent',
+              color: 'rgba(255,255,255,0.72)',
+              borderRadius: 12,
+              fontWeight: 600,
+              fontSize: 13,
+              textDecoration: 'none',
+              border: '1px solid rgba(255,255,255,0.10)',
+            }}
+          >
+            ← Wróć do dashboardu
+          </a>
+        </div>
+      </div>
     </div>
   )
 }
