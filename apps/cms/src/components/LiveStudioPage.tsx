@@ -30,6 +30,7 @@ type LiveMatchDoc = {
   competitionCustomLabel?: string | null
   homeLabel?: string | null
   awayLabel?: string | null
+  kickoffPlanned?: string | null
   kickoffReal?: string | null
   pauseAt?: string | null
   resumeAt?: string | null
