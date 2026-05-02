@@ -13,6 +13,98 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-02 — Mobile-first admin + dedykowany flow LiveMatch
+
+### Added
+
+- **MobileDashboard / MobileLiveStudio** — dedykowane widoki mobilne dla
+  `/admin` i `/admin/live-studio` (przełącznik na podstawie `useIsMobile()`
+  — viewport ≤ 768px). Single-column, tap-targety ≥ 44px, inputy
+  `font-size: 16px` (brak iOS auto-zoom). Bottom-sheet modale dla
+  goal/edit zdarzeń w MobileLiveStudio.
+- **LiveSetupPage** — `/admin/live-setup`: dedykowany formularz konfiguracji
+  meczu (zastępuje stary `LiveStartModal`). Wybór typu (ligowy/sparing/puchar/
+  własny tekst), źródło (terminarz/ręcznie), godzina, kadra meczowa
+  (pogrupowana z "zaznacz wszystkich"). Submit: tworzy/aktualizuje `Match`
+  + ustawia `liveMatch` global na `status=pre` + redirect do Studia.
+  Obsługuje `?matchId=` z dashboardu.
+- **Smart match-of-the-day** — karta meczu w MobileDashboard klasyfikuje stan
+  (upcoming / ready w oknie ±1h od kickoffu / live / past >2.5h po kickoffie)
+  i pokazuje odpowiedni CTA: `⚡ Rozpocznij live`, `Wróć do Studia`,
+  `Mecz zakończony — uzupełnij wynik` itd.
+- **Persistent live banner** — gdy mecz trwa, sticky karta na górze dashboardu
+  z aktualnym wynikiem, minutą i nazwami drużyn (polling globala co 10s,
+  tick co 30s). Wracasz do Studia jednym kliknięciem nawet po zamknięciu
+  i ponownym otwarciu przeglądarki.
+- **liveArchives collection** + auto-snapshot — kolekcja przechowuje snapshoty
+  zakończonych relacji (events JSON, lineup, czas trwania, wynik). Hook
+  `afterChange` na liveMatch przy `status=ft` automatycznie tworzy wpis,
+  którego osoba pisząca aktualności używa do przygotowania artykułu.
+  Migracja: `20260501_190732_liveArchives` (ręczna — generator dawał za szeroki
+  diff, bo snapshot był stary).
+- **`next.config.ts: allowedDevOrigins`** (`192.168.0.x`, `*.local`) —
+  pozwala wchodzić w dev z telefonu w LAN bez blokady cross-origin.
+- **Mobile CSS** w `custom.scss` — kompleksowe media queries `≤ 900px`
+  i `≤ 480px` dla domyślnego UI Payloada (stackowanie sidebar pól, większe
+  inputy, scrollable toolbary, full-width modale). Plus keyframes `wks-pulse`.
+
+### Changed
+
+- **`/admin/globals/liveMatch` schowany** z sidebara (`admin.hidden: true`)
+  — cała interakcja z relacją idzie przez `/admin/live-setup`
+  + `/admin/live-studio`.
+- **`/admin/live-studio` z gate'em** — gdy nie ma aktywnej relacji
+  (`enabled=false` lub `status=ft`) pokazuje przyjazny ekran "brak aktywnej
+  relacji" / "mecz zakończony" z linkami do Setup'u i Archiwum, zamiast
+  pustego interfejsu sterowania.
+- **LiveStudioNavLink** mutually-exclusive — pokazuje tylko `Utwórz mecz live`
+  (zielone) gdy live nieaktywne, albo tylko `Studio Live · TRWA` (czerwone,
+  pulsujące, z aktualnym wynikiem) gdy live trwa. Polling globala co 15s.
+- **Desktop Dashboard CTA "Rozpocznij mecz live"** prowadzi teraz do
+  `/admin/live-setup` zamiast otwierać modal (LiveStartModal nadal istnieje,
+  ale nie jest używany).
+
+### Fixed
+
+- **Studio Live: `+1 Gol WKS`** zwiększał zawsze `scoreHome` zamiast strony
+  WKS-a. Przy meczu na wyjeździe gol WKS-u inkrementował wynik rywala.
+  Wszystkie handlery (`quickGoalWks*`, `quickGoalOpp*`, `submitGoalWks`,
+  `undoLastGoalFor`, `undoLast`, `deleteEventAt`) używają teraz `wksIsHome`
+  (z `match.wksSide`).
+- **SSE endpoint** `/api/live-match/stream` zwracał 404. Payload mountuje
+  custom endpointy pod `/api/<path>`, więc `path: '/api/live-match/stream'`
+  dawał faktyczny URL `/api/api/live-match/stream`. Path zmieniony na
+  `/live-match/stream` — eventy live propagują się natychmiast do Studia
+  i widgetu na stronie głównej (bez F5).
+- **`competitionCustomLabel` "wyciekał"** — gdy raz ustawiło się `kind='custom'`
+  z tekstem (np. "TEST2"), label zostawał w bazie po przełączeniu na inny kind
+  i frontend dalej go pokazywał. `beforeChange` hook na liveMatch zeruje
+  `competitionCustomLabel` gdy `kind !== 'custom'` (self-healing).
+- **`openGoalModal`: "Brak kadry"** — gdy `match.lineup` był tablicą gołych ID
+  (depth=0), albo gdy mecz nie miał lineup'u. Dwa fallbacki: (1) ID-tablica
+  → fetch `/api/players?where[id][in]=...` po nazwy; (2) pusty lineup →
+  fetch wszystkich graczy z `match.wksTeam` (cała drużyna seniorów).
+- **Bug w prod DB schema** — tabela `live_match` nigdy nie była stworzona
+  migracją w prod, tylko `live_match_v2` zakładała jej istnienie. Dodane:
+  `20260428_231400_live_match_v1.ts` (CREATE TABLE),
+  `20260428_231450_live_match_created_at.ts` (kolumna `created_at`).
+
+### Open
+
+- Tomek dał feedback po pierwszym teście, że całość workflow live wymaga
+  dopracowania — kolejne iteracje na podstawie testów podczas realnego meczu.
+- Archiwum relacji jest na razie surowe (JSON z eventami). Przyszłością jest
+  "generator artykułu" — auto-szkic newsa z timestampów + szablon Lexical
+  oraz przycisk "Stwórz news z tej relacji".
+
+### Deploy
+
+- Push: `a0c79b8` na `main` (16 plików, +8158/-82). Server: `git pull` +
+  `docker compose up -d --build`. Migracja `20260501_190732_liveArchives`
+  zaaplikowana w 68ms przy pierwszym `/admin` request.
+
+---
+
 ## 2026-04-29 — LiveMatch v3.1: Studio Live + pre‑match hero + kadra meczowa
 
 ### Added
