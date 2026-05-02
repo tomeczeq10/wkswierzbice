@@ -216,6 +216,7 @@ export default function LiveSetupPage() {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [bootstrapping, setBootstrapping] = useState(true)
+  const [notice, setNotice] = useState<string | null>(null)
 
   // Source: from schedule OR manual
   const [source, setSource] = useState<'schedule' | 'manual'>('schedule')
@@ -280,6 +281,93 @@ export default function LiveSetupPage() {
     [baseUrl],
   )
 
+  // ── Auto-import najbliższego meczu z season.upcoming (źródło 90minut) do
+  //    kolekcji matches, jeśli go tam nie ma. Bez tego użytkownik zobaczyłby
+  //    pustą listę / stare testy, podczas gdy Najbliższy Mecz na stronie
+  //    głównej pokazuje realny mecz z 90minut.
+  // ──────────────────────────────────────────────────────────────────────────
+  type SeasonUpcoming = {
+    round?: number
+    date?: string | null
+    time?: string | null
+    venue?: 'home' | 'away'
+    opponent?: string
+  }
+
+  const buildKickoffIsoFromSeason = useCallback((date: string, time: string): string | null => {
+    // Dane z 90minut są w czasie lokalnym PL. Przyjmujemy UTC+02:00 dla okresu
+    // letniego (kwiecień–październik — dotyczy wszystkich nadchodzących meczów
+    // okręgówki w sezonie wiosennym 2026). Admin może doprecyzować w terminarzu.
+    try {
+      const iso = `${date}T${time}:00+02:00`
+      const d = new Date(iso)
+      return Number.isNaN(d.getTime()) ? null : d.toISOString()
+    } catch {
+      return null
+    }
+  }, [])
+
+  const importNearestSeasonMatch = useCallback(
+    async (currentMatches: MatchDoc[], wksTeamId: number | null): Promise<MatchDoc | null> => {
+      try {
+        const res = await fetch(`${baseUrl}/api/globals/season`, { credentials: 'include' })
+        if (!res.ok) return null
+        const json = await res.json()
+        const upcoming: SeasonUpcoming[] = json?.data?.wks?.upcoming ?? []
+        // Pierwszy z pełnym terminem (data + godzina)
+        const nearest = upcoming.find((m) => m?.date && m?.time && m?.opponent)
+        if (!nearest) return null
+
+        const kickoffIso = buildKickoffIsoFromSeason(nearest.date!, nearest.time!)
+        if (!kickoffIso) return null
+
+        // Idempotency: nie twórz duplikatu jeśli mamy już mecz w terminarzu z tym samym
+        // kickoffem (±2h tolerancji) i tym samym przeciwnikiem.
+        const oppLower = String(nearest.opponent).trim().toLowerCase()
+        const k = new Date(kickoffIso).getTime()
+        const dup = currentMatches.find((m) => {
+          const mk = m.kickoffPlanned ? new Date(m.kickoffPlanned).getTime() : NaN
+          if (!Number.isFinite(mk)) return false
+          if (Math.abs(mk - k) > 2 * 3600_000) return false
+          const home = String(m.homeTeamLabel ?? '').toLowerCase()
+          const away = String(m.awayTeamLabel ?? '').toLowerCase()
+          return home.includes(oppLower) || away.includes(oppLower)
+        })
+        if (dup) return null
+
+        const wksHome = nearest.venue !== 'away'
+        const opp = String(nearest.opponent).trim()
+        const body: Record<string, unknown> = {
+          competitionType: 'league',
+          kickoffPlanned: kickoffIso,
+          venue: wksHome ? 'home' : 'away',
+          wksSide: wksHome ? 'home' : 'away',
+          homeTeamLabel: wksHome ? 'WKS Wierzbice' : opp,
+          awayTeamLabel: wksHome ? opp : 'WKS Wierzbice',
+          competitionLabel: nearest.round ? `Klasa okręgowa · K${nearest.round}` : null,
+          // Pre-prefill kadry z wksTeam, żeby admin nie musiał zaznaczać od zera.
+          wksTeam: wksTeamId ?? undefined,
+        }
+        const create = await fetch(`${baseUrl}/api/matches`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body),
+        })
+        if (!create.ok) return null
+        const doc = (await create.json()) as { doc?: MatchDoc } | MatchDoc
+        const created = (doc as any)?.doc ?? doc
+        setNotice(
+          `Zaimportowano najbliższy mecz z 90minut: ${body.homeTeamLabel} vs ${body.awayTeamLabel} · ${nearest.date} ${nearest.time}`,
+        )
+        return created as MatchDoc
+      } catch {
+        return null
+      }
+    },
+    [baseUrl, buildKickoffIsoFromSeason],
+  )
+
   // ── Initial load ────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -295,6 +383,14 @@ export default function LiveSetupPage() {
 
     Promise.all([fetchUpcoming(), fetchSeniorTeam()])
       .then(async ([up, st]) => {
+        // Auto-import: jeśli w terminarzu nie ma meczu pasującego do najbliższego
+        // z season.upcoming (90minut), utwórz go cicho i odśwież listę.
+        if (!wantedMatchId) {
+          const imported = await importNearestSeasonMatch(up, st?.id ?? null)
+          if (imported) {
+            up = await fetchUpcoming()
+          }
+        }
         setUpcoming(up)
         setSeniorTeam(st)
 
@@ -544,6 +640,26 @@ export default function LiveSetupPage() {
               }}
             >
               {err}
+            </div>
+          )}
+          {notice && (
+            <div
+              style={{
+                background: T.greenLt,
+                color: T.greenDk,
+                padding: '12px 14px',
+                borderRadius: 10,
+                fontSize: 13,
+                marginBottom: 12,
+                border: `1px solid ${T.green}`,
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: 8,
+                lineHeight: 1.4,
+              }}
+            >
+              <span>📥</span>
+              <span>{notice}</span>
             </div>
           )}
 
