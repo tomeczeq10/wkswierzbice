@@ -232,7 +232,27 @@ export default function LiveStudioPage() {
               halfRaw === '1' || halfRaw === '2' ? halfRaw : halfRaw === 1 ? '1' : halfRaw === 2 ? '2' : undefined
             const minuteRaw = ev?.minute
             const minute = Number.isFinite(minuteRaw) ? Math.max(0, Math.trunc(minuteRaw)) : minuteRaw
-            return { ...ev, ...(half ? { half } : {}), ...(minute !== minuteRaw ? { minute } : {}) }
+            // SQLite ma NOT NULL na live_match_events.text (legacy z migracji v1).
+            // Bez tego INSERT się sypie 500. UI generuje pełny opis z fmtEventText,
+            // więc tu wystarczy minimalny placeholder oparty na typie/teamie.
+            const rawText = typeof ev?.text === 'string' ? ev.text : ''
+            const text = rawText.trim()
+              ? rawText
+              : ev?.type === 'goal'
+                ? ev?.team === 'opponent'
+                  ? 'Gol rywala'
+                  : 'Gol WKS'
+                : ev?.type === 'card'
+                  ? 'Kartka'
+                  : ev?.type === 'sub'
+                    ? 'Zmiana'
+                    : 'Info'
+            return {
+              ...ev,
+              ...(half ? { half } : {}),
+              ...(minute !== minuteRaw ? { minute } : {}),
+              text,
+            }
           })
         }
         const res = await fetch(patchUrl, {
@@ -521,6 +541,9 @@ export default function LiveStudioPage() {
       assistWks: goalAssistId || undefined,
       scorerText: goalScorerText.trim() || undefined,
       assistText: goalAssistText.trim() || undefined,
+      // Kolumna `text` w live_match_events jest NOT NULL (legacy schema). UI i tak
+      // formatuje opis przez fmtEventText z scorer/assist, więc wystarczy minimalny placeholder.
+      text: 'Gol WKS',
     }
 
     // WKS gol: gdy WKS gra u siebie → zwiększ scoreHome; gdy na wyjeździe → scoreAway
@@ -555,6 +578,7 @@ export default function LiveStudioPage() {
       team: 'opponent',
       half,
       minute: minuteAuto,
+      text: 'Gol rywala',
     }
     // Gol rywala: jeśli WKS u siebie → rywal=away → scoreAway++; jeśli WKS na wyjeździe → rywal=home → scoreHome++
     const next: Partial<LiveMatchDoc> = { events: [event, ...events].slice(0, 30) }
@@ -574,6 +598,7 @@ export default function LiveStudioPage() {
       team: 'wks',
       half,
       minute: minuteAuto,
+      text: 'Gol WKS',
     }
     const next: Partial<LiveMatchDoc> = { events: [event, ...events].slice(0, 30) }
     if (wksIsHome) next.scoreHome = clampInt(current?.scoreHome, 0) + 1

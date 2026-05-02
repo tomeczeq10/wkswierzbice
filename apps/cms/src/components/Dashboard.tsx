@@ -752,14 +752,46 @@ export default function Dashboard() {
   return <DashboardDesktop />
 }
 
+type LiveSnapshot = {
+  enabled?: boolean
+  status?: 'pre' | 'live' | 'ht' | 'live2' | 'ft'
+  scoreHome?: number
+  scoreAway?: number
+  homeLabel?: string | null
+  awayLabel?: string | null
+} | null
+
 function DashboardDesktop() {
   const [counts,  setCounts]  = useState<Record<string, number>>({})
   const [news,    setNews]    = useState<NewsDoc[]>([])
   const [players, setPlayers] = useState<PlayerDoc[]>([])
   const [season,  setSeason]  = useState<SeasonGlobal | null>(null)
+  const [live,    setLive]    = useState<LiveSnapshot>(null)
   const [loading, setLoading] = useState(true)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
+
+  // Polling liveMatch co 10s — banner LIVE w headerze ma świecić zawsze gdy mecz trwa,
+  // niezależnie od tego ile czasu admin zostawił otwartą stronę.
+  useEffect(() => {
+    let cancelled = false
+    const tick = async () => {
+      try {
+        const r = await fetch('/api/globals/liveMatch?depth=0', { credentials: 'include' })
+        if (!r.ok) return
+        const json = await r.json()
+        if (!cancelled) setLive(json as LiveSnapshot)
+      } catch {
+        // ignore
+      }
+    }
+    tick()
+    const t = window.setInterval(tick, 10_000)
+    return () => {
+      cancelled = true
+      window.clearInterval(t)
+    }
+  }, [])
 
   useEffect(() => {
     const slugs = ['news', 'players', 'teams', 'media', 'users', 'gallery', 'sponsors', 'staff', 'board', 'tags', 'heroSlides', 'staticPages']
@@ -835,7 +867,48 @@ function DashboardDesktop() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, position: 'relative' }}>
+        <div style={{ display: 'flex', gap: 8, position: 'relative', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* LIVE indicator — pulsujący czerwony badge gdy trwa relacja, link do Studia.
+              Pojawia się obok przycisków "+ Nowy news" by admin zawsze widział gdy mecz aktywny. */}
+          {live?.enabled && live.status && live.status !== 'ft' && (
+            <a
+              href="/admin/live-studio"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 14px',
+                background: 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)',
+                color: '#fff',
+                borderRadius: T.rLg,
+                textDecoration: 'none',
+                fontSize: 12.5,
+                fontWeight: 800,
+                letterSpacing: '0.04em',
+                boxShadow: '0 2px 12px rgba(220,38,38,0.45)',
+                border: '1px solid rgba(255,255,255,0.18)',
+              }}
+            >
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 99,
+                  background: '#fff',
+                  boxShadow: '0 0 0 5px rgba(255,255,255,0.22)',
+                  animation: 'wks-pulse 1.5s ease-in-out infinite',
+                }}
+              />
+              <span style={{ textTransform: 'uppercase' }}>Studio Live</span>
+              <span style={{ fontVariantNumeric: 'tabular-nums', opacity: 0.92 }}>
+                {live.scoreHome ?? 0}:{live.scoreAway ?? 0}
+              </span>
+              <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase', background: 'rgba(255,255,255,0.18)', padding: '2px 6px', borderRadius: 99 }}>
+                TRWA
+              </span>
+            </a>
+          )}
           <a href="/admin/collections/news/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.green, color: '#fff', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 8px rgba(22,101,52,0.5)' }}>
             <IconPlus size={13} color="#fff" /> Nowy news
           </a>
