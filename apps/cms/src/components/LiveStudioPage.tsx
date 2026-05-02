@@ -283,8 +283,26 @@ export default function LiveStudioPage() {
     async (st: LiveMatchState) => {
       const data: Partial<LiveMatchDoc> = { status: st }
       if (st === 'live') {
+        // Opcjonalny override: "Mecz zaczął się X minut temu" — gdy admin spóźnił się
+        // z odpaleniem live i chce, żeby zegar od razu pokazywał np. 7. minutę.
+        // Pusta odpowiedź / brak liczby → start = teraz.
+        const offsetRaw = window.prompt(
+          'Mecz zaczął się X minut temu (opcjonalnie). Pozostaw puste jeśli kickoff jest TERAZ.',
+          '',
+        )
+        const offsetMin = (() => {
+          const n = Number((offsetRaw ?? '').trim())
+          return Number.isFinite(n) && n > 0 && n < 120 ? Math.trunc(n) : 0
+        })()
+        const nowMs = Date.now()
+        const kickoffMs = nowMs - offsetMin * 60_000
+        const nowIso = new Date(nowMs).toISOString()
+        const kickoffIso = new Date(kickoffMs).toISOString()
         data.enabled = true
-        data.kickoffReal = new Date().toISOString()
+        data.kickoffReal = kickoffIso
+        // Aktualizujemy też kickoffPlanned na faktyczny start, żeby strona publiczna
+        // nie pokazywała "Relacja od 14:30" gdy mecz tak naprawdę zaczynał się o 16:00.
+        data.kickoffPlanned = nowIso
         data.pauseAt = null
         data.resumeAt = null
       }
@@ -434,11 +452,16 @@ export default function LiveStudioPage() {
     }
   }, [baseUrl, patch])
 
-  const openGoalModal = useCallback(async () => {
-    const current = live ?? (await fetchLive())
-    if (matchId) {
-      const m = await fetchMatch(matchId)
+  // Pobiera kadrę meczową (lineup match'u → all wksTeam → seniorzy fallback).
+  // Wyodrębnione, żeby auto-load był gotowy zanim user otworzy modal — dropdown
+  // strzelca zawsze ma dane, nie pokazuje "Brak kadry" przez UX-blink.
+  const loadLineupFromMatch = useCallback(
+    async (matchIdArg: string | number): Promise<Array<{ id: string; name: string }>> => {
+      const m = await fetchMatch(matchIdArg)
+      if (m) setMatch(m)
       const rawLineup = (m as any)?.lineup
+
+      // Krok 1: lineup z depth=2 (rozwinięte gracze)
       let normalized: Array<{ id: string; name: string }> = Array.isArray(rawLineup)
         ? rawLineup
             .map((p: any) => {
@@ -451,7 +474,7 @@ export default function LiveStudioPage() {
             .filter((p): p is { id: string; name: string } => p !== null)
         : []
 
-      // Fallback 1: lineup zapisany jako tablica numeric ID (depth=0). Pobierz nazwy.
+      // Krok 2: lineup jako tablica goła ID — pobierz nazwy
       if (
         normalized.length === 0 &&
         Array.isArray(rawLineup) &&
@@ -459,11 +482,16 @@ export default function LiveStudioPage() {
         rawLineup.every((x: any) => typeof x === 'number' || typeof x === 'string')
       ) {
         try {
-          const idsCsv = rawLineup.join(',')
-          const r = await fetch(
-            `${baseUrl}/api/players?limit=200&depth=0&where[id][in]=${encodeURIComponent(idsCsv)}`,
-            { credentials: 'include' },
-          )
+          // Payload accepts repeated where[id][in]=X — buduję URL ręcznie żeby uniknąć
+          // niejasności jakie format akceptuje konkretna wersja Payload.
+          const params = new URLSearchParams()
+          params.set('limit', '200')
+          params.set('depth', '0')
+          params.set('sort', 'number')
+          for (const id of rawLineup) {
+            params.append('where[id][in][]', String(id))
+          }
+          const r = await fetch(`${baseUrl}/api/players?${params.toString()}`, { credentials: 'include' })
           if (r.ok) {
             const json = await r.json()
             const docs = (Array.isArray(json?.docs) ? json.docs : []) as any[]
@@ -472,11 +500,11 @@ export default function LiveStudioPage() {
               .filter((x) => x.id && x.name)
           }
         } catch {
-          // ignore — fallback 2 below
+          // fallback 3 below
         }
       }
 
-      // Fallback 2: lineup pusty → pokaż całą drużynę WKS przypisaną do meczu.
+      // Krok 3: pusty lineup → cała drużyna WKS przypisana do meczu
       if (normalized.length === 0) {
         const wt = (m as any)?.wksTeam
         let wksTeamId =
@@ -486,8 +514,7 @@ export default function LiveStudioPage() {
               ? wt.id
               : null
 
-        // Fallback 3: gdy match nie ma wksTeam (stare mecze sprzed dodania pola),
-        // znajdź drużynę "seniorzy" w kolekcji teams.
+        // Krok 4: stary match bez wksTeam → znajdź drużynę "seniorzy"
         if (wksTeamId == null) {
           try {
             const r = await fetch(
@@ -525,14 +552,40 @@ export default function LiveStudioPage() {
 
       if (normalized.length === 0) {
         // eslint-disable-next-line no-console
-        console.warn('[live-studio] openGoalModal: brak kadry meczowej. raw lineup:', rawLineup, 'match:', m)
+        console.warn('[live-studio] loadLineupFromMatch: brak kadry. raw:', rawLineup, 'match:', m)
       }
+      return normalized
+    },
+    [baseUrl, fetchMatch],
+  )
 
-      setLineup(normalized)
-      if (!goalScorerId && normalized[0]?.id) setGoalScorerId(normalized[0].id)
-      if (m) setMatch(m)
-    } else {
+  // Auto-load lineup gdy zmieni się powiązany match (np. nowy live setup).
+  // Dropdown strzelca w modalu od razu ma dane, bez UX-blink "Brak kadry".
+  useEffect(() => {
+    if (!matchId) {
       setLineup([])
+      return
+    }
+    let cancelled = false
+    loadLineupFromMatch(matchId).then((list) => {
+      if (cancelled) return
+      setLineup(list)
+      if (list[0]?.id && !goalScorerId) setGoalScorerId(list[0].id)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchId])
+
+  const openGoalModal = useCallback(async () => {
+    const current = live ?? (await fetchLive())
+    // Lineup już załadowany przez useEffect powyżej. Re-load jeśli pusty (np. user
+    // otworzył modal zanim auto-load zdążył skończyć).
+    if (matchId && lineup.length === 0) {
+      const list = await loadLineupFromMatch(matchId)
+      setLineup(list)
+      if (list[0]?.id && !goalScorerId) setGoalScorerId(list[0].id)
     }
 
     const st = current?.status ?? 'pre'
@@ -544,7 +597,7 @@ export default function LiveStudioPage() {
     setGoalAssistText('')
     setGoalScorerText('')
     setGoalModalOpen(true)
-  }, [baseUrl, clock, fetchLive, fetchMatch, goalScorerId, live, matchId])
+  }, [clock, fetchLive, goalScorerId, lineup.length, live, loadLineupFromMatch, matchId])
 
   const submitGoalWks = useCallback(async () => {
     const current = live ?? (await fetchLive())
