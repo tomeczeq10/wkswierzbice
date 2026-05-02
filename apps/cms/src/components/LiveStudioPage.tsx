@@ -80,50 +80,47 @@ function stateLabel(s: LiveMatchState | undefined): string {
 }
 
 function computeClock(nowMs: number, doc: LiveMatchDoc): { minute: number; second: number } | null {
+  const status = doc.status ?? 'pre'
+
+  if (status === 'pre') return { minute: 0, second: 0 }
+
+  // Kanoniczne wartości na zatrzymaniach: po HT zegar pokazuje 45 (+ doliczony czas
+  // 1. połowy), po FT pokazuje 90 (+ doliczony czas 2. połowy). Bez tego klikajac
+  // „Koniec 1. połowy” w 1:02 zobaczyłbyś 01:02 zamiast 45:00 — niezgodne ze sztuką
+  // relacji meczowych i mylące dla kibica.
+  const added1 = clampInt(doc.addedTime1, 0)
+  const added2 = clampInt(doc.addedTime2, 0)
+
+  if (status === 'ht') return { minute: 45 + added1, second: 0 }
+  if (status === 'ft') return { minute: 90 + added2, second: 0 }
+
+  // Stany aktywne (live, live2): liczymy od kickoffReal / resumeAt.
   const kickoffMs = parseMs(doc.kickoffReal ?? null)
   if (!kickoffMs) return null
-
   const pauseMs = parseMs(doc.pauseAt ?? null)
   const resumeMs = parseMs(doc.resumeAt ?? null)
-  const st = doc.status ?? 'pre'
 
-  if (st === 'pre') return { minute: 0, second: 0 }
-  if (st === 'ht') {
-    const end = pauseMs ?? nowMs
-    const s = Math.max(0, Math.floor((end - kickoffMs) / 1000))
-    return { minute: Math.floor(s / 60), second: s % 60 }
-  }
-
-  if (st === 'live') {
-    // Pause/resume inside half: freeze when pauseAt is set and not resumed yet.
+  if (status === 'live') {
+    // Pauza wewnątrz połowy: zamrażamy przy pauseAt, dopóki nie ma resumeAt.
     const frozenEnd = pauseMs && (!resumeMs || resumeMs < pauseMs) ? pauseMs : nowMs
     const s = Math.max(0, Math.floor((frozenEnd - kickoffMs) / 1000))
     return { minute: Math.floor(s / 60), second: s % 60 }
   }
 
-  if (st === 'live2') {
-    // UX: po kliknięciu „Start 2. połowy” licz od 45:00 (jak w relacjach live),
-    // niezależnie od realnego czasu pauzy/przerwy.
+  if (status === 'live2') {
+    // Po kliknięciu „Start 2. połowy” licz od 45:00 niezależnie od długości przerwy.
     if (resumeMs) {
       const frozenEnd = pauseMs && pauseMs > resumeMs ? pauseMs : nowMs
       const second = Math.max(0, Math.floor((frozenEnd - resumeMs) / 1000))
       const s = 45 * 60 + second
       return { minute: Math.floor(s / 60), second: s % 60 }
     }
-    // fallback: jeśli brak resumeAt, licz jak dotychczas od kickoffReal
+    // Fallback: brak resumeAt (nie powinno się zdarzyć po naszym setState).
     const s = Math.max(0, Math.floor((nowMs - kickoffMs) / 1000))
     return { minute: Math.floor(s / 60), second: s % 60 }
   }
 
-  // ft: freeze at last known moment
-  const end = pauseMs ?? nowMs
-  if (resumeMs && st === 'ft') {
-    const second = Math.max(0, Math.floor((end - resumeMs) / 1000))
-    const s = 45 * 60 + second
-    return { minute: Math.floor(s / 60), second: s % 60 }
-  }
-  const s = Math.max(0, Math.floor((end - kickoffMs) / 1000))
-  return { minute: Math.floor(s / 60), second: s % 60 }
+  return null
 }
 
 const T = {
@@ -199,13 +196,21 @@ export default function LiveStudioPage() {
       try {
         const current = liveRef.current ?? live ?? (await fetchLive())
         const merged: any = { ...(current as any), ...(data as any) }
-        // Payload globals update uses POST; send a safe, complete snapshot to avoid wiping fields like `match`.
+
+        // Match musi iść jako ID, nie rozwinięty obiekt (depth=1 zwraca obiekt — Payload
+        // POST może to różnie traktować). Bez tego optimistic update stawał się rozjechany
+        // z DB i SSE wracał do "starego" stanu.
+        let matchIdForPayload: number | string | null | undefined = merged.match
+        if (matchIdForPayload && typeof matchIdForPayload === 'object') {
+          matchIdForPayload = (matchIdForPayload as any).id ?? null
+        }
+
         const payload: any = {
           enabled: merged.enabled,
           status: merged.status,
           mode: merged.mode,
           kind: merged.kind,
-          match: merged.match,
+          match: matchIdForPayload ?? null,
           competitionLabel: merged.competitionLabel,
           competitionCustomLabel: merged.competitionCustomLabel,
           kickoffPlanned: merged.kickoffPlanned,
@@ -237,15 +242,21 @@ export default function LiveStudioPage() {
           credentials: 'include',
         })
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        // optimistic update (SSE will correct it if needed)
-        setLive((prev) => ({ ...(prev ?? {}), ...(payload as any) }))
+
+        // Po sukcesie pobierz autorytatywny stan z DB (z depth=1 — dostajemy
+        // rozwinięte match.wksSide, kluczowe dla wksIsHome). To eliminuje rozjazdy
+        // pomiędzy optimistic update a tym co wraca przez SSE.
+        await fetchLive().catch(() => {
+          // Fallback do optimistic update jeśli refetch z jakiegoś powodu padnie.
+          setLive((prev) => ({ ...(prev ?? {}), ...(payload as any) }))
+        })
       } catch (e) {
         setErr(e instanceof Error ? e.message : String(e))
       } finally {
         setBusy(false)
       }
     },
-    [patchUrl],
+    [fetchLive, live, patchUrl],
   )
 
   const setState = useCallback(
@@ -282,7 +293,19 @@ export default function LiveStudioPage() {
     return null
   }, [live?.match])
 
-  const wksIsHome = (match?.wksSide ?? 'home') === 'home'
+  // Strona WKS-a: priorytet z `live.match` (depth=1 zwraca rozwinięte match).
+  // Bez tego była race condition — `match` state ładuje się DRUGIM fetchem (`fetchMatch`),
+  // więc do momentu jego zakończenia eventy renderowały się po złej stronie.
+  // Strona publiczna (cms-live.ts) używa tej samej heurystyki — stąd różnica vs Studio.
+  const wksIsHome = useMemo(() => {
+    const fromLive =
+      live?.match && typeof live.match === 'object' && (live.match as any).wksSide
+        ? String((live.match as any).wksSide)
+        : null
+    if (fromLive === 'home') return true
+    if (fromLive === 'away') return false
+    return (match?.wksSide ?? 'home') === 'home'
+  }, [live?.match, match?.wksSide])
 
   const eventSide = useCallback(
     (ev: any): 'home' | 'away' | 'neutral' => {
@@ -796,7 +819,28 @@ export default function LiveStudioPage() {
     es.onmessage = (ev) => {
       try {
         const json = JSON.parse(ev.data)
-        if (isRecord(json)) setLive(json as any)
+        if (!isRecord(json)) return
+        // Merge zamiast zastąpienia: hook afterChange może opublikować doc z payloadu POST
+        // (match jako goła ID), a my chcemy zachować rozwinięty match z fetchLive (depth=1).
+        // Po SSE robimy delegowany refetch w tle — gwarantuje że wksIsHome i preview
+        // mają komplet danych.
+        setLive((prev) => {
+          if (!prev) return json as any
+          const incomingMatch = (json as any).match
+          // Jeśli przychodzi tylko ID, zachowaj poprzedni rozwinięty match (jeśli pasuje).
+          const prevMatchId =
+            prev.match && typeof prev.match === 'object' ? (prev.match as any).id : prev.match
+          let nextMatch = incomingMatch
+          if (
+            (typeof incomingMatch === 'number' || typeof incomingMatch === 'string') &&
+            prev.match &&
+            typeof prev.match === 'object' &&
+            String(prevMatchId) === String(incomingMatch)
+          ) {
+            nextMatch = prev.match
+          }
+          return { ...prev, ...(json as any), match: nextMatch }
+        })
       } catch {
         // ignore
       }

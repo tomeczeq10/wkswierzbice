@@ -45,6 +45,8 @@ type LiveMatch = {
   kickoffReal?: string | null
   pauseAt?: string | null
   resumeAt?: string | null
+  addedTime1?: number | null
+  addedTime2?: number | null
   match?: number | { id: number } | null
 }
 type UpcomingMatchDoc = {
@@ -155,31 +157,34 @@ function kindLabel(k: 'league' | 'friendly' | 'cup'): string {
   return k === 'league' ? 'Ligowy' : k === 'friendly' ? 'Sparing' : 'Puchar'
 }
 
-/** Wylicza aktualną minutę meczu (1.poł 0..45+, 2.poł 45..90+) z live globala. */
+/**
+ * Wylicza aktualną minutę meczu z live globala.
+ * Kanoniczne wartości na zatrzymaniach: po HT pokazuje 45 (+ doliczony 1. poł.),
+ * po FT pokazuje 90 (+ doliczony 2. poł.). Zgodne z computeClock w Studio.
+ */
 function computeLiveMinute(live: LiveMatch | null, nowMs: number): number | null {
   if (!live) return null
+  const st = live.status
+  if (st === 'pre') return 0
+
+  const added1 = Number.isFinite(live.addedTime1 as any) ? Math.max(0, Math.trunc(Number(live.addedTime1))) : 0
+  const added2 = Number.isFinite(live.addedTime2 as any) ? Math.max(0, Math.trunc(Number(live.addedTime2))) : 0
+
+  if (st === 'ht') return 45 + added1
+  if (st === 'ft') return 90 + added2
+
   const kickoff = live.kickoffReal ? new Date(live.kickoffReal).getTime() : NaN
   if (!Number.isFinite(kickoff)) return null
   const pauseMs = live.pauseAt ? new Date(live.pauseAt).getTime() : null
   const resumeMs = live.resumeAt ? new Date(live.resumeAt).getTime() : null
-  const st = live.status
-  if (st === 'pre') return 0
+
   if (st === 'live') {
     const end = pauseMs && (!resumeMs || resumeMs < pauseMs) ? pauseMs : nowMs
-    return Math.max(0, Math.floor((end - kickoff) / 60000))
-  }
-  if (st === 'ht') {
-    const end = pauseMs ?? nowMs
     return Math.max(0, Math.floor((end - kickoff) / 60000))
   }
   if (st === 'live2' && resumeMs) {
     const end = pauseMs && pauseMs > resumeMs ? pauseMs : nowMs
     return 45 + Math.max(0, Math.floor((end - resumeMs) / 60000))
-  }
-  if (st === 'ft') {
-    const end = pauseMs ?? nowMs
-    if (resumeMs) return 45 + Math.max(0, Math.floor((end - resumeMs) / 60000))
-    return Math.max(0, Math.floor((end - kickoff) / 60000))
   }
   return null
 }
