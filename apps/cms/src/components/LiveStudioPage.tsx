@@ -291,6 +291,9 @@ export default function LiveStudioPage() {
       if (st === 'ht') data.pauseAt = new Date().toISOString()
       if (st === 'live2') {
         data.enabled = true
+        // Czyścimy pauseAt z przerwy — bez tego UI (`Boolean(pauseAt)`) myślał, że
+        // mecz wciąż jest na pauzie i pokazywał napis "⏸ pauza" w 2. połowie.
+        data.pauseAt = null
         data.resumeAt = new Date().toISOString()
       }
       if (st === 'ft') {
@@ -476,12 +479,31 @@ export default function LiveStudioPage() {
       // Fallback 2: lineup pusty → pokaż całą drużynę WKS przypisaną do meczu.
       if (normalized.length === 0) {
         const wt = (m as any)?.wksTeam
-        const wksTeamId =
+        let wksTeamId =
           typeof wt === 'number' || typeof wt === 'string'
             ? wt
             : wt && typeof wt === 'object' && wt.id != null
               ? wt.id
               : null
+
+        // Fallback 3: gdy match nie ma wksTeam (stare mecze sprzed dodania pola),
+        // znajdź drużynę "seniorzy" w kolekcji teams.
+        if (wksTeamId == null) {
+          try {
+            const r = await fetch(
+              `${baseUrl}/api/teams?limit=1&depth=0&where[category][equals]=seniorzy`,
+              { credentials: 'include' },
+            )
+            if (r.ok) {
+              const json = await r.json()
+              const t = (Array.isArray(json?.docs) ? json.docs[0] : null) as any
+              if (t?.id != null) wksTeamId = t.id
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         if (wksTeamId != null) {
           try {
             const r = await fetch(
@@ -1041,8 +1063,8 @@ export default function LiveStudioPage() {
   return (
     <div className="wks-live-studio" style={{ minHeight: '100vh', background: '#0b1f14', color: T.text, padding: 18, boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', gap: 14, alignItems: 'center', marginBottom: 14, flexWrap: 'wrap' }}>
-        <a href="/admin/globals/liveMatch" style={{ color: T.muted, textDecoration: 'none', fontWeight: 600 }}>
-          ← LiveMatch
+        <a href="/admin" style={{ color: T.muted, textDecoration: 'none', fontWeight: 600 }}>
+          ← Dashboard
         </a>
         <h1 style={{ margin: 0, fontSize: 16, fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
           Studio Live

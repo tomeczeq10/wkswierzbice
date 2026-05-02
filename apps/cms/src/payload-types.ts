@@ -399,6 +399,10 @@ export interface Player {
  */
 export interface Match {
   id: number;
+  /**
+   * Mecze ręczne (sparingi, pucharowe one-offy, testy) usuwają się automatycznie z terminarza po zakończeniu live (status=ft). Mecze ligowe (z 90minut) zostają.
+   */
+  source?: ('imported' | 'manual') | null;
   competitionType: 'league' | 'friendly' | 'cup';
   /**
    * Np. „Klasa okręgowa · K24”, „Puchar Polski”.
@@ -912,6 +916,7 @@ export interface PlayersSelect<T extends boolean = true> {
  * via the `definition` "matches_select".
  */
 export interface MatchesSelect<T extends boolean = true> {
+  source?: T;
   competitionType?: T;
   competitionLabel?: T;
   kickoffPlanned?: T;

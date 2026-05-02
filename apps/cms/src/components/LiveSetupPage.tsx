@@ -338,6 +338,7 @@ export default function LiveSetupPage() {
         const wksHome = nearest.venue !== 'away'
         const opp = String(nearest.opponent).trim()
         const body: Record<string, unknown> = {
+          source: 'imported', // mecz ligowy z 90minut — zostanie w terminarzu po FT
           competitionType: 'league',
           kickoffPlanned: kickoffIso,
           venue: wksHome ? 'home' : 'away',
@@ -529,12 +530,17 @@ export default function LiveSetupPage() {
           headers: { 'content-type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({
+            // Mecz ręczny (test/sparing/puchar/custom) — usunie się z terminarza po FT.
+            source: 'manual',
             competitionType: matchType,
             kickoffPlanned: kickoffIso,
             venue,
             wksSide,
             homeTeamLabel: homeLabel,
             awayTeamLabel: awayLabel,
+            // Bez wksTeam openGoalModal w Studio nie miałby fallbacku do całej drużyny seniorów —
+            // dropdown strzelca pokazywałby pusto mimo wybranej kadry.
+            wksTeam: seniorTeam?.id ?? undefined,
             lineup: lineupIds,
           }),
         })

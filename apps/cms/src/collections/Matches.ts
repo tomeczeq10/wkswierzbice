@@ -28,6 +28,21 @@ export const Matches: CollectionConfig = {
   defaultSort: '-kickoffPlanned',
   fields: [
     {
+      name: 'source',
+      type: 'select',
+      defaultValue: 'imported',
+      options: [
+        { label: 'Z 90minut (terminarz ligowy)', value: 'imported' },
+        { label: 'Ręczny (sparing/puchar/test)', value: 'manual' },
+      ],
+      label: { pl: 'Źródło', en: 'Source' },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Mecze ręczne (sparingi, pucharowe one-offy, testy) usuwają się automatycznie z terminarza po zakończeniu live (status=ft). Mecze ligowe (z 90minut) zostają.',
+      },
+    },
+    {
       name: 'competitionType',
       type: 'select',
       required: true,

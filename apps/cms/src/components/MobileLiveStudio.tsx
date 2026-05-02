@@ -426,7 +426,7 @@ export default function MobileLiveStudio(p: MobileStudioProps) {
       {/* Top bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
         <a
-          href="/admin/globals/liveMatch"
+          href="/admin"
           style={{
             display: 'inline-flex',
             alignItems: 'center',

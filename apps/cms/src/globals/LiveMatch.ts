@@ -119,6 +119,29 @@ export const LiveMatch: GlobalConfig = {
                 usedForArticle: false,
               } as any,
             })
+
+            // Cleanup terminarza: jeśli linkowany match był ręczny (test/sparing/puchar
+            // one-off utworzony w Live Setup), usuwamy go z `matches` żeby nie zaśmiecał
+            // listy. Mecze ligowe (source='imported' z 90minut) pozostają — terminarz
+            // jest fundamentem strony publicznej.
+            if (matchId) {
+              try {
+                const linked = await req.payload.findByID({
+                  collection: 'matches',
+                  id: matchId as any,
+                  depth: 0,
+                })
+                if ((linked as any)?.source === 'manual') {
+                  await req.payload.delete({
+                    collection: 'matches',
+                    id: matchId as any,
+                  })
+                }
+              } catch (e) {
+                // eslint-disable-next-line no-console
+                console.warn('[liveMatch] Cleanup terminarza po FT pominięty:', e)
+              }
+            }
           }
         } catch (e) {
           // Don't break the live-match update if archiving fails — just log.

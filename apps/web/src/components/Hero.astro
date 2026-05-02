@@ -187,32 +187,40 @@ function seasonSubtitle(): string | null {
                 </div>
               </div>
 
-              <div class="mt-4 grid grid-cols-3 items-end gap-4">
+              <div class="mt-4 grid grid-cols-[1fr_auto_1fr] items-end gap-3 sm:gap-4">
                 <div class="text-left min-w-0">
-                  <div class="font-display uppercase text-white/90 text-base sm:text-lg truncate" data-live-home>
+                  <div
+                    class="font-display uppercase text-white/90 text-xs sm:text-sm md:text-base lg:text-lg leading-tight break-words hyphens-auto"
+                    style="word-break: break-word; overflow-wrap: anywhere;"
+                    data-live-home
+                  >
                     {liveMatch?.homeLabel ?? "WKS Wierzbice"}
                   </div>
                 </div>
 
-                <div class="flex items-end justify-center gap-4">
-                  <span class="font-display text-6xl sm:text-7xl leading-none text-white tabular-nums" data-live-score-home>
+                <div class="flex items-end justify-center gap-2 sm:gap-4">
+                  <span class="font-display text-5xl sm:text-6xl md:text-7xl leading-none text-white tabular-nums" data-live-score-home>
                     {liveMatch?.scoreHome ?? 0}
                   </span>
                   <div class="flex flex-col items-center -mb-1">
-                    <span class="font-display uppercase tracking-[0.22em] text-[10px] text-white/70" data-live-state-2>
+                    <span class="font-display uppercase tracking-[0.22em] text-[10px] text-white/70 whitespace-nowrap" data-live-state-2>
                       {stateLabel(liveMatch?.state ?? "pre")}
                     </span>
-                    <span class="font-display tabular-nums text-white text-2xl sm:text-3xl leading-none" data-live-time-2>
+                    <span class="font-display tabular-nums text-white text-xl sm:text-2xl md:text-3xl leading-none" data-live-time-2>
                       {liveMatch?.clock?.time ?? "--:--"}
                     </span>
                   </div>
-                  <span class="font-display text-6xl sm:text-7xl leading-none text-white tabular-nums" data-live-score-away>
+                  <span class="font-display text-5xl sm:text-6xl md:text-7xl leading-none text-white tabular-nums" data-live-score-away>
                     {liveMatch?.scoreAway ?? 0}
                   </span>
                 </div>
 
                 <div class="text-right min-w-0">
-                  <div class="font-display uppercase text-white/90 text-base sm:text-lg truncate" data-live-away>
+                  <div
+                    class="font-display uppercase text-white/90 text-xs sm:text-sm md:text-base lg:text-lg leading-tight break-words hyphens-auto"
+                    style="word-break: break-word; overflow-wrap: anywhere;"
+                    data-live-away
+                  >
                     {liveMatch?.awayLabel ?? "—"}
                   </div>
                 </div>
@@ -230,26 +238,30 @@ function seasonSubtitle(): string | null {
                       <div class="text-[10px] uppercase tracking-[0.25em] text-white/60 font-display">
                         Zdarzenia
                       </div>
-                      <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-white/85">
-                        <ul class="space-y-1.5" data-live-events-home>
+                      <div class="mt-3 grid grid-cols-2 gap-3 text-xs sm:text-sm text-white/85">
+                        {/* Lewa kolumna — WKS (gdy gra u siebie) lub rywal (gdy WKS na wyjeździe).
+                            Tekst skrajnie po lewej, justify-start. */}
+                        <ul class="space-y-1.5 justify-self-start" data-live-events-home>
                           {home.map((e) => (
-                            <li class="flex gap-2">
-                              <span class="text-white/60 tabular-nums w-10 shrink-0">
+                            <li class="flex items-baseline gap-1.5">
+                              <span class="text-white/60 tabular-nums shrink-0 text-[11px] sm:text-xs">
                                 {typeof e.minute === "number" ? `${e.minute}'` : ""}
                               </span>
                               <span class="shrink-0">{icon(e)}</span>
-                              <span class="min-w-0">{e.text}</span>
+                              <span class="min-w-0 break-words" style="overflow-wrap: anywhere;">{e.text}</span>
                             </li>
                           ))}
                         </ul>
-                        <ul class="space-y-1.5" data-live-events-away>
+                        {/* Prawa kolumna — eventy "away" justify-self-end + flex-row-reverse,
+                            żeby tekst był skrajnie po prawej (przy nazwie rywala). */}
+                        <ul class="space-y-1.5 justify-self-end text-right" data-live-events-away>
                           {away.map((e) => (
-                            <li class="flex gap-2">
-                              <span class="text-white/60 tabular-nums w-10 shrink-0">
+                            <li class="flex flex-row-reverse items-baseline gap-1.5">
+                              <span class="text-white/60 tabular-nums shrink-0 text-[11px] sm:text-xs">
                                 {typeof e.minute === "number" ? `${e.minute}'` : ""}
                               </span>
                               <span class="shrink-0">{icon(e)}</span>
-                              <span class="min-w-0">{e.text}</span>
+                              <span class="min-w-0 break-words" style="overflow-wrap: anywhere;">{e.text}</span>
                             </li>
                           ))}
                         </ul>
@@ -511,17 +523,24 @@ function seasonSubtitle(): string | null {
                 .sort((a, b) => ((typeof a?.minute === "number" ? a.minute : 9999) - (typeof b?.minute === "number" ? b.minute : 9999)))
                 .slice(-5)
             : [];
+          // Strona "home" — flex normalny (tekst lewo). Strona "away" — flex-row-reverse
+          // (tekst prawo). Spójne ze SSR. Dzięki temu eventy WKS są przy lewej krawędzi
+          // gdy WKS gra u siebie, a eventy rywala przy prawej.
+          const isAway = side === "away";
           list.forEach((e) => {
             const li = document.createElement("li");
-            li.className = "flex gap-2";
+            li.className = isAway
+              ? "flex flex-row-reverse items-baseline gap-1.5"
+              : "flex items-baseline gap-1.5";
             const min = document.createElement("span");
-            min.className = "text-white/60 tabular-nums w-10 shrink-0";
+            min.className = "text-white/60 tabular-nums shrink-0 text-[11px] sm:text-xs";
             min.textContent = typeof e.minute === "number" ? `${e.minute}'` : "";
             const ico = document.createElement("span");
             ico.className = "shrink-0";
             ico.textContent = iconFor(e);
             const txt = document.createElement("span");
-            txt.className = "min-w-0";
+            txt.className = "min-w-0 break-words";
+            txt.style.overflowWrap = "anywhere";
             txt.textContent = String(e.text || "");
             li.appendChild(min);
             li.appendChild(ico);
@@ -570,9 +589,11 @@ function seasonSubtitle(): string | null {
         }
       }
 
-      // first refresh immediately, then every 15s
+      // Pierwsze odświeżenie natychmiast, potem co 5s (zamiast 15s) — opóźnienie
+      // pomiędzy "Start meczu" w Studio a pojawieniem się live na stronie publicznej
+      // jest teraz max ~5s (bez SSE) zamiast ~15s. SSE i tak daje "instant" gdy działa.
       tick();
-      setInterval(tick, 15000);
+      setInterval(tick, 5000);
 
       // Realtime: SSE (fallback to polling if unavailable)
       try {

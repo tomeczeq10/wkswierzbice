@@ -10,6 +10,7 @@ import * as migration_20260429_203900_matches_lineup from './20260429_203900_mat
 import * as migration_20260429_204400_live_match_event_text_assists from './20260429_204400_live_match_event_text_assists';
 import * as migration_20260429_205300_live_match_kickoff_planned from './20260429_205300_live_match_kickoff_planned';
 import * as migration_20260501_190732_liveArchives from './20260501_190732_liveArchives';
+import * as migration_20260502_140000_matches_source from './20260502_140000_matches_source';
 
 export const migrations = [
   {
@@ -71,5 +72,10 @@ export const migrations = [
     up: migration_20260501_190732_liveArchives.up,
     down: migration_20260501_190732_liveArchives.down,
     name: '20260501_190732_liveArchives'
+  },
+  {
+    up: migration_20260502_140000_matches_source.up,
+    down: migration_20260502_140000_matches_source.down,
+    name: '20260502_140000_matches_source',
   },
 ];
