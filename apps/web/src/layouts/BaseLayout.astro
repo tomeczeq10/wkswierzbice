@@ -2,6 +2,7 @@
 import "@/styles/global.css";
 import Header from "@/components/Header.astro";
 import Footer from "@/components/Footer.astro";
+import LiveBanner from "@/components/LiveBanner.astro";
 import { fetchSiteConfig } from "@/lib/cms-site";
 import { fetchSeason } from "@/lib/cms-season";
 import TemplateInit from "@/templates/init.astro";
@@ -106,6 +107,7 @@ const form = [...season.wks.played].reverse().slice(0, 5).map((m) => m.result?.o
     >
       Przejdź do treści
     </a>
+    <LiveBanner />
     <Header />
     <div data-template-only="klasyk">
       <KlasykStickyLeagueBar
