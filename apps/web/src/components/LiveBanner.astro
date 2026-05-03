@@ -222,7 +222,9 @@ const initialClock = live?.clock?.time ?? "--:--";
     let live = null;
     let tickerHandle = null;
 
-    const apply = (data) => {
+    const apply = (raw) => {
+      // Normalize: SSE z CMS ma `status`, polling /wks-live-match ma `state`.
+      const data = raw ? { ...raw, state: raw.state || raw.status } : null;
       const isLive = Boolean(
         data && data.enabled && (data.state === "live" || data.state === "ht" || data.state === "live2"),
       );
