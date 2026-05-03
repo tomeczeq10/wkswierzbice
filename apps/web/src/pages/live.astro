@@ -319,6 +319,7 @@ function fmtKickoff(iso: string | undefined): string | null {
       </div>
 
       {showWidget ? (
+        <>
         <article class="scoreboard">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
             <div class="live-pill">
@@ -382,6 +383,7 @@ function fmtKickoff(iso: string | undefined): string | null {
             )}
           </ul>
         </section>
+        </>
       ) : (
         <div class="no-live">
           <div style="font-size:36px; margin-bottom:10px;">⚪</div>
