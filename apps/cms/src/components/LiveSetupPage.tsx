@@ -581,7 +581,11 @@ export default function LiveSetupPage() {
         body: JSON.stringify({
           enabled: true,
           status: 'pre',
-          mode: 'fromMatch',
+          // Mode 'manual' gdy user wpisał ręcznie (sparing/pucharowy). Wtedy public page
+          // czyta homeLabel/awayLabel bezpośrednio z globala — nie z linkowanego match'u
+          // (który mógłby być stary/inny). Bez tego /live pokazywało Polonia Trzebnica
+          // mimo że Studio pokazywało Solna.
+          mode: source === 'manual' ? 'manual' : 'fromMatch',
           kind,
           match: matchId,
           competitionCustomLabel: kind === 'custom' ? customKindLabel.trim() || null : null,

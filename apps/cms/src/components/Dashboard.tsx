@@ -1094,7 +1094,7 @@ function DashboardDesktop() {
               <GlobalCard href="/admin/globals/siteConfig" label="Konfiguracja strony" sub="Nawigacja, kontakt, social" Icon={IconSettings} accent={T.slate} accentLt={T.slateLt} />
               <GlobalCard href="/admin/globals/season"     label="Sezon 2025/2026"     sub="Tabela · mecze · sync"    Icon={IconTrophy}   accent={T.amber} accentLt={T.amberLt} />
               <GlobalCard href="/admin/live-studio"       label="Studio Live"        sub="Relacja na żywo (sterowanie)" Icon={IconBolt}   accent={T.green} accentLt={T.greenLt} />
-              <GlobalCard href="/admin/globals/liveMatch" label="LiveMatch"          sub="Ustawienia relacji + szybki start" Icon={IconScore} accent={T.rose}  accentLt={T.roseLt} />
+              <GlobalCard href="/admin/collections/liveArchives" label="Archiwum relacji" sub="Zakończone live'y — do napisania artykułu" Icon={IconScore} accent={T.rose}  accentLt={T.roseLt} />
             </div>
           </div>
 

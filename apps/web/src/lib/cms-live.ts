@@ -250,15 +250,24 @@ function normalizeLiveMatch(raw: unknown): LiveMatchUi | null {
             : undefined)
       : matchLabels.competitionLabel ?? fallbackLabels.competitionLabel
 
+  // Defensywnie ZAWSZE preferuj home/awayLabel z globala (raw) jeśli admin je ustawił —
+  // to jest dokładnie to, co widzi w Studio Live, a public page powinno być spójne.
+  // Wcześniej w trybie 'fromMatch' brało nazwy z linkowanego matcha, co przy mismatch
+  // (sparing z inną drużyną niż match w terminarzu) dawało publicznie błędne dane.
+  const rawHome = String(manual?.homeLabel ?? '').trim()
+  const rawAway = String(manual?.awayLabel ?? '').trim()
   const homeLabel =
+    rawHome ||
     (mode === 'manual'
-      ? String(manual?.homeLabel ?? '').trim()
-      : String(matchLabels.homeLabel ?? fallbackLabels.homeLabel ?? '').trim()) || 'WKS Wierzbice'
+      ? ''
+      : String(matchLabels.homeLabel ?? fallbackLabels.homeLabel ?? '').trim()) ||
+    'WKS Wierzbice'
 
-  const awayLabel = (mode === 'manual'
-    ? String(manual?.awayLabel ?? '').trim()
-    : String(matchLabels.awayLabel ?? fallbackLabels.awayLabel ?? '').trim()
-  ).trim()
+  const awayLabel =
+    rawAway ||
+    (mode === 'manual'
+      ? ''
+      : String(matchLabels.awayLabel ?? fallbackLabels.awayLabel ?? '').trim())
   if (!awayLabel) return null
 
   const kickoffPlanned =
