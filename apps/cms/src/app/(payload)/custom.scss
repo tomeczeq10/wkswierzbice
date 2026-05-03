@@ -67,6 +67,30 @@
 // editing usable on phones and small tablets (target: iPhone SE → iPad mini).
 
 @media (max-width: 900px) {
+  // FIX: na telefonie sticky bottom CTA bar (Save / Publish) zasłania ostatnie ~80px
+  // contentu. Bez dodatkowego bottom padding nie da się dostać do końca listy
+  // (np. /admin/collections/media). Dodajemy hojny padding plus safe-area.
+  .template-default,
+  .template-default__main,
+  [class*="document-fields"],
+  [class*="collection-list__wrap"],
+  [class*="global-edit"],
+  [class*="collection-edit"] {
+    padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
+  }
+  // Wewnętrzne listy (np. okno wyboru relacji "Dodaj zawodnika") też mają sticky toolbar.
+  .list-drawer__content,
+  .list-drawer,
+  [class*="list-drawer"] {
+    padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+  }
+  // Globalnie body — last-resort bezpieczeństwo dla dowolnej nieoczekiwanej listy.
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width: 900px) {
   // 1. Top app bar: kompaktowy
   .app-header {
     padding: 8px 12px !important;

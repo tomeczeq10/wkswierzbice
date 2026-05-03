@@ -23,7 +23,7 @@ function fmtKickoff(iso: string | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" });
 }
 
 const initialKickoff = fmtKickoff(live?.kickoffPlanned);
@@ -213,7 +213,7 @@ const initialClock = live?.clock?.time ?? "--:--";
       try {
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())) return "";
-        return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+        return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" });
       } catch {
         return "";
       }

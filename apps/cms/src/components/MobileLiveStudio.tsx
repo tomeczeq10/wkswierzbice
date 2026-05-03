@@ -744,56 +744,63 @@ export default function MobileLiveStudio(p: MobileStudioProps) {
             style={inputBase}
           />
         </Field>
-        <Field label="Strzelec (z kadry)">
-          {p.lineup.length > 0 ? (
+        {/* Strzelec — albo wybierz z kadry, albo wpisz tekst (np. "Testowany").
+            Pokazujemy oba pola z toggle'em: wybór z listy ukrywa tekst i odwrotnie. */}
+        <Field label="Strzelec">
+          {p.lineup.length > 0 && (
             <select
               value={p.goalScorerId}
-              onChange={(e) => p.setGoalScorerId(e.target.value)}
-              style={inputBase}
+              onChange={(e) => {
+                p.setGoalScorerId(e.target.value)
+                if (e.target.value) p.setGoalScorerText('') // czyść tekst gdy wybrałeś z listy
+              }}
+              style={{ ...inputBase, marginBottom: p.goalScorerId ? 0 : 8 }}
             >
-              <option value="">— wybierz —</option>
+              <option value="">— wybierz z kadry —</option>
               {p.lineup.map((pl) => (
                 <option key={pl.id} value={pl.id} style={{ background: '#0f2a1c' }}>
                   {pl.name}
                 </option>
               ))}
             </select>
-          ) : (
-            <div style={{ fontSize: 12, color: T.subtle, padding: '8px 0' }}>
-              Brak kadry meczowej — uzupełnij w polu lineup meczu, aby wybierać z listy.
-            </div>
+          )}
+          {!p.goalScorerId && (
+            <input
+              type="text"
+              placeholder={p.lineup.length > 0 ? 'lub wpisz ręcznie (np. "Testowany")' : 'np. Kowalski'}
+              value={p.goalScorerText}
+              onChange={(e) => p.setGoalScorerText(e.target.value)}
+              style={inputBase}
+            />
           )}
         </Field>
-        <Field label="Strzelec (tekst, opcjonalnie)">
-          <input
-            type="text"
-            placeholder="np. Kowalski (jeśli nie ma w kadrze)"
-            value={p.goalScorerText}
-            onChange={(e) => p.setGoalScorerText(e.target.value)}
-            style={inputBase}
-          />
-        </Field>
-        <Field label="Asysta (z kadry)">
-          {p.lineup.length > 0 ? (
-            <select value={p.goalAssistId} onChange={(e) => p.setGoalAssistId(e.target.value)} style={inputBase}>
-              <option value="">— brak —</option>
+        <Field label="Asysta (opcjonalnie)">
+          {p.lineup.length > 0 && (
+            <select
+              value={p.goalAssistId}
+              onChange={(e) => {
+                p.setGoalAssistId(e.target.value)
+                if (e.target.value) p.setGoalAssistText('')
+              }}
+              style={{ ...inputBase, marginBottom: p.goalAssistId ? 0 : 8 }}
+            >
+              <option value="">— brak / wpisz ręcznie —</option>
               {p.lineup.map((pl) => (
                 <option key={pl.id} value={pl.id} style={{ background: '#0f2a1c' }}>
                   {pl.name}
                 </option>
               ))}
             </select>
-          ) : (
-            <div style={{ fontSize: 12, color: T.subtle }}>—</div>
           )}
-        </Field>
-        <Field label="Asysta (tekst, opcjonalnie)">
-          <input
-            type="text"
-            value={p.goalAssistText}
-            onChange={(e) => p.setGoalAssistText(e.target.value)}
-            style={inputBase}
-          />
+          {!p.goalAssistId && (
+            <input
+              type="text"
+              placeholder={p.lineup.length > 0 ? 'lub wpisz ręcznie' : 'np. Nowak'}
+              value={p.goalAssistText}
+              onChange={(e) => p.setGoalAssistText(e.target.value)}
+              style={inputBase}
+            />
+          )}
         </Field>
         <label style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', fontSize: 14 }}>
           <input

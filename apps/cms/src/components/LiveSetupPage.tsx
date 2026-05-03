@@ -251,7 +251,32 @@ export default function LiveSetupPage() {
     const res = await fetch(url.toString(), { credentials: 'include' })
     if (!res.ok) return []
     const json = await res.json()
-    return Array.isArray(json?.docs) ? (json.docs as MatchDoc[]) : []
+    const docs: MatchDoc[] = Array.isArray(json?.docs) ? (json.docs as MatchDoc[]) : []
+
+    // Filtr: pomiń mecze, które już były grane (mają wpis w liveArchives).
+    // Bez tego śmieciowy testowy mecz w przyszłości pojawiał się w sugestiach
+    // mimo że relacja na nim została już zakończona (FT).
+    if (docs.length === 0) return docs
+    try {
+      const archUrl = new URL(`${baseUrl}/api/liveArchives`)
+      archUrl.searchParams.set('limit', '500')
+      archUrl.searchParams.set('depth', '0')
+      archUrl.searchParams.set('sort', '-finishedAt')
+      const archRes = await fetch(archUrl.toString(), { credentials: 'include' })
+      if (archRes.ok) {
+        const archJson = await archRes.json()
+        const usedIds = new Set<string>()
+        for (const a of archJson?.docs ?? []) {
+          const m = (a as any)?.match
+          const id = typeof m === 'number' || typeof m === 'string' ? String(m) : m?.id != null ? String(m.id) : null
+          if (id) usedIds.add(id)
+        }
+        return docs.filter((d) => !usedIds.has(String(d.id)))
+      }
+    } catch {
+      // ignore — w razie błędu zwracamy oryginalną listę
+    }
+    return docs
   }, [baseUrl])
 
   const fetchSeniorTeam = useCallback(async (): Promise<TeamDoc | null> => {
@@ -897,7 +922,12 @@ export default function LiveSetupPage() {
                                   {p.name}
                                 </span>
                                 {p.position && (
-                                  <span style={{ fontSize: 11, color: T.subtle, whiteSpace: 'nowrap' }}>{p.position}</span>
+                                  <span style={{ fontSize: 11, color: T.subtle, whiteSpace: 'nowrap', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis' }}>{
+                                    // Niektóre wpisy w bazie mają position z dodatkowym opisem
+                                    // po " – " (np. "Napastnik – król strzelców…"). Pokazujemy tylko
+                                    // sam typ pozycji, opis zostaje w bazie ale nie zaśmieca UI.
+                                    String(p.position).split(/[–-]/)[0].trim()
+                                  }</span>
                                 )}
                               </label>
                             )

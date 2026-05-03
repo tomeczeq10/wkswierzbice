@@ -607,16 +607,24 @@ export default function LiveStudioPage() {
     const half = st === 'live2' || st === 'ft' ? '2' : '1'
     const minute = Number.isFinite(goalMinute) ? Math.max(0, Math.trunc(goalMinute)) : undefined
 
+    // Players.id w Payload to integer — `scorerWks: "1"` (string) → HTTP 400.
+    // Konwertujemy bezpiecznie do liczby; jeśli puste / nieparseable → undefined.
+    const toIntOrUndef = (v: string): number | undefined => {
+      const n = Number(v)
+      return Number.isFinite(n) && n > 0 ? Math.trunc(n) : undefined
+    }
     const event: Record<string, any> = {
       type: 'goal',
       team: 'wks',
       ownGoal: Boolean(goalOwnGoal),
       half,
       minute,
-      scorerWks: goalScorerId || undefined,
-      assistWks: goalAssistId || undefined,
-      scorerText: goalScorerText.trim() || undefined,
-      assistText: goalAssistText.trim() || undefined,
+      scorerWks: toIntOrUndef(goalScorerId),
+      assistWks: toIntOrUndef(goalAssistId),
+      // Tekstowe pola — używamy TYLKO gdy zawodnik nie został wybrany z kadry.
+      // Jeśli wybrany, wyczyszczamy text żeby nie dublować info na liście eventów.
+      scorerText: toIntOrUndef(goalScorerId) ? undefined : goalScorerText.trim() || undefined,
+      assistText: toIntOrUndef(goalAssistId) ? undefined : goalAssistText.trim() || undefined,
       // Kolumna `text` w live_match_events jest NOT NULL (legacy schema). UI i tak
       // formatuje opis przez fmtEventText z scorer/assist, więc wystarczy minimalny placeholder.
       text: 'Gol WKS',

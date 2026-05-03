@@ -37,7 +37,7 @@ function fmtKickoff(iso: string | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" });
+  return d.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Warsaw" });
 }
 ---
 
@@ -502,16 +502,53 @@ function fmtKickoff(iso: string | undefined): string | null {
           }
         };
 
+        // KRYTYCZNE: nie używamy window.location.reload() przy zmianie stanu.
+        // Wcześniej powodowało nieskończoną pętlę (poll → enabled=false → reload →
+        // SSR pokazuje "Brak relacji" → poll → reload → ...). Zamiast tego
+        // przełączamy widoki inline: gdy aktywne pokazujemy scoreboard,
+        // gdy nieaktywne pokazujemy overlay "Mecz zakończony / Brak relacji".
+        const $scoreboard = root.querySelector(".scoreboard");
+        const $eventsSection = root.querySelector(".events-section");
+        const $noLive = root.querySelector(".no-live");
+
+        const showInactive = () => {
+          if ($scoreboard) $scoreboard.style.display = "none";
+          if ($eventsSection) $eventsSection.style.display = "none";
+          if ($noLive) {
+            $noLive.style.display = "";
+          } else {
+            // SSR renderował scoreboard (był wtedy live) — wstrzyknij komunikat dynamicznie
+            const main = root;
+            const div = document.createElement("div");
+            div.className = "no-live";
+            div.innerHTML = `
+              <div style="font-size:36px; margin-bottom:10px;">🏁</div>
+              <h1>Mecz zakończony</h1>
+              <p>Relacja na żywo została zakończona. Wynik i podsumowanie pojawią się wkrótce w aktualnościach.</p>
+              <a href="/">← Wróć na stronę główną</a>
+            `;
+            main.appendChild(div);
+          }
+        };
+        const showActive = () => {
+          if ($scoreboard) $scoreboard.style.display = "";
+          if ($eventsSection) $eventsSection.style.display = "";
+          if ($noLive) $noLive.style.display = "none";
+        };
+
         const update = (data) => {
           if (!data) return;
           const isActive = Boolean(
             data.enabled && (data.state === "live" || data.state === "ht" || data.state === "live2" || data.state === "pre"),
           );
           if (!isActive) {
-            // Przejście aktywny → nieaktywny: przeładuj stronę żeby pokazać "Brak aktywnej relacji".
-            window.location.reload();
+            live = null;
+            showInactive();
             return;
           }
+          // Stan przeszedł z nieaktywnego na aktywny → upewnij się że scoreboard widoczny.
+          // Pierwsze wejście z SSR=active po prostu wykonuje aktualizację pól.
+          if ($scoreboard && getComputedStyle($scoreboard).display === "none") showActive();
           live = data;
           if ($home) $home.textContent = data.homeLabel || "WKS Wierzbice";
           if ($away) $away.textContent = data.awayLabel || "—";
