@@ -649,21 +649,30 @@ function fmtKickoff(iso: string | undefined): string | null {
           }
         }, 500);
 
+        // Pojedyncza funkcja pobierająca aktualny snapshot przez `/wks-live-match`
+        // (przechodzi przez fetchLiveMatch → normalizeLiveMatch — z polem `side`
+        // w eventach + sformatowanym `text`). Wywołuje update() z gotowymi danymi.
+        let pollInFlight = false;
+        const pollNow = async () => {
+          if (pollInFlight) return;
+          pollInFlight = true;
+          try {
+            const r = await fetch(`/wks-live-match?t=${Date.now()}`, { cache: "no-store" });
+            if (!r.ok) return;
+            const data = await r.json();
+            update(data);
+          } catch {}
+          finally {
+            pollInFlight = false;
+          }
+        };
+
         // Polling fallback co 3s (jeśli SSE nie żyje, dane i tak płyną).
         let pollHandle = null;
         const startPolling = () => {
           if (pollHandle) return;
-          const tick = async () => {
-            try {
-              // Cache-bust query param + Cache-Control no-store.
-              const r = await fetch(`/wks-live-match?t=${Date.now()}`, { cache: "no-store" });
-              if (!r.ok) return;
-              const data = await r.json();
-              update(data);
-            } catch {}
-          };
-          tick();
-          pollHandle = setInterval(tick, 3000);
+          pollNow();
+          pollHandle = setInterval(pollNow, 3000);
         };
         const stopPolling = () => {
           if (!pollHandle) return;
@@ -672,18 +681,21 @@ function fmtKickoff(iso: string | undefined): string | null {
         };
 
         // SSE — real-time push. Reconnect on error po 2s.
+        // UWAGA: SSE z CMS-a wysyła RAW Payload doc (bez znormalizowanego `side`
+        // w eventach i bez sformatowanego `text` z imionami zawodników). Zamiast
+        // próbować renderować niepełne dane (eventy nie pojawiały się natychmiast,
+        // bo filter po `side` ich nie znajdował), używamy SSE tylko jako sygnał
+        // "coś się zmieniło" → triggerujemy świeży poll, który daje znormalizowane
+        // dane w jednym cyklu razem ze score'm i zegarem.
         let es = null;
         let sseAlive = false;
         const connectSSE = () => {
           try {
             es = new EventSource("/wks-live-match/stream");
-            es.onmessage = (ev) => {
+            es.onmessage = () => {
               sseAlive = true;
               if ($reconnect) $reconnect.classList.remove("visible");
-              try {
-                const data = JSON.parse(ev.data);
-                update(data);
-              } catch {}
+              pollNow();
             };
             es.onopen = () => {
               sseAlive = true;
