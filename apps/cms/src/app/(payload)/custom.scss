@@ -148,27 +148,46 @@
     text-decoration: none !important;
   }
 
-  // Aktywny link — zielony akcent + delikatne tło
-  .nav__link--active,
-  .nav__link[aria-current="page"] {
-    background: rgba(22, 101, 52, 0.45) !important;
+  // Aktywny link — Payload renderuje go jako `<div class="nav__link">` (a nie
+  // `<a>` z modifierem `--active`). Dlatego targetujemy konkretnie div.nav__link.
+  div.nav__link {
+    background: rgba(74, 222, 128, 0.16) !important;
     color: #4ade80 !important;
   }
 
   // Hover (długi tap na iOS)
-  .nav__link:hover {
+  a.nav__link:hover {
     background: rgba(255, 255, 255, 0.06) !important;
   }
 
-  // Indicator (kreseczka po lewej aktywnego linka) — w wersji jasnej
+  // Indicator (kreseczka po lewej aktywnego linka)
   .nav__link-indicator {
     background: #4ade80 !important;
   }
 
-  // Przycisk close (×) w nagłówku drawera — biały na ciemnym tle
-  .nav__header button,
-  .nav__header [class*="hamburger"] {
-    color: #fff !important;
+  // ── Hamburger close (×) wewnątrz drawera ───────────────────────────────────
+  // Vanilla Payload daje białe tło + ciemny kolor (var(--theme-bg) /
+  // var(--theme-text)). W ciemnym drawerze wygląda to jak biały kwadrat
+  // z niewidoczną ikoną. Robimy transparent + biały kolor.
+  aside.nav .hamburger,
+  .nav__header .hamburger {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.06) !important;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.32) !important;
+    }
+  }
+
+  // ── Banner LiveStudio (BeforeNavLinks) ─────────────────────────────────────
+  // Komponent LiveStudioNavLink używa `color: 'inherit'` na <a>, więc na
+  // białym tle dziedziczy ciemny tekst. W ciemnym drawerze tekst znika —
+  // wymuszamy jasny kolor. Dotyczy też `Menedżer galerii` przycisku obok
+  // (ten ma własne explicite białe `color`, więc nasz override go nie psuje).
+  aside.nav > div > a {
+    color: rgba(255, 255, 255, 0.92) !important;
   }
 
   // Scrollbar nav — niewidoczny (czysty look)
