@@ -315,6 +315,16 @@
     flex-wrap: nowrap !important;
   }
 
+  // ── Mobile Dashboard wrapper — fill gray bg, zero extra padding ────────────
+  // MobileDashboard.tsx (rendered ≤ 768 px) manages its own padding internally.
+  // Without this, Payload's white .dashboard background shows below our content.
+  .dashboard {
+    background: #f1f5f9;
+    min-height: 100vh;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
   // ── Custom Dashboard (.wks-dashboard) ──────────────────────────────────────
   .wks-dashboard {
     padding: 12px 12px 40px !important;

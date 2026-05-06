@@ -279,6 +279,11 @@ const IcSettings: Icn = ({ size = 20, color = 'currentColor' }) => (
   </svg>
 )
 const IcChevron = mk('m9 18 6-6-6-6')
+const IcFolder: Icn = ({ size = 20, color = 'currentColor' }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+  </svg>
+)
 const IcDot: Icn = ({ size = 8, color = 'currentColor' }) => (
   <svg width={size} height={size} viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill={color} /></svg>
 )
@@ -545,7 +550,8 @@ export default function MobileDashboard() {
         background: T.bg,
         color: T.text,
         fontFamily: '-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif',
-        padding: '14px 12px 36px',
+        padding: '14px 12px 0',
+        paddingBottom: 'calc(48px + env(safe-area-inset-bottom, 0px))',
         boxSizing: 'border-box',
       }}
     >
@@ -680,7 +686,7 @@ export default function MobileDashboard() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
         <ActionTile href="/admin/collections/news/create" Icon={IcNews} label="Nowy news" accent={T.green} accentLt={T.greenLt} />
         <ActionTile href="/admin/collections/players/create" Icon={IcUsers} label="Nowy zawodnik" accent={T.blue} accentLt={T.blueLt} />
-        <ActionTile href="/admin/collections/gallery/create" Icon={IcImage} label="Dodaj zdjęcie" accent={T.purple} accentLt={T.purpleLt} />
+        <ActionTile href="/admin/gallery-manager" Icon={IcFolder} label="Menedżer galerii" accent={T.rose} accentLt={T.roseLt} />
         <ActionTile
           onClick={handleSync}
           Icon={IcRefresh}
