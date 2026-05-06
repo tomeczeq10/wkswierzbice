@@ -512,12 +512,29 @@
 // Payload 3 używa CSS modules więc selektory z [class*=] + :has().
 
 @media (max-width: 768px) {
-  // Ciemne tło drawera — barwy WKS ink
+  // Ciemne tło drawera — barwy WKS ink.
+  // UWAGA: NIE używaj `nav[class*="nav"]` — Payload renderuje breadcrumb jako
+  // `<nav class="step-nav">`, a podstring "nav" pasuje do "step-nav", przez co
+  // pasek breadcrumba na górze strony dostaje ciemnozielone tło i staje się
+  // nieczytelny (ciemny tekst na ciemnym tle). Drawer nawigacji w Payload to
+  // `<aside class="nav">`, więc zostawiamy tylko `aside[class*="nav"]`.
   [class*="nav__wrap"],
   [class*="template-default__nav"] > *,
-  aside[class*="nav"],
-  nav[class*="nav"] {
+  aside[class*="nav"] {
     background: #0f2a1c !important;
+  }
+
+  // Step-nav (breadcrumb) — JASNE tło + czytelny ciemny tekst.
+  // Bez tego, jeśli jakaś inna reguła zaciemni tło, breadcrumb znika.
+  .step-nav,
+  nav.step-nav,
+  [class*="step-nav"] {
+    background: transparent !important;
+    color: #0f172a !important;
+
+    a, span {
+      color: #0f172a !important;
+    }
   }
 
   // Nagłówek nav (logo + close)
