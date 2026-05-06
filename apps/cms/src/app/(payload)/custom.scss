@@ -407,6 +407,80 @@
   }
 }
 
+// ─── Mobile nav sidebar (≤ 768px) — ciemny drawer, kompaktowe linki ─────────
+// Payload 3 używa CSS modules więc selektory z [class*=] + :has().
+
+@media (max-width: 768px) {
+  // Ciemne tło drawera — barwy WKS ink
+  [class*="nav__wrap"],
+  [class*="template-default__nav"] > *,
+  aside[class*="nav"],
+  nav[class*="nav"] {
+    background: #0f2a1c !important;
+  }
+
+  // Nagłówek nav (logo + close)
+  [class*="nav__header"],
+  [class*="nav__header-content"] {
+    background: #0a1e13 !important;
+    border-bottom: 1px solid rgba(22,101,52,0.25) !important;
+  }
+
+  // Etykiety grup (KOLEKCJE, GLOBALNE, MECZE)
+  [class*="nav-group__toggle"],
+  [class*="nav-group__label"] {
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+    color: rgba(255,255,255,0.32) !important;
+    padding: 14px 16px 4px !important;
+    pointer-events: none;  // nie zwijaj grup na mobile
+  }
+
+  // Ukryj strzałkę zwijania
+  [class*="nav-group__toggle"] svg,
+  [class*="nav-group__toggle-icon"] {
+    display: none !important;
+  }
+
+  // Linki kolekcji
+  [class*="nav__link"] {
+    color: rgba(255,255,255,0.8) !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+    margin: 1px 8px !important;
+    padding: 0 10px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  // Aktywny link
+  [class*="nav__link--active"],
+  [class*="nav__link"][aria-current] {
+    background: rgba(22,101,52,0.45) !important;
+    color: #4ade80 !important;
+  }
+
+  // Hover / tap
+  [class*="nav__link"]:not([class*="nav__link--active"]):hover {
+    background: rgba(255,255,255,0.07) !important;
+  }
+
+  // Rzadziej używane kolekcje — ukryj z mobile sidebar
+  // (dostępne przez listę kolekcji w MobileDashboard lub na desktopie)
+  [class*="nav-group__list"] li:has(a[href*="/collections/heroSlides"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/staticPages"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/board"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/staff"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/tags"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/sponsors"]),
+  [class*="nav-group__list"] li:has(a[href*="/collections/users"]) {
+    display: none !important;
+  }
+}
+
 // ─── Mobile small (≤ 480px) — bardziej agresywne ulepszenia ──────────────────
 
 @media (max-width: 480px) {
