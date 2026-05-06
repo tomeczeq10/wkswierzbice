@@ -67,22 +67,21 @@
 // editing usable on phones and small tablets (target: iPhone SE → iPad mini).
 
 @media (max-width: 900px) {
-  // FIX: na telefonie sticky bottom CTA bar (Save / Publish) zasłania ostatnie ~80px
-  // contentu. Bez dodatkowego bottom padding nie da się dostać do końca listy
-  // (np. /admin/collections/media). Dodajemy hojny padding plus safe-area.
+  // FIX: na telefonie sticky bottom CTA bar (Save / Publish) zasłania ostatnie ~80px.
+  // Zmniejszone z 160px → 80px bo 160px tworzyło ogromne puste miejsca na końcu formularzy.
   .template-default,
   .template-default__main,
   [class*="document-fields"],
   [class*="collection-list__wrap"],
   [class*="global-edit"],
   [class*="collection-edit"] {
-    padding-bottom: calc(160px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
-  // Wewnętrzne listy (np. okno wyboru relacji "Dodaj zawodnika") też mają sticky toolbar.
+  // Wewnętrzne listy (np. okno wyboru relacji) — mniejszy zapas
   .list-drawer__content,
   .list-drawer,
   [class*="list-drawer"] {
-    padding-bottom: calc(120px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
   // Globalnie body — last-resort bezpieczeństwo dla dowolnej nieoczekiwanej listy.
   body {
@@ -248,9 +247,12 @@
     white-space: nowrap;
   }
 
+  // Lexical editor — zmniejszone z 240px → 120px na mobile
+  // (240px tworzyło ogromną pustą przestrzeń gdy edytor był pusty)
   .rich-text-lexical,
-  [class*="rich-text-lexical__editor"] {
-    min-height: 240px;
+  [class*="rich-text-lexical__editor"],
+  [class*="rich-text-lexical"] {
+    min-height: 120px !important;
   }
 
   // 12. Array / blocks / collapsible — kompaktowy padding
@@ -292,17 +294,22 @@
     margin: 12px;
   }
 
-  // 16. Zmniejsz nadmiarowe headery i grupy
+  // 16. Kompaktowy doc-header (tytuł dokumentu + opis kolekcji)
   .doc-header,
   .global-header,
   [class*="doc-header"],
   [class*="global-header"] {
-    padding-left: 12px !important;
-    padding-right: 12px !important;
+    padding: 6px 12px 8px !important;
 
     h1, h2 {
-      font-size: 18px !important;
-      line-height: 1.25;
+      font-size: 16px !important;
+      line-height: 1.2;
+      margin: 0 !important;
+    }
+
+    // Opis kolekcji pod tytułem — ukryj na mobile (oszczędność miejsca)
+    p {
+      display: none !important;
     }
   }
 
@@ -468,15 +475,16 @@
     background: rgba(255,255,255,0.07) !important;
   }
 
-  // Rzadziej używane kolekcje — ukryj z mobile sidebar
-  // (dostępne przez listę kolekcji w MobileDashboard lub na desktopie)
-  [class*="nav-group__list"] li:has(a[href*="/collections/heroSlides"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/staticPages"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/board"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/staff"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/tags"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/sponsors"]),
-  [class*="nav-group__list"] li:has(a[href*="/collections/users"]) {
+  // Rzadziej używane kolekcje — ukryj z mobile sidebar.
+  // Uwaga: Payload 3 używa CSS modules (hashed class names), więc nie możemy
+  // użyć [class*="nav-group__list"]. Zamiast tego: bezpośredni selektor li:has(a[href]).
+  li:has(a[href*="collections/heroSlides"]),
+  li:has(a[href*="collections/staticPages"]),
+  li:has(a[href*="collections/board"]),
+  li:has(a[href*="collections/staff"]),
+  li:has(a[href*="collections/tags"]),
+  li:has(a[href*="collections/sponsors"]),
+  li:has(a[href*="collections/users"]) {
     display: none !important;
   }
 }
