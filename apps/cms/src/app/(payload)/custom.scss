@@ -96,10 +96,12 @@
 
   // Padding-bottom dla głównej treści, żeby ostatnie pole formularza nie
   // chowało się pod fixed bar-em (~64px wysokości + safe-area).
+  // UWAGA: tylko najbardziej zewnętrzny kontener — nie wzorzec
+  // [class*="collection-edit__"], bo łapie kilka zagnieżdżonych wrapperów
+  // (collection-edit__main, collection-edit__main-wrapper, ...) i paddingi
+  // się sumują tworząc ogromny pusty obszar pod formularzem.
   .collection-edit,
-  .global-edit,
-  [class*="collection-edit__"],
-  [class*="global-edit__"] {
+  .global-edit {
     padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 }
