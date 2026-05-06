@@ -108,31 +108,50 @@
     padding-right: 12px !important;
   }
 
-  // 3. Edycja dokumentu — sidebar pól pod main, nie obok
-  .doc-fields,
+  // 3. Edycja dokumentu — sidebar pól pod main, bez pustej przestrzeni.
+  // UWAGA: Payload 3 używa klasy "document-fields" (NIE "doc-fields"!).
+  // Desktop CSS Payload ma `min-height: 100%` + `flex-grow: 1` na __main i
+  // `height: calc(100vh - ...)` na __sidebar-wrap — to TWORZY pustą przestrzeń
+  // gdy main ma mało pól a sidebar jest poniżej. Reset na mid-break Payload to
+  // robi sam ale `collection-edit__main-wrapper` zostaje flex.
+  .document-fields,
+  [class*="document-fields"],
   .render-fields,
-  [class*="doc-fields"] {
-    flex-direction: column !important;
+  [class*="render-fields"],
+  .collection-edit,
+  [class*="collection-edit"] {
     display: block !important;
+    min-height: 0 !important;
+    height: auto !important;
+    flex: none !important;
+  }
 
-    > .doc-fields__main,
-    > .doc-fields__sidebar,
-    > [class*="doc-fields__main"],
-    > [class*="doc-fields__sidebar"] {
-      width: 100% !important;
-      max-width: 100% !important;
-      flex: 1 1 100% !important;
-      padding-left: 0 !important;
-      padding-right: 0 !important;
-      border-left: 0 !important;
-    }
+  // Bezpośrednie dzieci form layoutu — pełna szerokość, brak min-height.
+  .document-fields > *,
+  [class*="document-fields"] > *,
+  .collection-edit > *,
+  [class*="collection-edit"] > *,
+  [class*="collection-edit__main-wrapper"] > * {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    flex: none !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    border-left: 0 !important;
+    border-right: 0 !important;
+  }
 
-    > .doc-fields__sidebar,
-    > [class*="doc-fields__sidebar"] {
-      margin-top: 18px;
-      padding-top: 18px !important;
-      border-top: 1px solid rgba(0, 0, 0, 0.08);
-    }
+  // Sidebar fields — delikatny separator nad nimi
+  [class*="document-fields__sidebar-wrap"],
+  [class*="document-fields__sidebar"] {
+    position: static !important;
+    margin-top: 16px !important;
+    padding-top: 16px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    overflow: visible !important;
   }
 
   // 4. Inputy / textarea / selecty — większe (lepsze tap-targety, font 16px = brak auto-zoom iOS)
@@ -476,15 +495,18 @@
   }
 
   // Rzadziej używane kolekcje — ukryj z mobile sidebar.
-  // Uwaga: Payload 3 używa CSS modules (hashed class names), więc nie możemy
-  // użyć [class*="nav-group__list"]. Zamiast tego: bezpośredni selektor li:has(a[href]).
-  li:has(a[href*="collections/heroSlides"]),
-  li:has(a[href*="collections/staticPages"]),
-  li:has(a[href*="collections/board"]),
-  li:has(a[href*="collections/staff"]),
-  li:has(a[href*="collections/tags"]),
-  li:has(a[href*="collections/sponsors"]),
-  li:has(a[href*="collections/users"]) {
+  // KLUCZ: Payload 3 nadaje każdemu linkowi nawigacji id="nav-{slug}"
+  // (źródło: @payloadcms/next/dist/elements/Nav/index.client.js).
+  // ID są stabilne i nie podlegają hashowaniu CSS modules.
+  // Linki NIE są w <li> — są bezpośrednio jako <a class="nav__link">,
+  // więc :has() na li nie zadziała.
+  #nav-users,
+  #nav-tags,
+  #nav-sponsors,
+  #nav-board,
+  #nav-staff,
+  #nav-heroSlides,
+  #nav-staticPages {
     display: none !important;
   }
 }
