@@ -165,12 +165,13 @@
     background: #4ade80 !important;
   }
 
-  // ── Hamburger close (×) wewnątrz drawera ───────────────────────────────────
-  // Vanilla Payload daje białe tło + ciemny kolor (var(--theme-bg) /
-  // var(--theme-text)). W ciemnym drawerze wygląda to jak biały kwadrat
-  // z niewidoczną ikoną. Robimy transparent + biały kolor.
-  aside.nav .hamburger,
-  .nav__header .hamburger {
+  // ── Hamburger close (×) gdy drawer jest otwarty ────────────────────────────
+  // Payload renderuje hamburger NIE wewnątrz aside.nav, tylko w osobnym
+  // `.template-default__nav-toggler-wrapper` (poza wrapperem nav). Vanilla
+  // styl daje białe tło + ciemny kolor — w ciemnym drawerze widać tylko
+  // biały kwadrat. Targetujemy stan `--nav-open` żeby nie psuć hamburgera
+  // gdy drawer jest zamknięty (wtedy musi być widoczny na białym contencie).
+  .template-default--nav-open .hamburger {
     background-color: transparent !important;
     color: #ffffff !important;
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.18) !important;
@@ -181,12 +182,13 @@
     }
   }
 
-  // ── Banner LiveStudio (BeforeNavLinks) ─────────────────────────────────────
-  // Komponent LiveStudioNavLink używa `color: 'inherit'` na <a>, więc na
-  // białym tle dziedziczy ciemny tekst. W ciemnym drawerze tekst znika —
-  // wymuszamy jasny kolor. Dotyczy też `Menedżer galerii` przycisku obok
-  // (ten ma własne explicite białe `color`, więc nasz override go nie psuje).
-  aside.nav > div > a {
+  // ── Linki w drawerze (banner Live, Menedżer galerii) ──────────────────────
+  // Banner LiveStudioNavLink używa `color: 'inherit'` — na ciemnym tle
+  // tekst znika. Wymuszamy jasny kolor na WSZYSTKICH <a> w aside.nav,
+  // wyłączając .nav__link (które ma już swój explicite kolor wyżej).
+  // Faktyczna struktura to aside.nav > div.nav__scroll > div > a (zagnieżdżone),
+  // więc selektor `aside.nav > div > a` (poprzedni) nie pasował.
+  aside.nav a:not(.nav__link) {
     color: rgba(255, 255, 255, 0.92) !important;
   }
 
