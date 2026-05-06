@@ -72,10 +72,14 @@ export default buildConfig({
         Icon: './components/Icon#default',
       },
       beforeLogin: ['./components/BeforeLogin#default'],
-      beforeNavLinks: ['./components/LiveStudioNavLink#default'],
+      beforeNavLinks: ['./components/LiveStudioNavLink#default', './components/GalleryManagerNavLink#default'],
       views: {
         dashboard: {
           Component: './components/Dashboard#default',
+        },
+        galleryManager: {
+          Component: './components/GalleryManager#default',
+          path: '/gallery-manager',
         },
       },
     },

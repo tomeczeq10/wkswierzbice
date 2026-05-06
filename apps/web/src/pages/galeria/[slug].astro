@@ -10,18 +10,15 @@ import { formatDate } from "@/lib/format";
 const slug = Astro.params.slug ?? "";
 const data = await fetchGalleryByAlbumSlug(slug);
 
-if (data === null) {
-  return Astro.redirect("/galeria", 302);
-}
-if (!data.album) {
-  return Astro.redirect("/404", 302);
-}
+if (data === null) return Astro.redirect("/galeria", 302);
 
-const { album, items } = data;
+const { album } = data;
 const title = album.title;
 const desc =
   album.description ||
-  `Zdjęcia z wydarzenia: ${album.title}. Galeria WKS Wierzbice.`;
+  (data.kind === "category"
+    ? `Albumy z kategorii: ${album.title}. Galeria WKS Wierzbice.`
+    : `Zdjęcia z wydarzenia: ${album.title}. Galeria WKS Wierzbice.`);
 ---
 
 <BaseLayout title={title} description={desc}>
@@ -31,24 +28,101 @@ const desc =
     description={album.description || undefined}
   />
 
-  <section class="section pb-6">
-    <div class="container mx-auto flex flex-wrap items-center justify-between gap-4">
-      <div class="text-sm text-brand-muted">
-        {album.eventDate ? <span>{formatDate(album.eventDate)}</span> : null}
-        {album.eventDate && items.length > 0 ? <span class="mx-2">·</span> : null}
-        {items.length > 0 ? (
-          <span>
-            {items.length === 1 ? "1 zdjęcie" : `${items.length} zdjęć`}
-          </span>
-        ) : null}
-      </div>
-      <a href="/galeria" class="btn btn-outline text-sm">← Wszystkie albumy</a>
-    </div>
-  </section>
+  {data.kind === "category" ? (
+    /* ── Widok kategorii — podfoldery ── */
+    <>
+      <section class="section pb-6">
+        <div class="container mx-auto flex flex-wrap items-center justify-between gap-4">
+          <p class="text-sm text-brand-muted">
+            {data.subAlbums.length === 1 ? "1 album" : `${data.subAlbums.length} albumy`}
+          </p>
+          <a href="/galeria" class="btn btn-outline text-sm">← Wszystkie kategorie</a>
+        </div>
+      </section>
 
-  <section class="section pt-0">
-    <div class="container mx-auto">
-      <GalleryGrid items={items} />
-    </div>
-  </section>
+      <section class="section pt-0">
+        <div class="container mx-auto">
+          <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {data.subAlbums.map((al) => (
+              <a
+                href={`/galeria/${al.slug}`}
+                class="card group flex flex-col overflow-hidden p-0 no-underline text-inherit hover:no-underline focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:outline-none"
+              >
+                <div class="relative aspect-[4/3] bg-slate-200 overflow-hidden">
+                  {al.coverSrc ? (
+                    <img
+                      src={al.coverSrc}
+                      alt=""
+                      class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class="flex h-full w-full items-center justify-center bg-slate-100 text-brand-muted font-display text-sm uppercase tracking-wider">
+                      Galeria
+                    </div>
+                  )}
+                  <span class="absolute inset-0 bg-brand-ink/0 transition-colors group-hover:bg-brand-ink/25" />
+                </div>
+                <div class="flex flex-1 flex-col gap-1 p-4">
+                  <h2 class="font-display text-xl uppercase tracking-tight text-brand-ink group-hover:text-brand-primary transition-colors">
+                    {al.title}
+                  </h2>
+                  {al.eventDate ? (
+                    <p class="text-sm text-brand-muted">{formatDate(al.eventDate)}</p>
+                  ) : null}
+                  {al.description ? (
+                    <p class="text-sm text-slate-600 line-clamp-2">{al.description}</p>
+                  ) : null}
+                  <p class="mt-auto pt-2 text-sm font-medium text-brand-primary">
+                    {al.photoCount === 1 ? "1 zdjęcie →" : `${al.photoCount} zdjęć →`}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+          {data.subAlbums.length === 0 && (
+            <p class="text-center text-brand-muted py-12">
+              Brak albumów w tej kategorii — dodaj je w panelu admina.
+            </p>
+          )}
+        </div>
+      </section>
+    </>
+  ) : (
+    /* ── Widok liścia — zdjęcia ── */
+    <>
+      <section class="section pb-6">
+        <div class="container mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div class="text-sm text-brand-muted">
+            {album.eventDate ? <span>{formatDate(album.eventDate)}</span> : null}
+            {album.eventDate && data.items.length > 0 ? <span class="mx-2">·</span> : null}
+            {data.items.length > 0 ? (
+              <span>
+                {data.items.length === 1 ? "1 zdjęcie" : `${data.items.length} zdjęć`}
+              </span>
+            ) : null}
+          </div>
+          {data.parentAlbum ? (
+            <a href={`/galeria/${data.parentAlbum.slug}`} class="btn btn-outline text-sm">
+              ← {data.parentAlbum.title}
+            </a>
+          ) : (
+            <a href="/galeria" class="btn btn-outline text-sm">← Wszystkie albumy</a>
+          )}
+        </div>
+      </section>
+
+      <section class="section pt-0">
+        <div class="container mx-auto">
+          {data.items.length > 0 ? (
+            <GalleryGrid items={data.items} />
+          ) : (
+            <p class="text-center text-brand-muted py-12">
+              Brak zdjęć w tym albumie — dodaj je w panelu admina.
+            </p>
+          )}
+        </div>
+      </section>
+    </>
+  )}
 </BaseLayout>

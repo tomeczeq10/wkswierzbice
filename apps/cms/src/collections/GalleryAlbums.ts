@@ -3,19 +3,24 @@ import { slugify } from '../utils/slugify'
 import { isEditorOrAdmin } from '../access'
 
 /**
- * Albumy galerii (wydarzenia) — karty na /galeria, zdjęcia w /galeria/[slug].
+ * Foldery / albumy galerii — dowolna głębokość zagnieżdżenia.
+ * Folder bez rodzica (parent = puste) = folder główny widoczny na /galeria.
+ * Folder z rodzicem = podfolder (dowolny poziom).
+ * Zdjęcia przypisuj do folderu-liścia (bez podfolderów).
+ * Zarządzaj przez Menedżer galerii: /admin/gallery-manager
  */
 export const GalleryAlbums: CollectionConfig = {
   slug: 'gallery-albums',
   labels: {
-    singular: { pl: 'Album galerii', en: 'Gallery album' },
-    plural: { pl: 'Albumy galerii', en: 'Gallery albums' },
+    singular: { pl: 'Folder galerii', en: 'Gallery folder' },
+    plural: { pl: 'Foldery galerii', en: 'Gallery folders' },
   },
   admin: {
     useAsTitle: 'title',
-    defaultColumns: ['title', 'slug', 'eventDate', 'order', 'updatedAt'],
+    defaultColumns: ['title', 'parent', 'slug', 'eventDate', 'updatedAt'],
     description:
-      'Wydarzenia / foldery na stronie Galeria. Do albumu przypisz zdjęcia w kolekcji „Galeria”.',
+      'Foldery galerii — dowolna głębokość. Zarządzaj przez Menedżer galerii (/admin/gallery-manager).',
+    hidden: true,
   },
   access: {
     read: () => true,
@@ -74,6 +79,17 @@ export const GalleryAlbums: CollectionConfig = {
       label: { pl: 'Okładka (opcjonalnie)', en: 'Cover image' },
       admin: {
         description: 'Miniatura na karcie albumu. Bez okładki — pierwsze zdjęcie z albumu.',
+      },
+    },
+    {
+      name: 'parent',
+      type: 'relationship',
+      relationTo: 'gallery-albums',
+      label: { pl: 'Folder nadrzędny', en: 'Parent folder' },
+      admin: {
+        position: 'sidebar',
+        description:
+          'Zostaw puste → folder główny. Wybierz folder → podfolder (dowolna głębokość).',
       },
     },
     {

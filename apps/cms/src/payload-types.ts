@@ -490,7 +490,7 @@ export interface LiveArchive {
   createdAt: string;
 }
 /**
- * Wydarzenia / foldery na stronie Galeria. Do albumu przypisz zdjęcia w kolekcji „Galeria”.
+ * Foldery galerii — dowolna głębokość. Zarządzaj przez Menedżer galerii (/admin/gallery-manager).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "gallery-albums".
@@ -511,6 +511,10 @@ export interface GalleryAlbum {
    * Miniatura na karcie albumu. Bez okładki — pierwsze zdjęcie z albumu.
    */
   cover?: (number | null) | Media;
+  /**
+   * Zostaw puste → folder główny. Wybierz folder → podfolder (dowolna głębokość).
+   */
+  parent?: (number | null) | GalleryAlbum;
   /**
    * Niższe = wyżej (przy tej samej dacie).
    */
@@ -966,6 +970,7 @@ export interface GalleryAlbumsSelect<T extends boolean = true> {
   description?: T;
   eventDate?: T;
   cover?: T;
+  parent?: T;
   order?: T;
   updatedAt?: T;
   createdAt?: T;

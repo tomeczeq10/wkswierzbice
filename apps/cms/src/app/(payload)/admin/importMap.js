@@ -28,7 +28,9 @@ import { default as default_32d15b2b13e1e9f604c74e03d9ff8022 } from '../../../co
 import { default as default_2396ffa5fcb8566707b31b0d1917b213 } from '../../../components/Logo'
 import { default as default_419a8da2bc438d88facd06b1b2091c5d } from '../../../components/BeforeLogin'
 import { default as default_2d3aea1b1434069e75dc4eb52c01db3f } from '../../../components/LiveStudioNavLink'
+import { default as default_5aab8973c9ff6945ca82e82777f3e6c5 } from '../../../components/GalleryManagerNavLink'
 import { default as default_c22c6ded068ed0e94e9b6d1c50d7f3ee } from '../../../components/Dashboard'
+import { default as default_6734f3c9edfd73a8be427c6d87db251d } from '../../../components/GalleryManager'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -63,6 +65,8 @@ export const importMap = {
   "./components/Logo#default": default_2396ffa5fcb8566707b31b0d1917b213,
   "./components/BeforeLogin#default": default_419a8da2bc438d88facd06b1b2091c5d,
   "./components/LiveStudioNavLink#default": default_2d3aea1b1434069e75dc4eb52c01db3f,
+  "./components/GalleryManagerNavLink#default": default_5aab8973c9ff6945ca82e82777f3e6c5,
   "./components/Dashboard#default": default_c22c6ded068ed0e94e9b6d1c50d7f3ee,
+  "./components/GalleryManager#default": default_6734f3c9edfd73a8be427c6d87db251d,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

@@ -4,7 +4,7 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-04-29 — LiveMatch v3.1 (Studio Live, pre‑match hero, kadra meczowa) + UX Studio/home (pauza/wznów, freeze zegara po `ft`, szybszy widget)
+> **Ostatnia aktualizacja:** 2026-05-06 — Menedżer galerii (file-explorer w panelu, nieograniczone zagnieżdżenie, MediaPicker) + szybszy ticker
 > domowym (`wkswierzbice.tmielczarek.pl`): Docker (`wks-web` SSR + `wks-cms`),
 > SQLite z **migracjami w prod** (`prodMigrations`), persist przez mount
 > katalogu `./persist` (nie samego pliku `cms.db`). Instrukcja:
@@ -236,11 +236,17 @@ Implementacja:
 - ✅ **Etap 8 (2026-04-26)** — `migrate-teams.ts` (5 drużyn + 110 zawodników),
   `migrate-team-photos.ts` (upload rastrów → Media + `Teams.photo`; SVG
   pomijane — placeholdery z YAML nadal przez enrichment w `cms-teams.ts`).
-- ✅ **Etap 9 (2026-04-26 + 2026-04-28)** — kolekcje `gallery-albums` + `gallery`
-  (relacja `album`), migracja `20260428_041852`, `cms-gallery.ts` (`fetchGalleryIndex`,
-  `fetchGalleryByAlbumSlug`), `galeria.astro` (karty albumów), `galeria/[slug].astro`,
-  `galeria/bez-albumu.astro`, komponent `GalleryGrid.astro`; bez albumów w CMS —
-  płaska lista jak wcześniej; brak CMS / pusta galeria → `GALLERY` z `site.ts`.
+- ✅ **Etap 9 (2026-04-26 + 2026-04-28 + 2026-05-06)** — kolekcje `gallery-albums` + `gallery`
+  (relacja `album`), migracje `20260428_041852` + `20260505_gallery_parent`,
+  `cms-gallery.ts` (`fetchGalleryIndex`, `fetchGalleryByAlbumSlug`, rekurencyjne
+  `countPhotosDeep`/`findCoverDeep` dla nieograniczonej głębokości), `galeria.astro`,
+  `galeria/[slug].astro`, `galeria/bez-albumu.astro`, `GalleryGrid.astro`;
+  bez albumów w CMS — płaska lista jak wcześniej; brak CMS / pusta galeria → `GALLERY` z `site.ts`.
+  **Menedżer galerii** (2026-05-06): własny widok `/admin/gallery-manager` — file-explorer
+  UX, drag & drop upload, MediaPickerModal (z biblioteki bez re-uploadu), nieograniczone
+  zagnieżdżenie folderów (pole `parent` self-referential). `GalleryManagerNavLink`
+  w `beforeNavLinks` (zielony, zawsze widoczny). Kolekcja `gallery-albums` ukryta
+  z domyślnego sidebara Payload.
 - ✅ **LiveMatch v3.1 (2026-04-29)** — relacja na żywo w hero + Studio Live w panelu,
   realtime przez SSE (`/api/live-match/stream` na CMS), publiczny odczyt snapshotu na stronie przez `/wks-live-match` (Astro), `matches.lineup[]` (kadra) i UX do prowadzenia relacji
   (gole modalem, cofanie/edycja/usuwanie zdarzeń, pre‑match zapowiedź).

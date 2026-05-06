@@ -13,6 +13,56 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-06 — Menedżer galerii (plik-explorer w panelu) + szybszy ticker
+
+### Added
+
+- **`GalleryManager.tsx`** — własny widok admina pod `/admin/gallery-manager`
+  (zarejestrowany jako `views.galleryManager` w `payload.config.ts`). UX
+  wzorowany na eksploratorze plików: breadcrumby, siatka folderów + siatka
+  zdjęć w bieżącym folderze, drag & drop upload, tworzenie / edycja /
+  usuwanie folderów z modalem, usuwanie zdjęć. Przycisk **← Dashboard**
+  na górze do szybkiego powrotu.
+- **`MediaPickerModal`** wewnątrz GalleryManager — wybór zdjęć z istniejącej
+  biblioteki mediów (`/api/media?limit=200&sort=-createdAt`) bez ponownego
+  uploadu. Dwa tryby: `single` (okładka folderu) i `multi` (dodanie zdjęć
+  do albumu). Przycisk **🗂 Z biblioteki** w nagłówku + **📁 Z biblioteki**
+  w formularzu tworzenia folderu.
+- **`GalleryManagerNavLink.tsx`** — nowy komponent nawigacyjny dla
+  Menedżera galerii; zarejestrowany w `beforeNavLinks` (nad linkami
+  kolekcji), stały zielony background `rgba(22,101,52,0.65)` — zawsze
+  widoczny bez klikania w sidebar.
+- **Migracja `20260505_gallery_parent`** — dodaje kolumnę `parent_id`
+  (FK self-referential) do tabeli `gallery_albums` oraz indeks. Rejestracja
+  w `migrations/index.ts`.
+
+### Changed
+
+- **`GalleryAlbums.ts`**: usunięty `beforeValidate` hook blokujący
+  zagnieżdżenie > 2 poziomów. Dodane pole `parent` (relacja self → `gallery-albums`,
+  sidebar). Kolekcja ukryta z sidebara panelu (`admin: { hidden: true }`) —
+  całe zarządzanie odbywa się przez Menedżer galerii.
+- **`payload.config.ts`**: `GalleryManagerNavLink` przeniesiony z
+  `afterNavLinks` do `beforeNavLinks` (widoczny bez zwijania sidebara).
+  Zarejestrowany widok `galleryManager` pod `/admin/gallery-manager`.
+- **`cms-gallery.ts`** — dodane rekurencyjne helpery `countPhotosDeep()`
+  i `findCoverDeep()` do obsługi nieograniczonej głębokości zagnieżdżenia
+  albumów. `buildAlbumCard` używa ich zamiast płaskiego liczenia 1 poziomu.
+- **`galeria.astro`** i **`galeria/[slug].astro`** — zaktualizowane do
+  pobierania okładki i liczby zdjęć przez rekurencyjne funkcje.
+- **Ticker animacji (marka)** — prędkość: 9 s desktop / 7 s mobile (wcześniej
+  20 s / 16 s z poprzedniej sesji).
+
+### Deploy
+
+- Pliki: `GalleryManager.tsx`, `GalleryManagerNavLink.tsx`,
+  `GalleryAlbums.ts`, `payload.config.ts`, `migrations/index.ts`,
+  `20260505_gallery_parent.ts`, `importMap.js`, `cms-gallery.ts`,
+  `galeria.astro`, `galeria/[slug].astro`, `global.css`, `payload-types.ts`,
+  `packages/shared/index.ts`.
+
+---
+
 ## 2026-05-02 — Mobile-first admin + dedykowany flow LiveMatch
 
 ### Added

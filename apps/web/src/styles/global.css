@@ -146,11 +146,10 @@
   50%      { opacity: 1; }
 }
 
-/* Pasek z wynikami / nadchodzącymi meczami — szybszy niż wcześniej (40s → 20s desktop,
-   16s mobile). Treść krótka, więc szybsze przewijanie czyta się lepiej. */
-.marka-ticker-track { animation: marka-marquee 20s linear infinite; }
+/* Pasek z wynikami — 9s desktop / 7s mobile */
+.marka-ticker-track { animation: marka-marquee 9s linear infinite; }
 @media (max-width: 768px) {
-  .marka-ticker-track { animation-duration: 16s; }
+  .marka-ticker-track { animation-duration: 7s; }
 }
 .marka-pulse        { animation: marka-pulse 1.5s ease-in-out infinite; }
 .marka-fadeup       { animation: marka-fadeup .9s cubic-bezier(.2,.8,.2,1) both; }
