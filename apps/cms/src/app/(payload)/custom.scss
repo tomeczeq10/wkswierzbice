@@ -68,3 +68,38 @@
     opacity: 0.55;
   }
 }
+
+// ── Mobile: Save bar na dole (≤ 768px) ───────────────────────────────────────
+// Vanilla Payload trzyma .doc-controls jako sticky:top — na telefonie wygodniej
+// mieć przyciski przy dolnej krawędzi (zasięg kciuka). Przesuwamy SAM kontener
+// z przyciskami akcji (.doc-controls__controls-wrapper) na dół jako fixed bar,
+// reszta paska (label "Tworzenie nowego..." + ikony meta) zostaje na górze.
+
+@media (max-width: 768px) {
+  .doc-controls__controls-wrapper {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    background: #ffffff;
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) !important;
+    margin: 0 !important;
+    z-index: 30;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  // Padding-bottom dla głównej treści, żeby ostatnie pole formularza nie
+  // chowało się pod fixed bar-em (~64px wysokości + safe-area).
+  .collection-edit,
+  .global-edit,
+  [class*="collection-edit__"],
+  [class*="global-edit__"] {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+  }
+}
