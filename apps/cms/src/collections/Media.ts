@@ -34,6 +34,7 @@ export const Media: CollectionConfig = {
     plural: { pl: 'Media' },
   },
   admin: {
+    group: 'Multimedia',
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
   },

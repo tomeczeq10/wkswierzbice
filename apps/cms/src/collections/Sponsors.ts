@@ -8,6 +8,7 @@ export const Sponsors: CollectionConfig = {
     plural: { pl: 'Sponsorzy', en: 'Sponsors' },
   },
   admin: {
+    group: 'Ustawienia',
     useAsTitle: 'name',
     defaultColumns: ['name', 'tier', 'website', 'updatedAt'],
     description: 'Sponsorzy i partnerzy klubu (strona /sponsorzy + komponenty).',

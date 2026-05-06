@@ -9,6 +9,7 @@ export const SiteConfig: GlobalConfig = {
     update: isAdmin,
   },
   admin: {
+    group: 'Ustawienia',
     description:
       'Ustawienia globalne strony (nawigacja, kontakt, social). Front ma fallback do `site.ts` gdy CMS OFF.',
   },

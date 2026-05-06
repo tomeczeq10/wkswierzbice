@@ -8,6 +8,7 @@ export const StaticPages: CollectionConfig = {
     plural: { pl: 'Strony statyczne', en: 'Static pages' },
   },
   admin: {
+    group: 'Ustawienia',
     useAsTitle: 'slug',
     defaultColumns: ['slug', 'title', 'updatedAt'],
     description: 'Treści stron: o-klubie / nabory / kontakt / polityka-prywatnosci.',

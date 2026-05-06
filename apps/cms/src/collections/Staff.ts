@@ -8,6 +8,7 @@ export const Staff: CollectionConfig = {
     plural: { pl: 'Sztab', en: 'Staff' },
   },
   admin: {
+    group: 'Drużyna',
     useAsTitle: 'name',
     defaultColumns: ['name', 'role', 'type', 'order', 'updatedAt'],
     description: 'Sztab szkoleniowy (sekcja /o-klubie).',

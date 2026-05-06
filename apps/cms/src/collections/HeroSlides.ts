@@ -8,6 +8,7 @@ export const HeroSlides: CollectionConfig = {
     plural: { pl: 'Slajdy hero', en: 'Hero slides' },
   },
   admin: {
+    group: 'Multimedia',
     useAsTitle: 'title',
     defaultColumns: ['title', 'active', 'order', 'updatedAt'],
     description: 'Karuzela na stronie głównej.',

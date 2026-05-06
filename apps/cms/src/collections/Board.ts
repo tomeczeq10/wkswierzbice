@@ -8,6 +8,7 @@ export const Board: CollectionConfig = {
     plural: { pl: 'Zarząd', en: 'Board' },
   },
   admin: {
+    group: 'Drużyna',
     useAsTitle: 'name',
     defaultColumns: ['name', 'role', 'order', 'updatedAt'],
     description: 'Zarząd klubu (sekcja /o-klubie).',

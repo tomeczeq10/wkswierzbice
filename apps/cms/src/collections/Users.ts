@@ -5,6 +5,7 @@ import { isAdmin } from '../access'
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
+    group: 'Ustawienia',
     useAsTitle: 'email',
   },
   auth: true,

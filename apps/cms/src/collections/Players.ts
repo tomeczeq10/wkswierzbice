@@ -9,6 +9,7 @@ export const Players: CollectionConfig = {
     plural: { pl: 'Zawodnicy', en: 'Players' },
   },
   admin: {
+    group: 'Drużyna',
     useAsTitle: 'name',
     defaultColumns: ['name', 'team', 'position', 'number', 'updatedAt'],
     description: 'Kadra drużyn. Każdy zawodnik należy do jednej drużyny (relacja do Teams).',

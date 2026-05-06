@@ -26,6 +26,7 @@ export const Tags: CollectionConfig = {
     },
   },
   admin: {
+    group: 'Treść',
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'updatedAt'],
     description: 'Tagi pomagają grupować newsy (np. wszystkie newsy o seniorach albo wszystkie o turniejach).',

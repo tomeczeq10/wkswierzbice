@@ -29,6 +29,7 @@ export const News: CollectionConfig = {
     },
   },
   admin: {
+    group: 'Treść',
     useAsTitle: 'title',
     defaultColumns: ['title', 'date', 'draft', 'updatedAt'],
     description: 'Wpisy widoczne na /aktualnosci. Pole "Szkic" ukrywa news przed publikacją.',

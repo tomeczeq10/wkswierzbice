@@ -10,6 +10,7 @@ export const Teams: CollectionConfig = {
     plural: { pl: 'Drużyny', en: 'Teams' },
   },
   admin: {
+    group: 'Drużyna',
     useAsTitle: 'name',
     defaultColumns: ['name', 'category', 'league', 'coach', 'order', 'updatedAt'],
     description: 'Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.',

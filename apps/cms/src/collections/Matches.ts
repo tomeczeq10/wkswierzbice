@@ -14,6 +14,7 @@ export const Matches: CollectionConfig = {
     plural: { pl: 'Mecze', en: 'Matches' },
   },
   admin: {
+    group: 'Mecze',
     useAsTitle: 'label',
     defaultColumns: ['kickoffPlanned', 'competitionType', 'venue', 'homeTeamLabel', 'awayTeamLabel', 'updatedAt'],
     description:

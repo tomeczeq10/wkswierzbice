@@ -9,6 +9,7 @@ export const Season: GlobalConfig = {
     update: isAdmin,
   },
   admin: {
+    group: 'Mecze',
     description:
       'Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (przycisk poniżej + widget na dashboardzie + cron).',
     components: {

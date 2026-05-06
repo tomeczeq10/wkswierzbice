@@ -11,6 +11,7 @@ export const Gallery: CollectionConfig = {
     plural: { pl: 'Galeria', en: 'Gallery' },
   },
   admin: {
+    group: 'Multimedia',
     useAsTitle: 'alt',
     defaultColumns: ['alt', 'album', 'order', 'category', 'updatedAt'],
     description:
