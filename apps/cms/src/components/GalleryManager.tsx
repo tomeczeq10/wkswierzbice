@@ -257,7 +257,6 @@ function MediaPickerModal({ mode, onConfirm, onClose }: {
             placeholder="Szukaj…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            autoFocus={!isMobile}
           />
         </div>
 
@@ -434,7 +433,7 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
 
           <div>
             <label style={lbl}>Tytuł *</label>
-            <input style={inp} value={form.title} onChange={e => handleTitle(e.target.value)} required placeholder="np. Turniej U10 — maj 2025" autoFocus={!isMobile} />
+            <input style={inp} value={form.title} onChange={e => handleTitle(e.target.value)} required placeholder="np. Turniej U10 — maj 2025" />
           </div>
 
           <div>

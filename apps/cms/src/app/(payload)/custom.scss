@@ -105,3 +105,74 @@
     padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
   }
 }
+
+// ── Mobile: ciemnozielony drawer nawigacji (≤ 768px) ─────────────────────────
+// Vanilla Payload renderuje nav drawer na białym tle — zderza się stylistycznie
+// z ciemnozielonym brand-em strony (login page, herb klubu). Tutaj barwy WKS:
+// ciemne tło + jasny tekst, zielony akcent na aktywnym linku.
+// UWAGA: NIE używaj selektorów `nav[class*=...]` ani `[class*="nav"]` — łapią
+// `<nav class="step-nav">` (breadcrumb) i psują czytelność tytułu strony.
+
+@media (max-width: 768px) {
+  // Tło drawera + nagłówka drawera (logo + close)
+  aside.nav,
+  .nav__header {
+    background: #0f2a1c !important;
+  }
+
+  .nav__header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+
+  // Etykiety grup (Kolekcje / Globalne / Mecze)
+  .nav-group__toggle,
+  .nav-group__label {
+    color: rgba(255, 255, 255, 0.45) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.12em !important;
+    text-transform: uppercase;
+  }
+
+  // Linki kolekcji / globalsów
+  .nav__link {
+    color: rgba(255, 255, 255, 0.85) !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+    margin: 1px 6px !important;
+    padding: 0 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    text-decoration: none !important;
+  }
+
+  // Aktywny link — zielony akcent + delikatne tło
+  .nav__link--active,
+  .nav__link[aria-current="page"] {
+    background: rgba(22, 101, 52, 0.45) !important;
+    color: #4ade80 !important;
+  }
+
+  // Hover (długi tap na iOS)
+  .nav__link:hover {
+    background: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  // Indicator (kreseczka po lewej aktywnego linka) — w wersji jasnej
+  .nav__link-indicator {
+    background: #4ade80 !important;
+  }
+
+  // Przycisk close (×) w nagłówku drawera — biały na ciemnym tle
+  .nav__header button,
+  .nav__header [class*="hamburger"] {
+    color: #fff !important;
+  }
+
+  // Scrollbar nav — niewidoczny (czysty look)
+  .nav__scroll::-webkit-scrollbar {
+    width: 0;
+  }
+}
