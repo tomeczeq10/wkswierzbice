@@ -43,6 +43,19 @@ type ModalForm = {
   coverThumb: string | null
 }
 
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+function useIsMobile(breakpoint = 640) {
+  const [mobile, setMobile] = useState(false)
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < breakpoint)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [breakpoint])
+  return mobile
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function toSlug(s: string): string {
@@ -161,6 +174,7 @@ function MediaPickerModal({ mode, onConfirm, onClose }: {
   onConfirm: (items: MediaDoc[]) => void
   onClose: () => void
 }) {
+  const isMobile = useIsMobile()
   const [items, setItems] = useState<MediaDoc[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -208,40 +222,53 @@ function MediaPickerModal({ mode, onConfirm, onClose }: {
       style={{
         position: 'fixed', inset: 0, zIndex: 199999,
         background: 'rgba(0,0,0,0.6)', display: 'flex',
-        alignItems: 'center', justifyContent: 'center', padding: 16,
+        alignItems: isMobile ? 'flex-end' : 'center',
+        justifyContent: 'center',
+        padding: isMobile ? 0 : 16,
       }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
       <div style={{
-        background: '#fff', borderRadius: 14, width: '100%', maxWidth: 720,
-        maxHeight: '88vh', display: 'flex', flexDirection: 'column',
+        background: '#fff',
+        borderRadius: isMobile ? '16px 16px 0 0' : 14,
+        width: '100%',
+        maxWidth: isMobile ? '100%' : 720,
+        maxHeight: isMobile ? '92vh' : '88vh',
+        display: 'flex', flexDirection: 'column',
         boxShadow: '0 24px 64px rgba(0,0,0,0.35)', overflow: 'hidden',
       }}>
+        {/* Handle bar (mobile) */}
+        {isMobile && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#d1d5db' }} />
+          </div>
+        )}
+
         {/* Header */}
-        <div style={{ padding: '20px 24px 12px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: 17, fontWeight: 800 }}>
-              {mode === 'single' ? 'Wybierz okładkę z biblioteki' : 'Wybierz zdjęcia z biblioteki'}
+        <div style={{ padding: isMobile ? '12px 16px 10px' : '20px 24px 12px', borderBottom: '1px solid #e5e7eb', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h2 style={{ margin: 0, fontSize: isMobile ? 15 : 17, fontWeight: 800 }}>
+              {mode === 'single' ? 'Wybierz okładkę' : 'Wybierz zdjęcia'}
             </h2>
-            <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#9ca3af', lineHeight: 1 }}>×</button>
+            <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: '#9ca3af', lineHeight: 1, padding: '4px 8px', minWidth: 44, minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           </div>
           <input
             style={inp}
-            placeholder="Szukaj po nazwie pliku lub alt…"
+            placeholder="Szukaj…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            autoFocus
+            autoFocus={!isMobile}
           />
         </div>
 
         {/* Grid */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? 10 : 16 }}>
           {loading ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#9ca3af' }}>Ładowanie biblioteki…</div>
           ) : filtered.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: '#9ca3af' }}>Brak plików{search ? ' spełniających kryteria' : ' w bibliotece'}</div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isMobile ? 90 : 120}px, 1fr))`, gap: isMobile ? 7 : 10 }}>
               {filtered.map(m => {
                 const thumb = mediaThumb(m)
                 const sel = selected.has(m.id)
@@ -267,7 +294,7 @@ function MediaPickerModal({ mode, onConfirm, onClose }: {
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 24, color: '#94a3b8' }}>🖼</div>
                       )}
                     </div>
-                    <p style={{ margin: 0, padding: '4px 6px', fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+                    <p style={{ margin: 0, padding: '3px 5px', fontSize: isMobile ? 9 : 10, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
                       {m.alt || m.filename || '—'}
                     </p>
                     {sel && (
@@ -283,15 +310,15 @@ function MediaPickerModal({ mode, onConfirm, onClose }: {
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '12px 24px', borderTop: '1px solid #e5e7eb', display: 'flex', gap: 10, justifyContent: 'flex-end', flexShrink: 0, background: '#f9fafb' }}>
-          <button type="button" onClick={onClose} style={{ padding: '9px 18px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>
+        <div style={{ padding: isMobile ? '10px 16px' : '12px 24px', borderTop: '1px solid #e5e7eb', display: 'flex', gap: 8, justifyContent: 'flex-end', flexShrink: 0, background: '#f9fafb' }}>
+          <button type="button" onClick={onClose} style={{ flex: isMobile ? 1 : undefined, padding: '11px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit', minHeight: 44 }}>
             Anuluj
           </button>
           <button
             type="button"
             onClick={handleConfirm}
             disabled={selected.size === 0}
-            style={{ padding: '9px 20px', borderRadius: 8, border: 'none', background: selected.size > 0 ? '#166534' : '#d1d5db', color: '#fff', cursor: selected.size > 0 ? 'pointer' : 'default', fontSize: 14, fontWeight: 700, fontFamily: 'inherit' }}
+            style={{ flex: isMobile ? 2 : undefined, padding: '11px 20px', borderRadius: 8, border: 'none', background: selected.size > 0 ? '#166534' : '#d1d5db', color: '#fff', cursor: selected.size > 0 ? 'pointer' : 'default', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', minHeight: 44 }}
           >
             {mode === 'single'
               ? `Wybierz${selected.size > 0 ? '' : ' (zaznacz 1)'}`
@@ -311,6 +338,7 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
   onSave: (form: ModalForm) => Promise<void>
   onClose: () => void
 }) {
+  const isMobile = useIsMobile()
   const [form, setForm] = useState<ModalForm>({
     title: initial?.title ?? '',
     slug: initial?.slug ?? '',
@@ -348,8 +376,9 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
   }
 
   const inp: React.CSSProperties = {
-    width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6,
-    fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', color: '#111',
+    width: '100%', padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 6,
+    fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', color: '#111',
+    minHeight: 44,
   }
   const lbl: React.CSSProperties = {
     display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7280',
@@ -364,33 +393,48 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
         style={{
           position: 'fixed', inset: 0, zIndex: 99999,
           background: 'rgba(0,0,0,0.55)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', padding: 16,
+          alignItems: isMobile ? 'flex-end' : 'center',
+          justifyContent: 'center',
+          padding: isMobile ? 0 : 16,
         }}
         onClick={e => e.target === e.currentTarget && onClose()}
       >
         <form
           onSubmit={handleSubmit}
           style={{
-            background: '#fff', borderRadius: 14, padding: '32px 28px',
-            width: '100%', maxWidth: 500, display: 'flex', flexDirection: 'column',
-            gap: 18, boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
-            maxHeight: '90vh', overflowY: 'auto',
+            background: '#fff',
+            borderRadius: isMobile ? '16px 16px 0 0' : 14,
+            padding: isMobile ? '20px 16px 32px' : '28px 24px',
+            width: '100%',
+            maxWidth: isMobile ? '100%' : 480,
+            display: 'flex', flexDirection: 'column',
+            gap: 14,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.35)',
+            maxHeight: isMobile ? '92vh' : '90vh',
+            overflowY: 'auto',
           }}
         >
+          {/* Handle bar (mobile) */}
+          {isMobile && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: -8, marginBottom: 4 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#d1d5db' }} />
+            </div>
+          )}
+
           <div>
-            <h2 style={{ margin: '0 0 4px', fontSize: 18, fontWeight: 800, color: '#111' }}>
+            <h2 style={{ margin: '0 0 4px', fontSize: isMobile ? 17 : 18, fontWeight: 800, color: '#111' }}>
               {initial ? 'Edytuj folder' : 'Nowy folder'}
             </h2>
             {!initial && parentTitle && (
               <p style={{ margin: 0, fontSize: 12, color: '#6b7280' }}>
-                Zostanie utworzony w: <strong>{parentTitle}</strong>
+                W: <strong>{parentTitle}</strong>
               </p>
             )}
           </div>
 
           <div>
             <label style={lbl}>Tytuł *</label>
-            <input style={inp} value={form.title} onChange={e => handleTitle(e.target.value)} required placeholder="np. Turniej U10 — maj 2025" autoFocus />
+            <input style={inp} value={form.title} onChange={e => handleTitle(e.target.value)} required placeholder="np. Turniej U10 — maj 2025" autoFocus={!isMobile} />
           </div>
 
           <div>
@@ -401,7 +445,7 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
 
           <div>
             <label style={lbl}>Opis (opcjonalnie)</label>
-            <textarea style={{ ...inp, resize: 'vertical', minHeight: 72 }} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Krótki opis folderu…" />
+            <textarea style={{ ...inp, resize: 'vertical', minHeight: 68 }} value={form.description} onChange={e => set('description', e.target.value)} placeholder="Krótki opis folderu…" />
           </div>
 
           <div>
@@ -413,11 +457,11 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
           <div>
             <label style={lbl}>Okładka</label>
             {previewThumb && (
-              <img src={previewThumb} alt="" style={{ width: 96, height: 72, objectFit: 'cover', borderRadius: 6, display: 'block', marginBottom: 8, border: '1px solid #e5e7eb' }} />
+              <img src={previewThumb} alt="" style={{ width: 88, height: 66, objectFit: 'cover', borderRadius: 6, display: 'block', marginBottom: 8, border: '1px solid #e5e7eb' }} />
             )}
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
               <label style={{ flex: 1, cursor: 'pointer' }}>
-                <div style={{ padding: '7px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#374151', textAlign: 'center', background: '#f9fafb' }}>
+                <div style={{ padding: '10px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#374151', textAlign: 'center', background: '#f9fafb', minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {form.coverFile ? `📎 ${form.coverFile.name}` : '⬆ Wgraj plik'}
                 </div>
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
@@ -425,8 +469,8 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
                   setForm(prev => ({ ...prev, coverFile: f, coverId: null, coverThumb: null }))
                 }} />
               </label>
-              <button type="button" onClick={() => setShowCoverPicker(true)} style={{ padding: '7px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#374151', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-                📁 Z biblioteki
+              <button type="button" onClick={() => setShowCoverPicker(true)} style={{ padding: '10px 14px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 13, fontWeight: 500, color: '#374151', background: '#fff', cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap', minHeight: 44 }}>
+                📁 Z bibl.
               </button>
             </div>
             {form.coverId && !form.coverFile && (
@@ -434,11 +478,11 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 4 }}>
-            <button type="button" onClick={onClose} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '12px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 15, fontWeight: 600, fontFamily: 'inherit', minHeight: 48 }}>
               Anuluj
             </button>
-            <button type="submit" disabled={saving} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: '#166534', color: '#fff', cursor: saving ? 'default' : 'pointer', fontSize: 14, fontWeight: 700, opacity: saving ? 0.7 : 1, fontFamily: 'inherit' }}>
+            <button type="submit" disabled={saving} style={{ flex: 2, padding: '12px', borderRadius: 8, border: 'none', background: '#166534', color: '#fff', cursor: saving ? 'default' : 'pointer', fontSize: 15, fontWeight: 700, opacity: saving ? 0.7 : 1, fontFamily: 'inherit', minHeight: 48 }}>
               {saving ? 'Zapisywanie…' : 'Zapisz'}
             </button>
           </div>
@@ -458,8 +502,8 @@ function FolderModal({ initial, parentTitle, onSave, onClose }: {
 
 // ─── IconBtn ──────────────────────────────────────────────────────────────────
 
-function IconBtn({ children, title, onClick, danger }: {
-  children: React.ReactNode; title: string; onClick: () => void; danger?: boolean
+function IconBtn({ children, title, onClick, danger, alwaysVisible }: {
+  children: React.ReactNode; title: string; onClick: () => void; danger?: boolean; alwaysVisible?: boolean
 }) {
   const [hov, setHov] = useState(false)
   return (
@@ -468,10 +512,14 @@ function IconBtn({ children, title, onClick, danger }: {
       onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
       style={{
         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-        width: 28, height: 28, borderRadius: 6, border: 'none', cursor: 'pointer',
-        fontSize: 13, fontFamily: 'inherit',
-        background: hov ? (danger ? '#fee2e2' : '#f3f4f6') : 'rgba(255,255,255,0.92)',
+        width: alwaysVisible ? 34 : 28,
+        height: alwaysVisible ? 34 : 28,
+        borderRadius: 6, border: 'none', cursor: 'pointer',
+        fontSize: alwaysVisible ? 15 : 13, fontFamily: 'inherit',
+        background: hov ? (danger ? '#fee2e2' : '#f3f4f6') : (alwaysVisible ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.92)'),
+        boxShadow: alwaysVisible ? '0 1px 3px rgba(0,0,0,0.12)' : 'none',
         transition: 'background 0.12s',
+        minWidth: 34, minHeight: 34,
       }}
     >{children}</button>
   )
@@ -479,11 +527,12 @@ function IconBtn({ children, title, onClick, danger }: {
 
 // ─── FolderCard ───────────────────────────────────────────────────────────────
 
-function FolderCard({ folder, onOpen, onEdit, onDelete }: {
+function FolderCard({ folder, onOpen, onEdit, onDelete, isMobile }: {
   folder: Album
   onOpen: (f: Album) => void
   onEdit: (f: Album) => void
   onDelete: (f: Album) => void
+  isMobile: boolean
 }) {
   const [hov, setHov] = useState(false)
   const thumb = mediaThumb(folder.cover as MediaDoc | number | null)
@@ -505,26 +554,31 @@ function FolderCard({ folder, onOpen, onEdit, onDelete }: {
         {thumb ? (
           <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 0.3s', transform: hov ? 'scale(1.05)' : 'scale(1)' }} />
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 36, color: '#cbd5e1' }}>📁</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: isMobile ? 28 : 36, color: '#cbd5e1' }}>📁</div>
         )}
       </div>
 
-      <div style={{ padding: '10px 12px 12px' }}>
-        <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{folder.title}</p>
-        {folder.eventDate && <p style={{ margin: '3px 0 0', fontSize: 11, color: '#6b7280' }}>{fmtDate(folder.eventDate)}</p>}
-        {folder.description && (
+      <div style={{ padding: isMobile ? '8px 10px 10px' : '10px 12px 12px' }}>
+        <p style={{ margin: 0, fontWeight: 700, fontSize: isMobile ? 12 : 13, color: '#111', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{folder.title}</p>
+        {folder.eventDate && <p style={{ margin: '2px 0 0', fontSize: 10, color: '#6b7280' }}>{fmtDate(folder.eventDate)}</p>}
+        {!isMobile && folder.description && (
           <p style={{ margin: '4px 0 0', fontSize: 11, color: '#9ca3af', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
             {folder.description}
           </p>
         )}
       </div>
 
+      {/* Actions: always visible on mobile, hover-only on desktop */}
       <div
-        style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4, opacity: hov ? 1 : 0, transition: 'opacity 0.15s' }}
+        style={{
+          position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4,
+          opacity: isMobile ? 1 : (hov ? 1 : 0),
+          transition: 'opacity 0.15s',
+        }}
         onClick={e => e.stopPropagation()}
       >
-        <IconBtn title="Edytuj folder" onClick={() => onEdit(folder)}>✏️</IconBtn>
-        <IconBtn title="Usuń folder" onClick={() => onDelete(folder)} danger>🗑️</IconBtn>
+        <IconBtn title="Edytuj folder" onClick={() => onEdit(folder)} alwaysVisible={isMobile}>✏️</IconBtn>
+        <IconBtn title="Usuń folder" onClick={() => onDelete(folder)} danger alwaysVisible={isMobile}>🗑️</IconBtn>
       </div>
     </div>
   )
@@ -532,7 +586,7 @@ function FolderCard({ folder, onOpen, onEdit, onDelete }: {
 
 // ─── PhotoCard ────────────────────────────────────────────────────────────────
 
-function PhotoCard({ photo, onDelete }: { photo: Photo; onDelete: (p: Photo) => void }) {
+function PhotoCard({ photo, onDelete, isMobile }: { photo: Photo; onDelete: (p: Photo) => void; isMobile: boolean }) {
   const [hov, setHov] = useState(false)
   const thumb = mediaThumb(photo.image as MediaDoc | number | null)
 
@@ -549,16 +603,19 @@ function PhotoCard({ photo, onDelete }: { photo: Photo; onDelete: (p: Photo) => 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 22, color: '#94a3b8' }}>🖼</div>
         )}
       </div>
-      <p style={{ margin: 0, padding: '4px 6px', fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
+      <p style={{ margin: 0, padding: '3px 5px', fontSize: 10, color: '#6b7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', background: '#fff', borderTop: '1px solid #e5e7eb' }}>
         {photo.alt || '—'}
       </p>
-      {hov && (
+      {/* Delete: always show on mobile, hover-only on desktop */}
+      {(isMobile || hov) && (
         <button
           type="button" title="Usuń zdjęcie" onClick={() => onDelete(photo)}
           style={{
-            position: 'absolute', top: 4, right: 4, width: 22, height: 22,
+            position: 'absolute', top: 4, right: 4,
+            width: isMobile ? 28 : 22,
+            height: isMobile ? 28 : 22,
             borderRadius: 4, border: 'none', background: 'rgba(220,38,38,0.9)',
-            color: '#fff', cursor: 'pointer', fontSize: 15, display: 'flex',
+            color: '#fff', cursor: 'pointer', fontSize: isMobile ? 18 : 15, display: 'flex',
             alignItems: 'center', justifyContent: 'center', lineHeight: 1, fontFamily: 'inherit',
           }}
         >×</button>
@@ -572,6 +629,7 @@ function PhotoCard({ photo, onDelete }: { photo: Photo; onDelete: (p: Photo) => 
 function GalleryManagerInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const isMobile = useIsMobile()
   const folderParam = searchParams?.get('folder')
   const currentFolderId: number | null = folderParam ? parseInt(folderParam, 10) : null
 
@@ -702,53 +760,69 @@ function GalleryManagerInner() {
 
   const currentTitle = crumbs[crumbs.length - 1]?.title ?? 'Galeria'
 
+  // Mobile breadcrumb: show only last 2 crumbs with "…" prefix
+  const visibleCrumbs = isMobile && crumbs.length > 2
+    ? [{ id: null as null, title: '…' }, ...crumbs.slice(-2)]
+    : crumbs
+
   const btnGreen: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+    padding: isMobile ? '0 10px' : '9px 16px',
+    height: 44,
     borderRadius: 8, border: 'none', background: '#166534', color: '#fff',
-    cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap',
+    cursor: 'pointer', fontSize: isMobile ? 12 : 13, fontWeight: 700, fontFamily: 'inherit', whiteSpace: 'nowrap',
+    flex: isMobile ? 1 : undefined,
   }
   const btnWhite: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+    padding: isMobile ? '0 10px' : '9px 16px',
+    height: 44,
     borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', color: '#374151',
-    cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit', whiteSpace: 'nowrap',
+    cursor: 'pointer', fontSize: isMobile ? 12 : 13, fontWeight: 600, fontFamily: 'inherit', whiteSpace: 'nowrap',
+    flex: isMobile ? 1 : undefined,
   }
   const btnBack: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 12px',
     borderRadius: 7, border: '1px solid #d1d5db', background: '#fff', color: '#6b7280',
     cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit', textDecoration: 'none',
+    minHeight: 36,
   }
   const sectionTitle: React.CSSProperties = {
-    margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: '#6b7280',
+    margin: '0 0 10px', fontSize: 11, fontWeight: 700, color: '#6b7280',
     textTransform: 'uppercase', letterSpacing: '0.07em',
   }
 
+  const px = isMobile ? 14 : 36
+
   return (
-    <div style={{ padding: '24px 36px 60px', minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111827' }}>
+    <div style={{ padding: `20px ${px}px 60px`, minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#111827' }}>
 
       {/* ── Back to dashboard ── */}
-      <div style={{ marginBottom: 18 }}>
+      <div style={{ marginBottom: 14 }}>
         <a href="/admin" style={btnBack}>← Dashboard</a>
       </div>
 
       {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
-        <div>
-          <h1 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800, letterSpacing: '-0.01em' }}>
+      <div style={{ marginBottom: 20 }}>
+        {/* Title + breadcrumb */}
+        <div style={{ marginBottom: isMobile ? 12 : 16 }}>
+          <h1 style={{ margin: '0 0 6px', fontSize: isMobile ? 18 : 22, fontWeight: 800, letterSpacing: '-0.01em' }}>
             Menedżer galerii
           </h1>
-          {/* Breadcrumb */}
-          <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-            {crumbs.map((c, i) => (
+          <nav aria-label="Breadcrumb" style={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+            {visibleCrumbs.map((c, i) => (
               <React.Fragment key={`${c.id ?? 'root'}-${i}`}>
-                {i > 0 && <span style={{ color: '#d1d5db', fontSize: 14, userSelect: 'none' }}>/</span>}
+                {i > 0 && <span style={{ color: '#d1d5db', fontSize: 13, userSelect: 'none', padding: '0 2px' }}>/</span>}
                 <button
                   type="button"
-                  onClick={() => navigateTo(c)}
+                  onClick={() => c.title === '…' ? undefined : navigateTo(c)}
                   style={{
-                    background: 'none', border: 'none', cursor: i === crumbs.length - 1 ? 'default' : 'pointer',
-                    padding: '2px 6px', borderRadius: 4, fontSize: 14, fontFamily: 'inherit',
-                    fontWeight: i === crumbs.length - 1 ? 700 : 500,
-                    color: i === crumbs.length - 1 ? '#111' : '#166534',
+                    background: 'none', border: 'none',
+                    cursor: (i === visibleCrumbs.length - 1 || c.title === '…') ? 'default' : 'pointer',
+                    padding: '3px 5px', borderRadius: 4, fontSize: isMobile ? 13 : 14, fontFamily: 'inherit',
+                    fontWeight: i === visibleCrumbs.length - 1 ? 700 : 500,
+                    color: i === visibleCrumbs.length - 1 ? '#111' : (c.title === '…' ? '#9ca3af' : '#166534'),
+                    minHeight: 32,
                   }}
                 >{c.title}</button>
               </React.Fragment>
@@ -756,15 +830,16 @@ function GalleryManagerInner() {
           </nav>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0, alignItems: 'center', flexWrap: 'wrap' }}>
+        {/* Action buttons — flex row, full-width on mobile */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', flexWrap: isMobile ? 'wrap' : 'nowrap' }}>
           <button style={btnWhite} onClick={() => { setEditTarget(null); setModal('create') }}>
-            📁 Nowy folder
+            📁 {isMobile ? 'Folder' : 'Nowy folder'}
           </button>
           <button style={btnWhite} onClick={() => setShowPhotosPicker(true)}>
-            🗂 Z biblioteki
+            🗂 {isMobile ? 'Biblioteka' : 'Z biblioteki'}
           </button>
           <button style={btnGreen} onClick={() => fileRef.current?.click()}>
-            ⬆ Dodaj zdjęcia
+            ⬆ {isMobile ? 'Dodaj' : 'Dodaj zdjęcia'}
           </button>
           <input ref={fileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => handleUpload(e.target.files)} />
         </div>
@@ -772,14 +847,14 @@ function GalleryManagerInner() {
 
       {/* ── Upload progress ── */}
       {uploadStatus && (
-        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#166534', fontWeight: 600 }}>
+        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#166534', fontWeight: 600 }}>
           ⏳ {uploadStatus}
         </div>
       )}
 
       {/* ── Error ── */}
       {error && (
-        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 13, color: '#dc2626', fontWeight: 600 }}>
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 14px', marginBottom: 16, fontSize: 13, color: '#dc2626', fontWeight: 600 }}>
           ⚠️ {error} —{' '}
           <button type="button" onClick={refresh} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontWeight: 700, fontFamily: 'inherit', fontSize: 13 }}>Spróbuj ponownie</button>
         </div>
@@ -791,13 +866,20 @@ function GalleryManagerInner() {
         <>
           {/* ── Sub-folders ── */}
           {folders.length > 0 && (
-            <section style={{ marginBottom: 36 }}>
+            <section style={{ marginBottom: 28 }}>
               <h2 style={sectionTitle}>Podfoldery ({folders.length})</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile
+                  ? 'repeat(auto-fill, minmax(140px, 1fr))'
+                  : 'repeat(auto-fill, minmax(200px, 1fr))',
+                gap: isMobile ? 10 : 14,
+              }}>
                 {folders.map(f => (
                   <FolderCard
                     key={f.id}
                     folder={f}
+                    isMobile={isMobile}
                     onOpen={navigateInto}
                     onEdit={f => { setEditTarget(f); setModal('edit') }}
                     onDelete={handleDeleteFolder}
@@ -813,8 +895,15 @@ function GalleryManagerInner() {
 
             {photos.length > 0 ? (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10, marginBottom: 10 }}>
-                  {photos.map(p => <PhotoCard key={p.id} photo={p} onDelete={handleDeletePhoto} />)}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile
+                    ? 'repeat(auto-fill, minmax(90px, 1fr))'
+                    : 'repeat(auto-fill, minmax(130px, 1fr))',
+                  gap: isMobile ? 7 : 10,
+                  marginBottom: 10,
+                }}>
+                  {photos.map(p => <PhotoCard key={p.id} photo={p} onDelete={handleDeletePhoto} isMobile={isMobile} />)}
                 </div>
                 <div
                   onDragEnter={onDragEnter} onDragLeave={onDragLeave} onDragOver={onDragOver} onDrop={onDrop}
@@ -824,9 +913,10 @@ function GalleryManagerInner() {
                     borderRadius: 8, padding: '14px 16px', textAlign: 'center', cursor: 'pointer',
                     color: dragOver ? '#166534' : '#9ca3af', fontSize: 12, fontWeight: 600,
                     background: dragOver ? '#f0fdf4' : 'transparent', transition: 'all 0.2s',
+                    minHeight: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
                 >
-                  + Dodaj więcej zdjęć (przeciągnij lub kliknij)
+                  + Dodaj więcej zdjęć{!isMobile && ' (przeciągnij lub kliknij)'}
                 </div>
               </>
             ) : (
@@ -835,24 +925,26 @@ function GalleryManagerInner() {
                 onClick={() => fileRef.current?.click()}
                 style={{
                   border: `2px dashed ${dragOver ? '#166534' : '#d1d5db'}`,
-                  borderRadius: 10, padding: '56px 24px', textAlign: 'center', cursor: 'pointer',
+                  borderRadius: 10, padding: isMobile ? '40px 16px' : '56px 24px', textAlign: 'center', cursor: 'pointer',
                   background: dragOver ? '#f0fdf4' : '#f9fafb', transition: 'all 0.2s',
                   color: dragOver ? '#166534' : '#9ca3af',
                 }}
               >
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📷</div>
-                <p style={{ margin: 0, fontWeight: 600, fontSize: 14 }}>Przeciągnij zdjęcia lub kliknij, żeby dodać</p>
-                <p style={{ margin: '5px 0 0', fontSize: 12 }}>JPG, PNG, WEBP — lub użyj „Z biblioteki" powyżej</p>
+                <div style={{ fontSize: isMobile ? 28 : 36, marginBottom: 10 }}>📷</div>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: isMobile ? 13 : 14 }}>
+                  {isMobile ? 'Kliknij, żeby dodać zdjęcia' : 'Przeciągnij zdjęcia lub kliknij, żeby dodać'}
+                </p>
+                <p style={{ margin: '5px 0 0', fontSize: 12 }}>JPG, PNG, WEBP — lub użyj „Biblioteka" powyżej</p>
               </div>
             )}
           </section>
 
           {/* ── Empty state ── */}
           {folders.length === 0 && photos.length === 0 && !error && (
-            <div style={{ textAlign: 'center', marginTop: 40, color: '#9ca3af' }}>
-              <div style={{ fontSize: 44, marginBottom: 14 }}>📂</div>
-              <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#6b7280' }}>Ten folder jest pusty</p>
-              <p style={{ margin: '6px 0 0', fontSize: 13 }}>Utwórz podfolder lub dodaj zdjęcia korzystając z przycisków powyżej.</p>
+            <div style={{ textAlign: 'center', marginTop: 32, color: '#9ca3af' }}>
+              <div style={{ fontSize: isMobile ? 36 : 44, marginBottom: 12 }}>📂</div>
+              <p style={{ margin: 0, fontSize: isMobile ? 14 : 16, fontWeight: 700, color: '#6b7280' }}>Ten folder jest pusty</p>
+              <p style={{ margin: '6px 0 0', fontSize: 12 }}>Utwórz podfolder lub dodaj zdjęcia korzystając z przycisków powyżej.</p>
             </div>
           )}
         </>
