@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useHasSpecialAccess } from './PermissionGuard'
 
 type LiveSnapshot = {
   enabled?: boolean
@@ -23,6 +24,7 @@ export default function LiveStudioNavLink() {
   const pathname = usePathname()
   const setupActive = useMemo(() => pathname === '/admin/live-setup', [pathname])
   const studioActive = useMemo(() => pathname === '/admin/live-studio', [pathname])
+  const canAccess = useHasSpecialAccess('liveStudio')
 
   const [live, setLive] = useState<LiveSnapshot>(null)
   useEffect(() => {
@@ -48,6 +50,8 @@ export default function LiveStudioNavLink() {
   const isLive = Boolean(live?.enabled && live?.status && live.status !== 'ft')
   const sh = live?.scoreHome ?? 0
   const sa = live?.scoreAway ?? 0
+
+  if (!canAccess) return null
 
   return (
     <div style={{ padding: 'calc(var(--base) * 0.5)', width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -3,7 +3,12 @@
 import React from 'react'
 
 import LiveSetupPage from '../../../../components/LiveSetupPage'
+import PermissionGuard from '../../../../components/PermissionGuard'
 
 export default function Page() {
-  return <LiveSetupPage />
+  return (
+    <PermissionGuard special="liveStudio">
+      <LiveSetupPage />
+    </PermissionGuard>
+  )
 }

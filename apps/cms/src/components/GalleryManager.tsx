@@ -973,10 +973,14 @@ function GalleryManagerInner() {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
+import PermissionGuard from './PermissionGuard'
+
 export default function GalleryManager() {
   return (
-    <Suspense fallback={<div style={{ padding: 40, color: '#9ca3af', fontFamily: 'system-ui, sans-serif' }}>Ładowanie…</div>}>
-      <GalleryManagerInner />
-    </Suspense>
+    <PermissionGuard special="galleryManager">
+      <Suspense fallback={<div style={{ padding: 40, color: '#9ca3af', fontFamily: 'system-ui, sans-serif' }}>Ładowanie…</div>}>
+        <GalleryManagerInner />
+      </Suspense>
+    </PermissionGuard>
   )
 }

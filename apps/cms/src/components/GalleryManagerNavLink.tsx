@@ -1,11 +1,15 @@
 'use client'
 import React, { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useHasSpecialAccess } from './PermissionGuard'
 
 export default function GalleryManagerNavLink() {
   const pathname = usePathname() ?? ''
   const active = pathname.startsWith('/admin/gallery-manager')
   const [hov, setHov] = useState(false)
+  const canAccess = useHasSpecialAccess('galleryManager')
+
+  if (!canAccess) return null
 
   return (
     <div style={{ padding: '8px 10px 4px' }}>

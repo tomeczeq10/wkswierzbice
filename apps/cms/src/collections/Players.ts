@@ -53,17 +53,10 @@ export const Players: CollectionConfig = {
       admin: {
         position: 'sidebar',
       },
-      hooks: {
-        beforeValidate: [
-          ({ value, req }) => {
-            // Trener nie może przypisać zawodnika do innej drużyny niż własna.
-            const role = (req.user as any)?.role
-            const userTeam = (req.user as any)?.team
-            if (role === 'trener' && userTeam) return userTeam
-            return value
-          },
-        ],
-      },
+      // (Po refaktorze RBAC: legacy hook "trener forced team" usunięty —
+      // role są dynamiczne, scope per-record dodamy później jako osobne pole
+      // w roli, jeśli będzie potrzebne. Dziś każdy z rolą Administrator może
+      // wybrać dowolną drużynę.)
     },
     {
       name: 'photo',

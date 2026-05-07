@@ -1,5 +1,5 @@
 import type { GlobalConfig } from 'payload'
-import { getRole } from '../access'
+import { hasPermission } from '../access/hasPermission'
 import { livePubSub } from '../live/pubsub'
 
 export const LiveMatch: GlobalConfig = {
@@ -7,10 +7,8 @@ export const LiveMatch: GlobalConfig = {
   label: { pl: 'Relacja na żywo', en: 'Live match' },
   access: {
     read: () => true,
-    update: ({ req }) => {
-      const r = getRole(req)
-      return r === 'admin' || r === 'redaktor' || r === 'trener'
-    },
+    // Edycja stanu relacji live = special permission "Live Studio" (sterowanie meczem).
+    update: async ({ req }) => hasPermission(req, 'liveStudio'),
   },
   admin: {
     // Schowane z sidebara — wszystko robi się przez /admin/live-setup i /admin/live-studio.

@@ -31,6 +31,7 @@ import cron from 'node-cron'
 import { syncSeason } from './lib/sync-season'
 import { migrations } from './migrations'
 import { livePubSub } from './live/pubsub'
+import { hasPermission } from './access/hasPermission'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -129,8 +130,8 @@ export default buildConfig({
       method: 'post',
       handler: async (req) => {
         if (!req.user) return new Response('Unauthorized', { status: 401 })
-        const role = (req.user as any).role
-        if (role && role !== 'admin') return new Response('Forbidden', { status: 403 })
+        const allowed = await hasPermission(req, 'syncSeason')
+        if (!allowed) return new Response('Forbidden', { status: 403 })
 
         try {
           await req.payload.updateGlobal({
