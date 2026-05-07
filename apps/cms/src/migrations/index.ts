@@ -13,6 +13,7 @@ import * as migration_20260501_190732_liveArchives from './20260501_190732_liveA
 import * as migration_20260502_140000_matches_source from './20260502_140000_matches_source';
 import * as migration_20260505_gallery_parent from './20260505_gallery_parent';
 import * as migration_20260506_220000_roles_rbac from './20260506_220000_roles_rbac';
+import * as migration_20260507_055000_roles_locked_docs_fix from './20260507_055000_roles_locked_docs_fix';
 
 export const migrations = [
   {
@@ -89,5 +90,10 @@ export const migrations = [
     up: migration_20260506_220000_roles_rbac.up,
     down: migration_20260506_220000_roles_rbac.down,
     name: '20260506_220000_roles_rbac',
+  },
+  {
+    up: migration_20260507_055000_roles_locked_docs_fix.up,
+    down: migration_20260507_055000_roles_locked_docs_fix.down,
+    name: '20260507_055000_roles_locked_docs_fix',
   },
 ];
