@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const Sponsors: CollectionConfig = {
   slug: 'sponsors',
@@ -9,15 +10,16 @@ export const Sponsors: CollectionConfig = {
   },
   admin: {
     group: 'Ustawienia',
+    hidden: hideUnless('sponsors'),
     useAsTitle: 'name',
     defaultColumns: ['name', 'tier', 'website', 'updatedAt'],
     description: 'Sponsorzy i partnerzy klubu (strona /sponsorzy + komponenty).',
   },
   access: {
     read: () => true,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: can('sponsors', 'create'),
+    update: can('sponsors', 'update'),
+    delete: can('sponsors', 'delete'),
   },
   defaultSort: 'name',
   fields: [

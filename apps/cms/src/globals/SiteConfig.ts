@@ -1,15 +1,17 @@
 import type { GlobalConfig } from 'payload'
-import { isAdmin } from '../access'
+import { canGlobal } from '../access/hasPermission'
+import { hideGlobalUnless } from '../access/hideUnlessHasPermission'
 
 export const SiteConfig: GlobalConfig = {
   slug: 'siteConfig',
   label: { pl: 'Konfiguracja strony', en: 'Site config' },
   access: {
     read: () => true,
-    update: isAdmin,
+    update: canGlobal('siteConfig', 'update'),
   },
   admin: {
     group: 'Ustawienia',
+    hidden: hideGlobalUnless('siteConfig'),
     description:
       'Ustawienia globalne strony (nawigacja, kontakt, social). Front ma fallback do `site.ts` gdy CMS OFF.',
   },

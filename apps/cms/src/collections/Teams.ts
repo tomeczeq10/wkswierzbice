@@ -1,7 +1,8 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
-import { isAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const Teams: CollectionConfig = {
   slug: 'teams',
@@ -11,15 +12,16 @@ export const Teams: CollectionConfig = {
   },
   admin: {
     group: 'Drużyna',
+    hidden: hideUnless('teams'),
     useAsTitle: 'name',
     defaultColumns: ['name', 'category', 'league', 'coach', 'order', 'updatedAt'],
     description: 'Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.',
   },
   access: {
     read: () => true,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: can('teams', 'create'),
+    update: can('teams', 'update'),
+    delete: can('teams', 'delete'),
   },
   defaultSort: '-order',
   fields: [

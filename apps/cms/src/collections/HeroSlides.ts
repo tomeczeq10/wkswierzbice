@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { isEditorOrAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const HeroSlides: CollectionConfig = {
   slug: 'heroSlides',
@@ -9,15 +10,16 @@ export const HeroSlides: CollectionConfig = {
   },
   admin: {
     group: 'Multimedia',
+    hidden: hideUnless('heroSlides'),
     useAsTitle: 'title',
     defaultColumns: ['title', 'active', 'order', 'updatedAt'],
     description: 'Karuzela na stronie głównej.',
   },
   access: {
     read: () => true,
-    create: isEditorOrAdmin,
-    update: isEditorOrAdmin,
-    delete: isEditorOrAdmin,
+    create: can('heroSlides', 'create'),
+    update: can('heroSlides', 'update'),
+    delete: can('heroSlides', 'delete'),
   },
   defaultSort: 'order',
   fields: [

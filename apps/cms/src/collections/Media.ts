@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { isEditorOrAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 import path from 'path'
 
 const uploadsDir =
@@ -35,14 +36,15 @@ export const Media: CollectionConfig = {
   },
   admin: {
     group: 'Multimedia',
+    hidden: hideUnless('media'),
     useAsTitle: 'filename',
     defaultColumns: ['filename', 'alt', 'mimeType', 'filesize', 'updatedAt'],
   },
   access: {
     read: () => true,
-    create: isEditorOrAdmin,
-    update: isEditorOrAdmin,
-    delete: isEditorOrAdmin,
+    create: can('media', 'create'),
+    update: can('media', 'update'),
+    delete: can('media', 'delete'),
   },
   fields: [
     {

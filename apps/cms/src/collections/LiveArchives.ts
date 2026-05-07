@@ -1,11 +1,7 @@
-import type { Access, CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { getRole } from '../access'
-
-const canEdit: Access = ({ req }) => {
-  const r = getRole(req)
-  return r === 'admin' || r === 'redaktor'
-}
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 /**
  * LiveArchives — snapshot zakończonej relacji live (status=ft).
@@ -30,12 +26,13 @@ export const LiveArchives: CollectionConfig = {
     description:
       'Snapshoty zakończonych relacji live (status=ft). Służą do późniejszego napisania artykułu w aktualnościach. Wyniki w terminarzu uzupełniaj osobno.',
     group: 'Mecze',
+    hidden: hideUnless('liveArchives'),
   },
   access: {
     read: () => true,
-    create: canEdit,
-    update: canEdit,
-    delete: canEdit,
+    create: can('liveArchives', 'create'),
+    update: can('liveArchives', 'update'),
+    delete: can('liveArchives', 'delete'),
   },
   defaultSort: '-finishedAt',
   fields: [

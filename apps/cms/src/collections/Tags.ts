@@ -1,7 +1,8 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
-import { isEditorOrAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 /**
  * Tagi do oznaczania newsów (np. "seniorzy", "wynik", "turniej").
@@ -27,15 +28,16 @@ export const Tags: CollectionConfig = {
   },
   admin: {
     group: 'Treść',
+    hidden: hideUnless('tags'),
     useAsTitle: 'name',
     defaultColumns: ['name', 'slug', 'updatedAt'],
     description: 'Tagi pomagają grupować newsy (np. wszystkie newsy o seniorach albo wszystkie o turniejach).',
   },
   access: {
     read: () => true,
-    create: isEditorOrAdmin,
-    update: isEditorOrAdmin,
-    delete: isEditorOrAdmin,
+    create: can('tags', 'create'),
+    update: can('tags', 'update'),
+    delete: can('tags', 'delete'),
   },
   fields: [
     {

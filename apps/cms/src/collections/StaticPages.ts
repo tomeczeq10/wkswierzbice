@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { isEditorOrAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const StaticPages: CollectionConfig = {
   slug: 'staticPages',
@@ -9,15 +10,16 @@ export const StaticPages: CollectionConfig = {
   },
   admin: {
     group: 'Ustawienia',
+    hidden: hideUnless('staticPages'),
     useAsTitle: 'slug',
     defaultColumns: ['slug', 'title', 'updatedAt'],
     description: 'Treści stron: o-klubie / nabory / kontakt / polityka-prywatnosci.',
   },
   access: {
     read: () => true,
-    create: isEditorOrAdmin,
-    update: isEditorOrAdmin,
-    delete: isEditorOrAdmin,
+    create: can('staticPages', 'create'),
+    update: can('staticPages', 'update'),
+    delete: can('staticPages', 'delete'),
   },
   fields: [
     {

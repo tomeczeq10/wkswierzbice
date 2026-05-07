@@ -1,6 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
-import { canCreatePlayer, canDeletePlayer, canUpdatePlayer } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const Players: CollectionConfig = {
   slug: 'players',
@@ -10,15 +11,16 @@ export const Players: CollectionConfig = {
   },
   admin: {
     group: 'Drużyna',
+    hidden: hideUnless('players'),
     useAsTitle: 'name',
     defaultColumns: ['name', 'team', 'position', 'number', 'updatedAt'],
     description: 'Kadra drużyn. Każdy zawodnik należy do jednej drużyny (relacja do Teams).',
   },
   access: {
     read: () => true,
-    create: canCreatePlayer,
-    update: canUpdatePlayer,
-    delete: canDeletePlayer,
+    create: can('players', 'create'),
+    update: can('players', 'update'),
+    delete: can('players', 'delete'),
   },
   defaultSort: 'name',
   fields: [

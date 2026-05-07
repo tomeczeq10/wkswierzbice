@@ -1,7 +1,8 @@
 import type { CollectionConfig } from 'payload'
 
 import { slugify } from '../utils/slugify'
-import { isEditorOrAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 /**
  * Aktualności klubowe.
@@ -30,15 +31,16 @@ export const News: CollectionConfig = {
   },
   admin: {
     group: 'Treść',
+    hidden: hideUnless('news'),
     useAsTitle: 'title',
     defaultColumns: ['title', 'date', 'draft', 'updatedAt'],
     description: 'Wpisy widoczne na /aktualnosci. Pole "Szkic" ukrywa news przed publikacją.',
   },
   access: {
-    read: () => true,
-    create: isEditorOrAdmin,
-    update: isEditorOrAdmin,
-    delete: isEditorOrAdmin,
+    read: () => true, // publiczne (front Astro odpytuje API)
+    create: can('news', 'create'),
+    update: can('news', 'update'),
+    delete: can('news', 'delete'),
   },
   defaultSort: '-date',
   fields: [

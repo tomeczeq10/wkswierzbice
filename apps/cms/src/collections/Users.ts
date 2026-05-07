@@ -23,7 +23,9 @@ export const Users: CollectionConfig = {
     defaultColumns: ['email', 'role', 'updatedAt'],
     description: 'Konta z dostępem do panelu. Tylko Administrator może je tworzyć i edytować.',
   },
-  auth: true,
+  auth: {
+    depth: 1, // populate `role` jako obiekt (nie samo id) — wymagane przez admin.hidden + hasPermission
+  },
   access: {
     read: isAdministrator,
     create: isAdministrator,

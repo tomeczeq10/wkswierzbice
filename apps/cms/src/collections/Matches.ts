@@ -1,11 +1,7 @@
-import type { Access, CollectionConfig } from 'payload'
+import type { CollectionConfig } from 'payload'
 
-import { getRole } from '../access'
-
-const canEditMatches: Access = ({ req }) => {
-  const r = getRole(req)
-  return r === 'admin' || r === 'redaktor' || r === 'trener'
-}
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const Matches: CollectionConfig = {
   slug: 'matches',
@@ -15,6 +11,7 @@ export const Matches: CollectionConfig = {
   },
   admin: {
     group: 'Mecze',
+    hidden: hideUnless('matches'),
     useAsTitle: 'label',
     defaultColumns: ['kickoffPlanned', 'competitionType', 'venue', 'homeTeamLabel', 'awayTeamLabel', 'updatedAt'],
     description:
@@ -22,9 +19,9 @@ export const Matches: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: canEditMatches,
-    update: canEditMatches,
-    delete: canEditMatches,
+    create: can('matches', 'create'),
+    update: can('matches', 'update'),
+    delete: can('matches', 'delete'),
   },
   defaultSort: '-kickoffPlanned',
   fields: [

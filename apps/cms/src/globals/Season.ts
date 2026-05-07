@@ -1,15 +1,17 @@
 import type { GlobalConfig } from 'payload'
-import { isAdmin } from '../access'
+import { canGlobal } from '../access/hasPermission'
+import { hideGlobalUnless } from '../access/hideUnlessHasPermission'
 
 export const Season: GlobalConfig = {
   slug: 'season',
   label: { pl: 'Sezon (90minut)', en: 'Season (90minut)' },
   access: {
     read: () => true,
-    update: isAdmin,
+    update: canGlobal('season', 'update'),
   },
   admin: {
     group: 'Mecze',
+    hidden: hideGlobalUnless('season'),
     description:
       'Snapshot tabeli i terminarza z 90minut.pl. Uzupełniane przez endpoint /api/season/sync (przycisk poniżej + widget na dashboardzie + cron).',
     components: {

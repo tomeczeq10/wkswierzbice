@@ -1,5 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { isAdmin } from '../access'
+import { can } from '../access/hasPermission'
+import { hideUnless } from '../access/hideUnlessHasPermission'
 
 export const Board: CollectionConfig = {
   slug: 'board',
@@ -9,15 +10,16 @@ export const Board: CollectionConfig = {
   },
   admin: {
     group: 'Drużyna',
+    hidden: hideUnless('board'),
     useAsTitle: 'name',
     defaultColumns: ['name', 'role', 'order', 'updatedAt'],
     description: 'Zarząd klubu (sekcja /o-klubie).',
   },
   access: {
     read: () => true,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    create: can('board', 'create'),
+    update: can('board', 'update'),
+    delete: can('board', 'delete'),
   },
   defaultSort: 'order',
   fields: [
