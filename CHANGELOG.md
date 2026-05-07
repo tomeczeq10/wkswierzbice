@@ -13,6 +13,90 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-07 — RBAC (dynamiczne role + permissions matrix) + grupowanie sidebar
+
+### Added
+
+- **Kolekcja `Roles`** (`src/collections/Roles.ts`) — admin tworzy własne
+  role (np. „Redaktor", „Fotograf") i zaznacza permissions. Schema:
+  53 checkboxów (12 kolekcji × 4 CRUD + 2 globalsy `*_update` + 3 specjalne
+  dostępy: `liveStudio`, `galleryManager`, `syncSeason`). Flaga `isSystem`
+  chroni rolę „Administrator" przed usunięciem/edycją (hooks + access).
+- **Pole `role`** na `Users` — relacja → `roles`, required. `auth.depth: 1`
+  żeby `req.user.role` było populated jako obiekt (wymagane przez
+  `admin.hidden` synchronous + `hasPermission`).
+- **Helper `hasPermission`** (`src/access/hasPermission.ts`) — typowane
+  sprawdzanie `(req, resource, action)` z bypass dla Administratora.
+  Skróty: `can('news', 'create')`, `canGlobal('siteConfig', 'update')`.
+- **Helper `hideUnless`** (`src/access/hideUnlessHasPermission.ts`) —
+  dla `admin.hidden` w kolekcji; chowa pozycję w sidebarze gdy user nie
+  ma READ permission.
+- **Komponent `PermissionGuard`** (`src/components/PermissionGuard.tsx`) —
+  client-side guard dla custom views, redirect na `/admin` gdy brak
+  permission. Eksportuje też hook `useHasSpecialAccess(special)` używany
+  w nav-linkach.
+- **Migracja `20260506_220000_roles_rbac`** — CREATE TABLE roles, seed
+  systemowej roli „Administrator", ALTER users ADD role_id, recreate users
+  z `role_id NOT NULL` (bez starej kolumny `role` text enum).
+- **Migracja `20260507_055000_roles_locked_docs_fix`** — hot-fix dorzuca
+  `roles_id` do `payload_locked_documents_rels` (Payload utrzymuje wspólną
+  tabelę z FK do każdej kolekcji; bez tej kolumny admin rzucał 500).
+- **Logiczne grupowanie sidebar** — `admin.group` w 16 plikach: Treść
+  (News/Tags), Drużyna (Players/Teams/Staff/Board), Mecze (Matches/
+  LiveArchives/Season), Multimedia (Media/HeroSlides), Ustawienia
+  (StaticPages/Sponsors/Users/SiteConfig/Roles).
+
+### Changed
+
+- **Access functions w 12 kolekcjach + 2 globalsach** zastąpione na nowy
+  RBAC: `can(slug, action)` zamiast `isAdmin/isEditorOrAdmin/canEditMatches/
+  canEditPlayer`. `admin.hidden = hideUnless(slug)` automatycznie chowa
+  kolekcję dla user-a bez READ.
+- **Custom views** (`/admin/live-studio`, `/admin/live-setup`,
+  `/admin/gallery-manager`) owinięte w `<PermissionGuard special="...">`.
+- **Nav-linki** `LiveStudioNavLink` i `GalleryManagerNavLink` chowają
+  się dla user-a bez special access (`useHasSpecialAccess` hook).
+- **POST /api/season/sync** używa `hasPermission(req, 'syncSeason')`
+  zamiast legacy `role === 'admin'`.
+- **LiveMatch global** `access.update = hasPermission(req, 'liveStudio')`.
+- **Players** — usunięty legacy hook „trener forced team" (po refaktorze
+  role są dynamiczne, scope per-record dorzucimy później jeśli potrzeba).
+- **Galeria (kolekcja `gallery`)** — `admin.hidden: true`. Kolekcja dalej
+  istnieje w bazie (Menedżer galerii używa tych samych tabel), ale znika
+  z sidebara — dla nie-IT user-a Menedżer galerii to jedyna ścieżka.
+- **`access.ts`** zachowane jako legacy backward-compat (helpery
+  isAdmin/isEditorOrAdmin/getRole/canEditPlayerDoc dalej działają, ale po
+  refaktorze NIKT ich już nie importuje — zostają jako safety net).
+
+### Fixed (mobile responsiveness — duża sesja przed RBAC)
+
+- **`apps/cms/src/app/(payload)/custom.scss`** zresetowany z ~580 linii
+  do ~150 (5 świadomych dodatków zamiast 580 nakładających się
+  override-ów). Klasyczny błąd: `nav[class*="nav"]` zaciemniał breadcrumb,
+  bo `<nav class="step-nav">` pasuje do podstringu „nav".
+- **Save bar fixed-bottom** na mobile (`.doc-controls__controls-wrapper`
+  na dół + 80px padding-bottom na `.collection-edit/.global-edit` żeby
+  ostatnie pole nie chowało się pod barem).
+- **Ciemnozielony drawer** (≤768 px) w barwach klubu (#0f2a1c) — celne
+  selektory `aside.nav`, `.nav__link`, `.template-default--nav-open
+  .hamburger`, `aside.nav a:not(.nav__link)` dla bannera Live.
+- **Gallery FolderModal** — usunięty `autoFocus={!isMobile}` (SSR-safe
+  hook startuje od `false`, więc na mobile od razu otwierał klawiaturę).
+
+### Open / Next
+
+- **Test praktyczny RBAC** — utworzenie roli „Redaktor" w panelu, nowego
+  konta z tą rolą, zalogowanie się i weryfikacja, że sidebar pokazuje tylko
+  uprawnione kolekcje. Do zrobienia przy najbliższej sesji.
+- **Backup** `cms.db.bak.before_rbac` na serwerze (`/srv/wks/wks_cms/
+  deploy/wks/persist/`) — usunąć po pomyślnym teście praktycznym.
+- **Per-record scope** (np. „Trener edytuje TYLKO swoich zawodników z
+  przypisanej drużyny") — możliwy do dodania jako dedykowane pole w roli
+  + checkbox „Zakres: tylko własne". Otwarte, nie pilne — żaden trener
+  jeszcze nie istnieje, redaktor jest jeden i widzi wszystko.
+
+---
+
 ## 2026-05-06 — Menedżer galerii (plik-explorer w panelu) + szybszy ticker
 
 ### Added

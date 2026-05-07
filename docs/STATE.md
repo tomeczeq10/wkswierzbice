@@ -4,11 +4,20 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-05-06 — Menedżer galerii (file-explorer w panelu, nieograniczone zagnieżdżenie, MediaPicker) + szybszy ticker
-> domowym (`wkswierzbice.tmielczarek.pl`): Docker (`wks-web` SSR + `wks-cms`),
+> **Ostatnia aktualizacja:** 2026-05-07 — RBAC (dynamiczne role + permissions
+> matrix w panelu), grupowanie sidebar w 5 logicznych sekcji, mobile
+> responsywność admina (reset custom.scss + fixed-bottom save bar +
+> ciemnozielony drawer). Hosting bez zmian: serwer domowy
+> `wkswierzbice.tmielczarek.pl`, Docker (`wks-web` SSR + `wks-cms`),
 > SQLite z **migracjami w prod** (`prodMigrations`), persist przez mount
-> katalogu `./persist` (nie samego pliku `cms.db`). Instrukcja:
-> [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).
+> katalogu `./persist`. Instrukcja: [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).
+>
+> ### Co czeka na test praktyczny
+> RBAC commit 3/3 wdrożony i działa technicznie (HTTP 200 wszędzie, brak
+> błędów w logach), ale nie był jeszcze przetestowany od strony user-a:
+> trzeba utworzyć w panelu rolę „Redaktor" + konto testowe z tą rolą +
+> zalogować się i sprawdzić, że sidebar realnie chowa kolekcje bez READ
+> permission. Backup `cms.db.bak.before_rbac` na serwerze do rollbacku.
 
 ## Produkcja
 
@@ -68,6 +77,45 @@ Implementacja:
 [`docs/REVIEW-2026-04-20.md`](REVIEW-2026-04-20.md).
 
 ## Co jest zrobione
+
+### Panel admina — RBAC + UX (2026-05-07)
+
+- **Dynamiczny system ról** w panelu (kolekcja `Roles` w grupie Ustawienia):
+  - Admin tworzy własne role (np. „Redaktor", „Fotograf"), zaznacza checkboxy:
+    12 kolekcji × 4 CRUD + 2 globalsy `*_update` + 3 specjalne dostępy
+    (`liveStudio`, `galleryManager`, `syncSeason`).
+  - Rola **„Administrator"** (`isSystem=true`) seedowana migracją —
+    nieusuwalna, zawsze ma full access (bypass w `hasPermission`).
+  - Pole `role` na `Users` to relacja → `roles` (required). `auth.depth: 1`
+    populuje `req.user.role` jako obiekt z permissions.
+  - Sidebar **automatycznie ukrywa** kolekcje, dla których rola nie ma
+    READ permission (`admin.hidden = hideUnless('news')`).
+  - Custom views (`/admin/live-studio`, `/admin/live-setup`,
+    `/admin/gallery-manager`) chronione `<PermissionGuard special="…">` —
+    redirect na `/admin` przy braku dostępu.
+  - Helpery: `src/access/hasPermission.ts` (`can()`, `canGlobal()`),
+    `src/access/hideUnlessHasPermission.ts` (`hideUnless()`,
+    `hideGlobalUnless()`), `src/components/PermissionGuard.tsx` z hookiem
+    `useHasSpecialAccess()`.
+  - Zarządzanie userami i rolami — twardo zaszyte tylko dla rola =
+    „Administrator" (nie podlega systemowi permissions).
+- **Logiczne grupowanie sidebar** (5 sekcji zamiast płaskiej listy 13):
+  Treść / Drużyna / Mecze / Multimedia / Ustawienia. Nagłówki klikalne
+  (zwijają sekcje, stan w localStorage). CTA na górze: „Utwórz mecz live"
+  + „Menedżer galerii".
+- **Galeria (kolekcja `gallery`)** ukryta z sidebara — nie-IT user idzie
+  zawsze przez Menedżer galerii. Kolekcja istnieje w bazie (Manager używa
+  tych samych tabel).
+- **Mobile responsywność** admina (panel dostępny z iPhone'a):
+  - Reset `custom.scss` z ~580 linii nakładających się override-ów do
+    ~150 świadomych reguł. Wcześniejszy bug: `nav[class*="nav"]` zaciemniał
+    breadcrumb (`<nav class="step-nav">` pasuje do podstringu „nav").
+  - Save bar fixed-bottom na mobile (`.doc-controls__controls-wrapper`),
+    żeby kciuk dosięgał. 80px padding-bottom na content żeby ostatnie pole
+    nie chowało się pod barem.
+  - Ciemnozielony drawer (≤768 px) w barwach klubu (#0f2a1c) — celowe
+    selektory bez wildcardów, banner Live czytelny, hamburger close (×)
+    biały na ciemnym tle, aktywny link z jasnozielonym akcentem.
 
 ### Relacja na żywo (LiveMatch)
 
@@ -378,6 +426,22 @@ Pełna lista + estymaty + plan kolejności w
   artykułu (najczęstszy sensowny model przy migracji z „tylko FB”).
 
 ## Następne kroki (roadmap)
+
+### Pilne (do najbliższej sesji)
+- **Test praktyczny RBAC.** Etapy 1–3 wdrożone technicznie, ale jeszcze
+  nieprzeklikane od strony user-a. Plan testu:
+  1. Zaloguj się na produkcji jako admin.
+  2. Ustawienia → Role → „Stwórz nowy" → nazwa „Redaktor", zaznacz:
+     Aktualności (R/C/U/D), Mecze (R/U), Archiwum relacji (R), Live
+     Studio (special). Resztę zostaw pustą. Zapisz.
+  3. Ustawienia → Users → „Stwórz nowy" → email + hasło, rola: Redaktor.
+  4. Wyloguj się, zaloguj jako redaktor.
+  5. Sprawdź: w sidebarze widać TYLKO Treść (Aktualności), Mecze (Mecze
+     + Archiwum relacji), banner ⚡ Utwórz mecz live. Reszta (Drużyna,
+     Multimedia, Ustawienia, Users) — niewidoczna. Próba wejścia pod
+     `/admin/collections/sponsors` → 403/redirect.
+- **Po pomyślnym teście:** usunąć backup `cms.db.bak.before_rbac` z
+  serwera (`/srv/wks/wks_cms/deploy/wks/persist/`).
 
 ### Krótkoterminowo — przed spotkaniem z zarządem
 0. **NOWY** — domknąć krytyczne fixy z review 2026-04-20 (sekcja „Znane
