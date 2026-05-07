@@ -68,6 +68,7 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    roles: Role;
     media: Media;
     news: News;
     tags: Tag;
@@ -90,6 +91,7 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    roles: RolesSelect<false> | RolesSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     news: NewsSelect<false> | NewsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
@@ -152,14 +154,19 @@ export interface UserAuthOperations {
   };
 }
 /**
+ * Konta z dostępem do panelu. Tylko Administrator może je tworzyć i edytować.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
  */
 export interface User {
   id: number;
-  role: 'admin' | 'redaktor' | 'trener';
   /**
-   * Używane tylko dla roli trener — ogranicza edycję zawodników do tej drużyny.
+   * Określa, co użytkownik może robić w panelu.
+   */
+  role: number | Role;
+  /**
+   * Pole pomocnicze — np. trenera można powiązać z konkretną drużyną.
    */
   team?: (number | null) | Team;
   updatedAt: string;
@@ -180,6 +187,115 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * Definiowanie ról i ich uprawnień. "Administrator" to rola systemowa — nie można jej usunąć ani zmienić jej uprawnień.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles".
+ */
+export interface Role {
+  id: number;
+  /**
+   * Np. "Redaktor", "Fotograf", "Trener juniorów".
+   */
+  name: string;
+  /**
+   * Co ta rola może robić — dla siebie, dla porządku.
+   */
+  description?: string | null;
+  /**
+   * Role systemowe (Administrator) nie mogą być usunięte.
+   */
+  isSystem?: boolean | null;
+  /**
+   * Zaznacz, co ta rola może robić. Administrator widzi wszystko niezależnie od tych ustawień.
+   */
+  permissions?: {
+    news?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    tags?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    players?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    teams?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    staff?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    board?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    matches?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    liveArchives?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    media?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    heroSlides?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    sponsors?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    staticPages?: {
+      read?: boolean | null;
+      create?: boolean | null;
+      update?: boolean | null;
+      delete?: boolean | null;
+    };
+    globals?: {
+      siteConfigUpdate?: boolean | null;
+      seasonUpdate?: boolean | null;
+    };
+    special?: {
+      liveStudio?: boolean | null;
+      galleryManager?: boolean | null;
+      syncSeason?: boolean | null;
+    };
+  };
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Drużyny widoczne na /druzyny. Skład (kadra) jest w osobnej kolekcji Players.
@@ -671,6 +787,10 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
+        relationTo: 'roles';
+        value: number | Role;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -791,6 +911,130 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "roles_select".
+ */
+export interface RolesSelect<T extends boolean = true> {
+  name?: T;
+  description?: T;
+  isSystem?: T;
+  permissions?:
+    | T
+    | {
+        news?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        tags?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        players?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        teams?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        staff?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        board?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        matches?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        liveArchives?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        media?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        heroSlides?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        sponsors?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        staticPages?:
+          | T
+          | {
+              read?: T;
+              create?: T;
+              update?: T;
+              delete?: T;
+            };
+        globals?:
+          | T
+          | {
+              siteConfigUpdate?: T;
+              seasonUpdate?: T;
+            };
+        special?:
+          | T
+          | {
+              liveStudio?: T;
+              galleryManager?: T;
+              syncSeason?: T;
+            };
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

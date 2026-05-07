@@ -12,6 +12,7 @@ import * as migration_20260429_205300_live_match_kickoff_planned from './2026042
 import * as migration_20260501_190732_liveArchives from './20260501_190732_liveArchives';
 import * as migration_20260502_140000_matches_source from './20260502_140000_matches_source';
 import * as migration_20260505_gallery_parent from './20260505_gallery_parent';
+import * as migration_20260506_220000_roles_rbac from './20260506_220000_roles_rbac';
 
 export const migrations = [
   {
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20260505_gallery_parent.up,
     down: migration_20260505_gallery_parent.down,
     name: '20260505_gallery_parent',
+  },
+  {
+    up: migration_20260506_220000_roles_rbac.up,
+    down: migration_20260506_220000_roles_rbac.down,
+    name: '20260506_220000_roles_rbac',
   },
 ];

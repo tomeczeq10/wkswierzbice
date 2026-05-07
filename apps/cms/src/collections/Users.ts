@@ -1,43 +1,55 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin } from '../access'
+/**
+ * Users — konta logujące się do panelu admina.
+ *
+ * Po refaktorze RBAC (2026-05-06): pole `role` to relacja do kolekcji `roles`,
+ * NIE sztywny enum. Każdy user musi mieć przypisaną rolę. Logika permissions
+ * (kto może czytać/edytować daną kolekcję) siedzi w `src/access/hasPermission.ts`
+ * i odpytuje pole `role.permissions` aktualnie zalogowanego usera.
+ *
+ * Zarządzanie kontami (CRUD na users + roles) jest twardo zaszyte tylko dla
+ * roli "Administrator" — nie podlega systemowi permissions.
+ */
+
+const isAdministrator = ({ req }: any): boolean =>
+  req.user?.role?.name === 'Administrator'
 
 export const Users: CollectionConfig = {
   slug: 'users',
   admin: {
     group: 'Ustawienia',
     useAsTitle: 'email',
+    defaultColumns: ['email', 'role', 'updatedAt'],
+    description: 'Konta z dostępem do panelu. Tylko Administrator może je tworzyć i edytować.',
   },
   auth: true,
   access: {
-    read: isAdmin,
-    create: isAdmin,
-    update: isAdmin,
-    delete: isAdmin,
+    read: isAdministrator,
+    create: isAdministrator,
+    update: isAdministrator,
+    delete: isAdministrator,
   },
   fields: [
-    // Email added by default
     {
       name: 'role',
-      type: 'select',
+      type: 'relationship',
+      relationTo: 'roles',
       required: true,
-      defaultValue: 'admin',
-      options: [
-        { label: 'Admin', value: 'admin' },
-        { label: 'Redaktor', value: 'redaktor' },
-        { label: 'Trener', value: 'trener' },
-      ],
-      admin: { position: 'sidebar' },
+      label: 'Rola',
+      admin: {
+        position: 'sidebar',
+        description: 'Określa, co użytkownik może robić w panelu.',
+      },
     },
     {
       name: 'team',
       type: 'relationship',
       relationTo: 'teams',
-      label: { pl: 'Drużyna (dla trenera)', en: 'Team (for coach)' },
+      label: { pl: 'Drużyna (opcjonalnie)', en: 'Team (optional)' },
       admin: {
         position: 'sidebar',
-        description: 'Używane tylko dla roli trener — ogranicza edycję zawodników do tej drużyny.',
-        condition: (_, siblingData) => siblingData?.role === 'trener',
+        description: 'Pole pomocnicze — np. trenera można powiązać z konkretną drużyną.',
       },
     },
   ],

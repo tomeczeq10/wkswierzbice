@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 
 import { Users } from './collections/Users'
+import { Roles } from './collections/Roles'
 import { Media } from './collections/Media'
 import { News } from './collections/News'
 import { Tags } from './collections/Tags'
@@ -91,6 +92,7 @@ export default buildConfig({
   },
   collections: [
     Users,
+    Roles,
     Media,
     News,
     Tags,

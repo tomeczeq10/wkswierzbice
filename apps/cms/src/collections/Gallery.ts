@@ -12,6 +12,9 @@ export const Gallery: CollectionConfig = {
   },
   admin: {
     group: 'Multimedia',
+    // Schowane z sidebara — wszystko robi się przez /admin/gallery-manager
+    // (kolekcja dalej istnieje w bazie, Manager używa tych samych tabel).
+    hidden: true,
     useAsTitle: 'alt',
     defaultColumns: ['alt', 'album', 'order', 'category', 'updatedAt'],
     description:
