@@ -8,13 +8,23 @@ import type { CollectionResource } from './hasPermission'
  * Jeśli role nie jest populated jako object, fail-closed (ukrywamy) —
  * lepiej niewidoczne niż pokazane bez prawa dostępu.
  */
+// Implicite: liveStudio role widzi Mecze + Archiwum relacji w sidebarze
+// (musi je móc otworzyć z poziomu Live Setup / Studio). Lustrzane do logiki
+// w `hasPermission.ts` (LIVE_STUDIO_IMPLIES).
+const SIDEBAR_LIVE_STUDIO_IMPLIES: ReadonlySet<CollectionResource> = new Set([
+  'matches',
+  'liveArchives',
+])
+
 export const hideUnless = (resource: CollectionResource) => {
   return ({ user }: { user: any }): boolean => {
     if (!user) return true
     const role = user.role
     if (!role || typeof role !== 'object' || !role.name) return true
     if (role.name === 'Administrator') return false
-    return !role.permissions?.[resource]?.read
+    if (role.permissions?.[resource]?.read) return false
+    if (role.permissions?.special?.liveStudio && SIDEBAR_LIVE_STUDIO_IMPLIES.has(resource)) return false
+    return true
   }
 }
 

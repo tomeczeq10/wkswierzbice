@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
+import { useAuth } from '@payloadcms/ui'
 
 type SeasonGlobal = {
   lastSync?: string | null
@@ -15,6 +16,14 @@ async function fetchSeason(): Promise<SeasonGlobal> {
 }
 
 export default function SeasonSyncWidget() {
+  // RBAC: przycisk "Odśwież teraz" wywołuje POST /api/season/sync, który
+  // wymaga special.syncSeason. Bez tego permission user dostałby 403 po
+  // kliknięciu — ukrywamy przycisk żeby UX-owo nie kusić.
+  const { user } = useAuth()
+  const role: any = (user as any)?.role
+  const isAdmin = role && typeof role === 'object' && role.name === 'Administrator'
+  const canSync = isAdmin || (role && typeof role === 'object' && role.permissions?.special?.syncSeason)
+
   const [season, setSeason] = useState<SeasonGlobal | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,21 +80,27 @@ export default function SeasonSyncWidget() {
           <div style={{ fontWeight: 700, fontSize: 14 }}>Wyniki 90minut</div>
           <div style={{ fontSize: 12, opacity: 0.7, marginTop: 2 }}>Ostatni sync: {lastSyncLabel}</div>
         </div>
-        <button
-          type="button"
-          onClick={refresh}
-          disabled={busy}
-          style={{
-            padding: '8px 12px',
-            borderRadius: 10,
-            border: '1px solid rgba(0,0,0,0.12)',
-            background: busy ? 'rgba(0,0,0,0.04)' : 'white',
-            cursor: busy ? 'not-allowed' : 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          {busy || status === 'running' ? 'Synchronizuję…' : 'Odśwież teraz'}
-        </button>
+        {canSync ? (
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={busy}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 10,
+              border: '1px solid rgba(0,0,0,0.12)',
+              background: busy ? 'rgba(0,0,0,0.04)' : 'white',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            {busy || status === 'running' ? 'Synchronizuję…' : 'Odśwież teraz'}
+          </button>
+        ) : (
+          <span style={{ fontSize: 11, opacity: 0.55, fontStyle: 'italic' }}>
+            Brak uprawnień do ręcznego sync
+          </span>
+        )}
       </div>
 
       <div style={{ marginTop: 10, fontSize: 12 }}>

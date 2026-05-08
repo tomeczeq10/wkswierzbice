@@ -40,6 +40,20 @@ export type SpecialAccess = 'liveStudio' | 'galleryManager' | 'syncSeason'
 
 // ── Główny helper ───────────────────────────────────────────────────────────
 
+// ── Implicite implications ─────────────────────────────────────────────────
+// Live Studio (sterowanie meczem live) wymaga w praktyce CRUD na powiązanych
+// zasobach: LiveSetupPage auto-importuje mecz z 90minut (POST /api/matches),
+// LiveStudioPage archiwizuje po końcu (POST /api/liveArchives), a sterowanie
+// stanem live aktualizuje wynik w `matches`. Dlatego rola z `special.liveStudio`
+// dostaje implicite te uprawnienia bez zaznaczania checkboxów.
+//
+// `delete` ŚWIADOMIE pominięte — usuwanie meczy / archiwów to operacja
+// "porządkowa" dla admina, nie operatora live.
+const LIVE_STUDIO_IMPLIES: Record<string, Record<string, true>> = {
+  matches: { read: true, create: true, update: true },
+  liveArchives: { read: true, create: true, update: true },
+}
+
 export async function hasPermission(
   req: PayloadRequest,
   resource: CollectionResource,
@@ -77,8 +91,10 @@ export async function hasPermission(
     return false
   }
 
-  // Kolekcje (CRUD)
-  return Boolean(p[resource]?.[action])
+  // Kolekcje (CRUD) — explicite z permissions ALBO implicite przez liveStudio.
+  if (p[resource]?.[action]) return true
+  if (p.special?.liveStudio && LIVE_STUDIO_IMPLIES[resource]?.[action]) return true
+  return false
 }
 
 // ── Skróty: gotowe Access functions ─────────────────────────────────────────

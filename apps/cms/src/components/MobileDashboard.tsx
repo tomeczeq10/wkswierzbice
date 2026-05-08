@@ -469,10 +469,22 @@ export default function MobileDashboard() {
   // ── RBAC permissions (rola usera + helpery do warunkowego renderowania) ──
   const role = useRole()
   const admin = isAdminRole(role)
-  const canRead = (slug: string): boolean =>
-    admin || Boolean(role?.permissions?.[slug]?.read)
-  const canCreate = (slug: string): boolean =>
-    admin || Boolean(role?.permissions?.[slug]?.create)
+  // Implicite: liveStudio = matches.read + liveArchives.read (lustrzane do
+  // hasPermission.LIVE_STUDIO_IMPLIES — operator live musi widzieć terminarz
+  // i archiwum w panelu, mimo że nie ma checkboxów dla nich).
+  const liveStudioImplies = Boolean(role?.permissions?.special?.liveStudio)
+  const canRead = (slug: string): boolean => {
+    if (admin) return true
+    if (role?.permissions?.[slug]?.read) return true
+    if (liveStudioImplies && (slug === 'matches' || slug === 'liveArchives')) return true
+    return false
+  }
+  const canCreate = (slug: string): boolean => {
+    if (admin) return true
+    if (role?.permissions?.[slug]?.create) return true
+    if (liveStudioImplies && (slug === 'matches' || slug === 'liveArchives')) return true
+    return false
+  }
   const canSpecial = (key: 'liveStudio' | 'galleryManager' | 'syncSeason'): boolean =>
     admin || Boolean(role?.permissions?.special?.[key])
   const canGlobalUpdate = (key: 'siteConfig' | 'season'): boolean =>
