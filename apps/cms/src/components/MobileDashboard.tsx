@@ -15,6 +15,21 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '@payloadcms/ui'
+
+// ─── Permissions helper (RBAC 2026-05-07) ────────────────────────────────────
+// Dashboard renderuje tylko sekcje, do których zalogowany user ma uprawnienia.
+// Administrator (isSystem) widzi wszystko (bypass). Inne role: filtrujemy
+// per-sekcja. Karty informacyjne (Najbliższy mecz, Ostatni wynik, Standings)
+// zostają widoczne dla każdej roli — to dane publiczne, kontekst pracy.
+
+type RoleObj = { name?: string; permissions?: any } | null
+const useRole = (): RoleObj => {
+  const { user } = useAuth()
+  const r: any = (user as any)?.role
+  return r && typeof r === 'object' ? r : null
+}
+const isAdminRole = (role: RoleObj): boolean => role?.name === 'Administrator'
 
 // ─── Types (mirror Dashboard.tsx, kept local to allow independent evolution) ──
 
@@ -451,6 +466,18 @@ function Divider() {
 // ─── Main component ──────────────────────────────────────────────────────────
 
 export default function MobileDashboard() {
+  // ── RBAC permissions (rola usera + helpery do warunkowego renderowania) ──
+  const role = useRole()
+  const admin = isAdminRole(role)
+  const canRead = (slug: string): boolean =>
+    admin || Boolean(role?.permissions?.[slug]?.read)
+  const canCreate = (slug: string): boolean =>
+    admin || Boolean(role?.permissions?.[slug]?.create)
+  const canSpecial = (key: 'liveStudio' | 'galleryManager' | 'syncSeason'): boolean =>
+    admin || Boolean(role?.permissions?.special?.[key])
+  const canGlobalUpdate = (key: 'siteConfig' | 'season'): boolean =>
+    admin || Boolean(role?.permissions?.globals?.[`${key}Update`])
+
   const [counts, setCounts] = useState<Record<string, number>>({})
   const [news, setNews] = useState<NewsDoc[]>([])
   const [season, setSeason] = useState<SeasonGlobal | null>(null)
@@ -578,8 +605,9 @@ export default function MobileDashboard() {
         </div>
       </div>
 
-      {/* Persistent live banner — gdy mecz trwa, jest tu zawsze do powrotu po zamknięciu/otwarciu przeglądarki */}
-      {isLive ? (
+      {/* Persistent live banner — gdy mecz trwa, jest tu zawsze do powrotu po zamknięciu/otwarciu przeglądarki.
+          RBAC: tylko dla rolami z dostępem do Live Studio (operatorzy meczu live). */}
+      {canSpecial('liveStudio') && (isLive ? (
         <a
           href="/admin/live-studio"
           style={{
@@ -679,23 +707,35 @@ export default function MobileDashboard() {
           </div>
           <IcChevron size={18} color="#fff" />
         </a>
-      )}
+      ))}
 
-      {/* Quick action grid 2x2 */}
-      <SectionLabel>Szybkie akcje</SectionLabel>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
-        <ActionTile href="/admin/collections/news/create" Icon={IcNews} label="Nowy news" accent={T.green} accentLt={T.greenLt} />
-        <ActionTile href="/admin/collections/players/create" Icon={IcUsers} label="Nowy zawodnik" accent={T.blue} accentLt={T.blueLt} />
-        <ActionTile href="/admin/gallery-manager" Icon={IcFolder} label="Menedżer galerii" accent={T.rose} accentLt={T.roseLt} />
-        <ActionTile
-          onClick={handleSync}
-          Icon={IcRefresh}
-          label={syncing ? 'Synchronizuję...' : 'Sync wyników'}
-          accent={T.amber}
-          accentLt={T.amberLt}
-          badge={season?.lastSync ? rel(season.lastSync).replace(' temu', '') : undefined}
-        />
-      </div>
+      {/* Quick action grid — kafelki widoczne tylko dla rola z odpowiednią permission. */}
+      {(canCreate('news') || canCreate('players') || canSpecial('galleryManager') || canSpecial('syncSeason')) && (
+        <>
+          <SectionLabel>Szybkie akcje</SectionLabel>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 18 }}>
+            {canCreate('news') && (
+              <ActionTile href="/admin/collections/news/create" Icon={IcNews} label="Nowy news" accent={T.green} accentLt={T.greenLt} />
+            )}
+            {canCreate('players') && (
+              <ActionTile href="/admin/collections/players/create" Icon={IcUsers} label="Nowy zawodnik" accent={T.blue} accentLt={T.blueLt} />
+            )}
+            {canSpecial('galleryManager') && (
+              <ActionTile href="/admin/gallery-manager" Icon={IcFolder} label="Menedżer galerii" accent={T.rose} accentLt={T.roseLt} />
+            )}
+            {canSpecial('syncSeason') && (
+              <ActionTile
+                onClick={handleSync}
+                Icon={IcRefresh}
+                label={syncing ? 'Synchronizuję...' : 'Sync wyników'}
+                accent={T.amber}
+                accentLt={T.amberLt}
+                badge={season?.lastSync ? rel(season.lastSync).replace(' temu', '') : undefined}
+              />
+            )}
+          </div>
+        </>
+      )}
       {syncError && (
         <div style={{ marginTop: -8, marginBottom: 18, padding: 10, background: T.redLt, color: T.red, borderRadius: 10, fontSize: 13 }}>
           Sync error: {syncError}
@@ -703,8 +743,10 @@ export default function MobileDashboard() {
       )}
 
       {/* Smart match card — kontekstowo: live / ready / upcoming / past.
-          Pomijamy gdy live trwa (jest już persistent banner powyżej). */}
-      {!isLive && upcomingMatch && (
+          Pomijamy gdy live trwa (jest już persistent banner powyżej).
+          RBAC: karta zawiera akcje (rozpocznij live, uzupełnij wynik) —
+          ma sens tylko dla rolami z liveStudio LUB matches.update. */}
+      {!isLive && upcomingMatch && (canSpecial('liveStudio') || canRead('matches')) && (
         <>
           <SectionLabel>
             {matchCardState.kind === 'ready'
@@ -909,8 +951,8 @@ export default function MobileDashboard() {
         </div>
       )}
 
-      {/* Recent news */}
-      {news.length > 0 && (
+      {/* Recent news — tylko dla rolami z dostępem do edycji aktualności. */}
+      {canRead('news') && news.length > 0 && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 4px 8px' }}>
             <SectionLabel>Ostatnie aktualności</SectionLabel>
@@ -937,61 +979,107 @@ export default function MobileDashboard() {
         </>
       )}
 
-      {/* Collections grid */}
-      <SectionLabel>Kolekcje</SectionLabel>
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
-        <ListRow href="/admin/collections/news" Icon={IcNews} iconBg={T.greenLt} iconColor={T.green} title="Aktualności" rightLabel={String(counts.news ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/players" Icon={IcUsers} iconBg={T.blueLt} iconColor={T.blue} title="Zawodnicy" rightLabel={String(counts.players ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/teams" Icon={IcShield} iconBg={T.amberLt} iconColor={T.amber} title="Drużyny" rightLabel={String(counts.teams ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/gallery" Icon={IcImage} iconBg={T.purpleLt} iconColor={T.purple} title="Galeria" rightLabel={String(counts.gallery ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/sponsors" Icon={IcTrophy} iconBg={T.roseLt} iconColor={T.rose} title="Sponsorzy" rightLabel={String(counts.sponsors ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/staff" Icon={IcUsers} iconBg={T.slateLt} iconColor={T.muted} title="Sztab" rightLabel={String(counts.staff ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/board" Icon={IcUsers} iconBg={T.slateLt} iconColor={T.muted} title="Zarząd" rightLabel={String(counts.board ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/media" Icon={IcImage} iconBg={T.slateLt} iconColor={T.muted} title="Media (pliki)" rightLabel={String(counts.media ?? 0)} />
-      </div>
+      {/* Collections grid — każdy wiersz tylko dla rolami z READ na danej kolekcji.
+          Cała sekcja zwija się gdy user nie ma żadnej widocznej kolekcji.
+          Galeria (kolekcja gallery) jest ukryta z całego panelu — Menedżer galerii
+          to jedyna ścieżka, więc nie ma jej w tej liście. */}
+      {(() => {
+        const collectionsToShow: Array<{
+          slug: string
+          href: string
+          Icon: Icn
+          iconBg: string
+          iconColor: string
+          title: string
+          countKey: string
+        }> = [
+          { slug: 'news', href: '/admin/collections/news', Icon: IcNews, iconBg: T.greenLt, iconColor: T.green, title: 'Aktualności', countKey: 'news' },
+          { slug: 'players', href: '/admin/collections/players', Icon: IcUsers, iconBg: T.blueLt, iconColor: T.blue, title: 'Zawodnicy', countKey: 'players' },
+          { slug: 'teams', href: '/admin/collections/teams', Icon: IcShield, iconBg: T.amberLt, iconColor: T.amber, title: 'Drużyny', countKey: 'teams' },
+          { slug: 'sponsors', href: '/admin/collections/sponsors', Icon: IcTrophy, iconBg: T.roseLt, iconColor: T.rose, title: 'Sponsorzy', countKey: 'sponsors' },
+          { slug: 'staff', href: '/admin/collections/staff', Icon: IcUsers, iconBg: T.slateLt, iconColor: T.muted, title: 'Sztab', countKey: 'staff' },
+          { slug: 'board', href: '/admin/collections/board', Icon: IcUsers, iconBg: T.slateLt, iconColor: T.muted, title: 'Zarząd', countKey: 'board' },
+          { slug: 'media', href: '/admin/collections/media', Icon: IcImage, iconBg: T.slateLt, iconColor: T.muted, title: 'Media (pliki)', countKey: 'media' },
+        ]
+        const visible = collectionsToShow.filter((c) => canRead(c.slug))
+        if (visible.length === 0) return null
+        return (
+          <>
+            <SectionLabel>Kolekcje</SectionLabel>
+            <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
+              {visible.map((c, i) => (
+                <React.Fragment key={c.slug}>
+                  {i > 0 && <Divider />}
+                  <ListRow
+                    href={c.href}
+                    Icon={c.Icon}
+                    iconBg={c.iconBg}
+                    iconColor={c.iconColor}
+                    title={c.title}
+                    rightLabel={String(counts[c.countKey] ?? 0)}
+                  />
+                </React.Fragment>
+              ))}
+            </div>
+          </>
+        )
+      })()}
 
-      {/* Live & matches section — Studio Live tylko gdy aktywne, Utwórz tylko gdy nie aktywne */}
-      <SectionLabel>Mecze i relacje</SectionLabel>
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
-        {isLive ? (
-          <ListRow
-            href="/admin/live-studio"
-            Icon={IcBolt}
-            iconBg={T.redLt}
-            iconColor={T.red}
-            title="Studio Live · TRWA"
-            meta={`${liveStateLabel(live?.status)}${liveMinute != null && live?.status !== 'pre' ? ` · ${liveMinute}'` : ''} · ${live?.scoreHome ?? 0}:${live?.scoreAway ?? 0}`}
-          />
-        ) : (
-          <ListRow
-            href="/admin/live-setup"
-            Icon={IcBolt}
-            iconBg={T.greenLt}
-            iconColor={T.green}
-            title="Utwórz mecz live"
-            meta="Konfiguracja meczu + skład"
-          />
-        )}
-        <Divider />
-        <ListRow href="/admin/collections/liveArchives" Icon={IcCalendar} iconBg={T.purpleLt} iconColor={T.purple} title="Archiwum relacji" meta="Po meczu — do napisania artykułu" rightLabel={String(counts.liveArchives ?? 0)} />
-        <Divider />
-        <ListRow href="/admin/collections/matches" Icon={IcCalendar} iconBg={T.amberLt} iconColor={T.amber} title="Terminarz" meta="Mecze (ligowe, sparingi, puchar)" />
-      </div>
+      {/* Live & matches section — każdy wiersz tylko dla rolami z odpowiednim
+          dostępem. Cała sekcja zwija się gdy nikt z trzech wierszy nie pasuje. */}
+      {(canSpecial('liveStudio') || canRead('liveArchives') || canRead('matches')) && (
+        <>
+          <SectionLabel>Mecze i relacje</SectionLabel>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
+            {canSpecial('liveStudio') && (
+              isLive ? (
+                <ListRow
+                  href="/admin/live-studio"
+                  Icon={IcBolt}
+                  iconBg={T.redLt}
+                  iconColor={T.red}
+                  title="Studio Live · TRWA"
+                  meta={`${liveStateLabel(live?.status)}${liveMinute != null && live?.status !== 'pre' ? ` · ${liveMinute}'` : ''} · ${live?.scoreHome ?? 0}:${live?.scoreAway ?? 0}`}
+                />
+              ) : (
+                <ListRow
+                  href="/admin/live-setup"
+                  Icon={IcBolt}
+                  iconBg={T.greenLt}
+                  iconColor={T.green}
+                  title="Utwórz mecz live"
+                  meta="Konfiguracja meczu + skład"
+                />
+              )
+            )}
+            {canSpecial('liveStudio') && canRead('liveArchives') && <Divider />}
+            {canRead('liveArchives') && (
+              <ListRow href="/admin/collections/liveArchives" Icon={IcCalendar} iconBg={T.purpleLt} iconColor={T.purple} title="Archiwum relacji" meta="Po meczu — do napisania artykułu" rightLabel={String(counts.liveArchives ?? 0)} />
+            )}
+            {(canSpecial('liveStudio') || canRead('liveArchives')) && canRead('matches') && <Divider />}
+            {canRead('matches') && (
+              <ListRow href="/admin/collections/matches" Icon={IcCalendar} iconBg={T.amberLt} iconColor={T.amber} title="Terminarz" meta="Mecze (ligowe, sparingi, puchar)" />
+            )}
+          </div>
+        </>
+      )}
 
-      {/* Globals + settings */}
-      <SectionLabel>Ustawienia strony</SectionLabel>
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
-        <ListRow href="/admin/globals/siteConfig" Icon={IcSettings} iconBg={T.slateLt} iconColor={T.muted} title="Konfiguracja strony" />
-        <Divider />
-        <ListRow href="/admin/globals/season" Icon={IcCalendar} iconBg={T.greenLt} iconColor={T.green} title="Sezon (terminarz 90minut, tabela)" meta={season?.lastSync ? `Sync: ${rel(season.lastSync)}` : 'Brak synchronizacji'} />
-      </div>
+      {/* Globals + settings — sekcja widoczna tylko dla rola z dostępem
+          do edycji któregoś z globalsów (Konfiguracja strony / Sezon). */}
+      {(canGlobalUpdate('siteConfig') || canGlobalUpdate('season')) && (
+        <>
+          <SectionLabel>Ustawienia strony</SectionLabel>
+          <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 14, overflow: 'hidden', marginBottom: 18 }}>
+            {canGlobalUpdate('siteConfig') && (
+              <ListRow href="/admin/globals/siteConfig" Icon={IcSettings} iconBg={T.slateLt} iconColor={T.muted} title="Konfiguracja strony" />
+            )}
+            {canGlobalUpdate('siteConfig') && canGlobalUpdate('season') && <Divider />}
+            {canGlobalUpdate('season') && (
+              <ListRow href="/admin/globals/season" Icon={IcCalendar} iconBg={T.greenLt} iconColor={T.green} title="Sezon (terminarz 90minut, tabela)" meta={season?.lastSync ? `Sync: ${rel(season.lastSync)}` : 'Brak synchronizacji'} />
+            )}
+          </div>
+        </>
+      )}
 
       <div style={{ textAlign: 'center', fontSize: 11, color: T.subtle, padding: '20px 0' }}>
         WKS Wierzbice · Panel admina · {loading ? 'ładuję dane…' : 'mobile'}
