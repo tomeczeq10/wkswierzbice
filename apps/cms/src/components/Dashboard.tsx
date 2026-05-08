@@ -1,7 +1,21 @@
 'use client'
 
 import React, { useCallback, useEffect, useState } from 'react'
+import { useAuth } from '@payloadcms/ui'
 import MobileDashboard from './MobileDashboard'
+
+// ─── Permissions helper (RBAC 2026-05-08) ────────────────────────────────────
+// Identyczna logika jak w MobileDashboard — Administrator widzi wszystko,
+// inne role widzą tylko sekcje z odpowiednim permission. Karty informacyjne
+// (Najbliższy mecz, Ostatni wynik, Tabela) zostają widoczne dla każdej roli.
+
+type RoleObj = { name?: string; permissions?: any } | null
+const useRole = (): RoleObj => {
+  const { user } = useAuth()
+  const r: any = (user as any)?.role
+  return r && typeof r === 'object' ? r : null
+}
+const isAdminRole = (role: RoleObj): boolean => role?.name === 'Administrator'
 
 // Hook: prawda gdy viewport ≤ 768px. SSR-safe (start od `false`, refresh po mount).
 function useIsMobile(breakpoint = 768): boolean {
@@ -300,7 +314,8 @@ const CLUB: CollectionDef[] = [
   { slug: 'staff',    label: 'Sztab szkoleniowy',   Icon: IconUserCheck, accent: T.blue,   accentLt: T.blueLt   },
   { slug: 'board',    label: 'Zarząd',              Icon: IconTrophy,    accent: T.amber,  accentLt: T.amberLt  },
   { slug: 'sponsors', label: 'Sponsorzy',           Icon: IconHandshake, accent: T.purple, accentLt: T.purpleLt },
-  { slug: 'gallery',  label: 'Galeria',             Icon: IconImage,     accent: T.rose,   accentLt: T.roseLt   },
+  // (Galeria — kolekcja gallery jest admin.hidden=true; ścieżka idzie przez
+  // Menedżer galerii w Szybkich akcjach.)
 ]
 const SYSTEM: CollectionDef[] = [
   { slug: 'users', label: 'Użytkownicy', Icon: IconSettings, accent: T.slate, accentLt: T.slateLt },
@@ -549,17 +564,26 @@ function FormStrip({ matches }: { matches: WksMatch[] }) {
 
 // ─── Post-match checklist ─────────────────────────────────────────────────────
 
-function PostMatchPanel({ lastMatch, onSync }: { lastMatch: WksMatch | null; onSync: () => void }) {
+function PostMatchPanel({ lastMatch, onSync, canCreateNews, canGalleryManager, canHeroSlides, canSync }: {
+  lastMatch: WksMatch | null
+  onSync: () => void
+  canCreateNews: boolean
+  canGalleryManager: boolean
+  canHeroSlides: boolean
+  canSync: boolean
+}) {
   const isRecent = lastMatch?.date
     ? (Date.now() - new Date(lastMatch.date).getTime()) < 7 * 86400000
     : false
 
-  const tasks = [
-    { label: 'Dodaj relację z meczu do Aktualności', href: '/admin/collections/news/create',   Icon: IconNewspaper,  key: 'news' },
-    { label: 'Wgraj zdjęcia do Galerii',              href: '/admin/collections/gallery/create', Icon: IconImage,      key: 'gallery' },
-    { label: 'Zaktualizuj slajdy hero (jeśli trzeba)', href: '/admin/collections/heroSlides',    Icon: IconSlides,     key: 'hero' },
-    { label: 'Zsynchronizuj wyniki (90minut)',         href: null,                                Icon: IconRefresh,    key: 'sync', action: onSync },
-  ]
+  // Filtrujemy zadania per permission. "Galeria" celuje w Menedżer galerii
+  // (kolekcja gallery jest hidden — zdjęcia wgrywa się przez /admin/gallery-manager).
+  type Task = { label: string; href: string | null; Icon: IconComponent; key: string; action?: () => void }
+  const tasks: Task[] = []
+  if (canCreateNews) tasks.push({ label: 'Dodaj relację z meczu do Aktualności', href: '/admin/collections/news/create',   Icon: IconNewspaper,  key: 'news' })
+  if (canGalleryManager) tasks.push({ label: 'Wgraj zdjęcia (Menedżer galerii)',  href: '/admin/gallery-manager',           Icon: IconImage,      key: 'gallery' })
+  if (canHeroSlides) tasks.push({ label: 'Zaktualizuj slajdy hero (jeśli trzeba)', href: '/admin/collections/heroSlides',    Icon: IconSlides,     key: 'hero' })
+  if (canSync) tasks.push({ label: 'Zsynchronizuj wyniki (90minut)',          href: null,                                Icon: IconRefresh,    key: 'sync', action: onSync })
 
   return (
     <Card style={{ padding: '18px 18px 14px' }}>
@@ -762,6 +786,18 @@ type LiveSnapshot = {
 } | null
 
 function DashboardDesktop() {
+  // ── RBAC ──
+  const role = useRole()
+  const admin = isAdminRole(role)
+  const canRead = (slug: string): boolean =>
+    admin || Boolean(role?.permissions?.[slug]?.read)
+  const canCreate = (slug: string): boolean =>
+    admin || Boolean(role?.permissions?.[slug]?.create)
+  const canSpecial = (key: 'liveStudio' | 'galleryManager' | 'syncSeason'): boolean =>
+    admin || Boolean(role?.permissions?.special?.[key])
+  const canGlobalUpdate = (key: 'siteConfig' | 'season'): boolean =>
+    admin || Boolean(role?.permissions?.globals?.[`${key}Update`])
+
   const [counts,  setCounts]  = useState<Record<string, number>>({})
   const [news,    setNews]    = useState<NewsDoc[]>([])
   const [players, setPlayers] = useState<PlayerDoc[]>([])
@@ -869,8 +905,9 @@ function DashboardDesktop() {
 
         <div style={{ display: 'flex', gap: 8, position: 'relative', alignItems: 'center', flexWrap: 'wrap' }}>
           {/* LIVE indicator — pulsujący czerwony badge gdy trwa relacja, link do Studia.
-              Pojawia się obok przycisków "+ Nowy news" by admin zawsze widział gdy mecz aktywny. */}
-          {live?.enabled && live.status && live.status !== 'ft' && (
+              Pojawia się obok przycisków "+ Nowy news" by admin zawsze widział gdy mecz aktywny.
+              RBAC: tylko dla rolami z dostępem do Live Studio. */}
+          {canSpecial('liveStudio') && live?.enabled && live.status && live.status !== 'ft' && (
             <a
               href="/admin/live-studio"
               style={{
@@ -909,12 +946,16 @@ function DashboardDesktop() {
               </span>
             </a>
           )}
-          <a href="/admin/collections/news/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.green, color: '#fff', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 8px rgba(22,101,52,0.5)' }}>
-            <IconPlus size={13} color="#fff" /> Nowy news
-          </a>
-          <a href="/admin/collections/players/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(255,255,255,0.09)', color: '#fff', border: '1px solid rgba(255,255,255,0.14)', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 600 }}>
-            <IconPlus size={13} color="rgba(255,255,255,0.6)" /> Nowy zawodnik
-          </a>
+          {canCreate('news') && (
+            <a href="/admin/collections/news/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: T.green, color: '#fff', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 700, boxShadow: '0 2px 8px rgba(22,101,52,0.5)' }}>
+              <IconPlus size={13} color="#fff" /> Nowy news
+            </a>
+          )}
+          {canCreate('players') && (
+            <a href="/admin/collections/players/create" style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', background: 'rgba(255,255,255,0.09)', color: '#fff', border: '1px solid rgba(255,255,255,0.14)', borderRadius: T.rLg, textDecoration: 'none', fontSize: 12.5, fontWeight: 600 }}>
+              <IconPlus size={13} color="rgba(255,255,255,0.6)" /> Nowy zawodnik
+            </a>
+          )}
         </div>
       </div>
 
@@ -928,11 +969,30 @@ function DashboardDesktop() {
       {/* ── Form strip ─────────────────────────────────────────────────────── */}
       {played.length > 0 && <FormStrip matches={played} />}
 
-      {/* ── Main grid (2/3 + 1/3) ─────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 290px', gap: 16, marginBottom: 18 }}>
+      {/* ── Main grid (2/3 + 1/3) ───────────────────────────────────────────
+          RBAC: lewa kolumna (Recent news + players) tylko dla rolami z
+          news.read OR players.read; prawa (Mecz na żywo / Quick actions /
+          PostMatchPanel) tylko gdy ma jakąkolwiek akcję. Gdy obie kolumny
+          puste — cały grid znika. Gdy tylko jedna jest pełna — zajmuje
+          pełną szerokość. */}
+      {(() => {
+        const hasLeftColumn = canRead('news') || canRead('players')
+        const hasRightColumn =
+          canSpecial('liveStudio') ||
+          canCreate('news') ||
+          canCreate('players') ||
+          canSpecial('galleryManager') ||
+          canCreate('teams') ||
+          canSpecial('syncSeason')
+        if (!hasLeftColumn && !hasRightColumn) return null
+        return (
+      <div style={{ display: 'grid', gridTemplateColumns: hasLeftColumn && hasRightColumn ? '1fr 290px' : '1fr', gap: 16, marginBottom: 18 }}>
 
-        {/* Left: recent news */}
+        {/* Left: recent news + players */}
+        {hasLeftColumn && (
         <Card>
+          {canRead('news') && (
+            <>
           <div style={{ padding: '18px 20px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>Ostatnie aktualności</div>
@@ -961,9 +1021,11 @@ function DashboardDesktop() {
               ))
             )}
           </div>
+            </>
+          )}
 
           {/* Recent players below */}
-          {players.length > 0 && (
+          {canRead('players') && players.length > 0 && (
             <>
               <div style={{ padding: '4px 20px 0' }}>
                 <SectionLabel>Ostatnio dodani zawodnicy</SectionLabel>
@@ -985,10 +1047,13 @@ function DashboardDesktop() {
           )}
           <div style={{ height: 12 }} />
         </Card>
+        )}
 
         {/* Right: quick actions + post-match + sync */}
+        {hasRightColumn && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
+          {canSpecial('liveStudio') && (
           <Card>
             <div style={{ padding: '16px 15px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1025,24 +1090,43 @@ function DashboardDesktop() {
               </a>
             </div>
           </Card>
+          )}
 
-          {/* Quick actions */}
+          {/* Quick actions — kafelki widoczne tylko dla odpowiednich permissions.
+              "Dodaj zdjęcie" przemianowane na "Menedżer galerii" — kolekcja gallery
+              jest hidden, jedyna ścieżka do dodawania zdjęć to /admin/gallery-manager. */}
+          {(canCreate('news') || canCreate('players') || canSpecial('galleryManager') || canCreate('teams') || canSpecial('syncSeason')) && (
           <Card>
             <div style={{ padding: '16px 15px 8px' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text, marginBottom: 10 }}>Szybkie akcje</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <QuickBtn href="/admin/collections/news/create"   label="Dodaj aktualność"    Icon={IconNewspaper}  accent={T.green}  accentLt={T.greenLt}  primary />
-                <QuickBtn href="/admin/collections/players/create" label="Dodaj zawodnika"     Icon={IconUsers}      accent={T.green}  accentLt={T.greenLt}  />
-                <QuickBtn href="/admin/collections/gallery/create" label="Dodaj zdjęcie"       Icon={IconImage}      accent={T.rose}   accentLt={T.roseLt}   />
-                <QuickBtn href="/admin/collections/teams/create"   label="Nowa drużyna"        Icon={IconShield}     accent={T.green}  accentLt={T.greenLt}  />
-                <QuickBtn onClick={handleSync}                     label={isBusy ? 'Synchronizuję…' : 'Sync wyników 90minut'} Icon={IconRefresh} accent={T.blue} accentLt={T.blueLt} />
+                {canCreate('news') && (
+                  <QuickBtn href="/admin/collections/news/create"   label="Dodaj aktualność"    Icon={IconNewspaper}  accent={T.green}  accentLt={T.greenLt}  primary />
+                )}
+                {canCreate('players') && (
+                  <QuickBtn href="/admin/collections/players/create" label="Dodaj zawodnika"     Icon={IconUsers}      accent={T.green}  accentLt={T.greenLt}  />
+                )}
+                {canSpecial('galleryManager') && (
+                  <QuickBtn href="/admin/gallery-manager"            label="Menedżer galerii"    Icon={IconImage}      accent={T.rose}   accentLt={T.roseLt}   />
+                )}
+                {canCreate('teams') && (
+                  <QuickBtn href="/admin/collections/teams/create"   label="Nowa drużyna"        Icon={IconShield}     accent={T.green}  accentLt={T.greenLt}  />
+                )}
+                {canSpecial('syncSeason') && (
+                  <QuickBtn onClick={handleSync}                     label={isBusy ? 'Synchronizuję…' : 'Sync wyników 90minut'} Icon={IconRefresh} accent={T.blue} accentLt={T.blueLt} />
+                )}
               </div>
             </div>
             <div style={{ height: 8 }} />
           </Card>
+          )}
 
-          {/* Post-match checklist */}
-          <PostMatchPanel lastMatch={lastMatch} onSync={handleSync} />
+          {/* Post-match checklist — widoczne dla rolami z dostępem do tworzenia
+              relacji (news), zarządzania galerią lub sync (czyli komuś, kto realnie
+              ma "co zrobić po meczu"). */}
+          {(canCreate('news') || canSpecial('galleryManager') || canRead('heroSlides') || canSpecial('syncSeason')) && (
+            <PostMatchPanel lastMatch={lastMatch} onSync={handleSync} canCreateNews={canCreate('news')} canGalleryManager={canSpecial('galleryManager')} canHeroSlides={canRead('heroSlides')} canSync={canSpecial('syncSeason')} />
+          )}
 
           {/* Sync status mini */}
           {(syncError || season?.lastSyncError || syncStatus === 'success') && (
@@ -1060,43 +1144,76 @@ function DashboardDesktop() {
             </div>
           )}
         </div>
+        )}
       </div>
+        )
+      })()}
 
 
       {/* ── Collections grid ───────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+      {(() => {
+        const visibleContent = CONTENT.filter((d) => canRead(d.slug))
+        const visibleClub = CLUB.filter((d) => canRead(d.slug))
+        // SYSTEM zawiera 'users' (twardo zaszyte tylko Administrator) + 'media'.
+        const visibleSystem = SYSTEM.filter((d) => {
+          if (d.slug === 'users') return admin
+          return canRead(d.slug)
+        })
+        const visibleGlobals: Array<{ key: string; el: React.ReactNode }> = []
+        if (canGlobalUpdate('siteConfig')) visibleGlobals.push({ key: 'siteConfig', el: <GlobalCard href="/admin/globals/siteConfig" label="Konfiguracja strony" sub="Nawigacja, kontakt, social" Icon={IconSettings} accent={T.slate} accentLt={T.slateLt} /> })
+        if (canGlobalUpdate('season')) visibleGlobals.push({ key: 'season', el: <GlobalCard href="/admin/globals/season" label="Sezon 2025/2026" sub="Tabela · mecze · sync" Icon={IconTrophy} accent={T.amber} accentLt={T.amberLt} /> })
+        if (canSpecial('liveStudio')) visibleGlobals.push({ key: 'liveStudio', el: <GlobalCard href="/admin/live-studio" label="Studio Live" sub="Relacja na żywo (sterowanie)" Icon={IconBolt} accent={T.green} accentLt={T.greenLt} /> })
+        if (canRead('liveArchives')) visibleGlobals.push({ key: 'liveArchives', el: <GlobalCard href="/admin/collections/liveArchives" label="Archiwum relacji" sub="Zakończone live'y — do napisania artykułu" Icon={IconScore} accent={T.rose} accentLt={T.roseLt} /> })
+
+        const showContentCard = visibleContent.length > 0
+        const showClubCard = visibleClub.length > 0
+        const showSystemCard = visibleSystem.length > 0 || visibleGlobals.length > 0
+        const visibleCount = [showContentCard, showClubCard, showSystemCard].filter(Boolean).length
+        if (visibleCount === 0) return null
+        const gridTemplate = visibleCount === 3 ? '1fr 1fr 1fr' : visibleCount === 2 ? '1fr 1fr' : '1fr'
+
+        return (
+      <div style={{ display: 'grid', gridTemplateColumns: gridTemplate, gap: 16 }}>
         {/* Treści */}
+        {showContentCard && (
         <Card style={{ padding: '16px 14px' }}>
           <SectionLabel>Treści</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {CONTENT.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
+            {visibleContent.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
           </div>
         </Card>
+        )}
 
         {/* Kadra & Klub */}
+        {showClubCard && (
         <Card style={{ padding: '16px 14px' }}>
           <SectionLabel>Kadra i Klub</SectionLabel>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {CLUB.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
+            {visibleClub.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
           </div>
         </Card>
+        )}
 
         {/* System + stats */}
+        {showSystemCard && (
         <Card style={{ padding: '16px 14px' }}>
-          <SectionLabel>System</SectionLabel>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {SYSTEM.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
-          </div>
+          {visibleSystem.length > 0 && (
+            <>
+              <SectionLabel>System</SectionLabel>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {visibleSystem.map((def) => <CollectionCard key={def.slug} def={def} count={counts[def.slug] ?? 0} />)}
+              </div>
+            </>
+          )}
 
-          <div style={{ marginTop: 16 }}>
+          {visibleGlobals.length > 0 && (
+          <div style={{ marginTop: visibleSystem.length > 0 ? 16 : 0 }}>
             <SectionLabel>Globale</SectionLabel>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <GlobalCard href="/admin/globals/siteConfig" label="Konfiguracja strony" sub="Nawigacja, kontakt, social" Icon={IconSettings} accent={T.slate} accentLt={T.slateLt} />
-              <GlobalCard href="/admin/globals/season"     label="Sezon 2025/2026"     sub="Tabela · mecze · sync"    Icon={IconTrophy}   accent={T.amber} accentLt={T.amberLt} />
-              <GlobalCard href="/admin/live-studio"       label="Studio Live"        sub="Relacja na żywo (sterowanie)" Icon={IconBolt}   accent={T.green} accentLt={T.greenLt} />
-              <GlobalCard href="/admin/collections/liveArchives" label="Archiwum relacji" sub="Zakończone live'y — do napisania artykułu" Icon={IconScore} accent={T.rose}  accentLt={T.roseLt} />
+              {visibleGlobals.map(({ key, el }) => <React.Fragment key={key}>{el}</React.Fragment>)}
             </div>
           </div>
+          )}
 
           {/* Season mini-stats */}
           <div style={{ marginTop: 16, borderRadius: T.rXl, overflow: 'hidden', border: `1px solid rgba(15,42,28,0.12)` }}>
@@ -1124,7 +1241,10 @@ function DashboardDesktop() {
             </div>
           </div>
         </Card>
+        )}
       </div>
+        )
+      })()}
     </div>
   )
 }
