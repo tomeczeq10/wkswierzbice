@@ -4,20 +4,13 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-05-07 — RBAC (dynamiczne role + permissions
-> matrix w panelu), grupowanie sidebar w 5 logicznych sekcji, mobile
-> responsywność admina (reset custom.scss + fixed-bottom save bar +
-> ciemnozielony drawer). Hosting bez zmian: serwer domowy
-> `wkswierzbice.tmielczarek.pl`, Docker (`wks-web` SSR + `wks-cms`),
-> SQLite z **migracjami w prod** (`prodMigrations`), persist przez mount
-> katalogu `./persist`. Instrukcja: [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).
->
-> ### Co czeka na test praktyczny
-> RBAC commit 3/3 wdrożony i działa technicznie (HTTP 200 wszędzie, brak
-> błędów w logach), ale nie był jeszcze przetestowany od strony user-a:
-> trzeba utworzyć w panelu rolę „Redaktor" + konto testowe z tą rolą +
-> zalogować się i sprawdzić, że sidebar realnie chowa kolekcje bez READ
-> permission. Backup `cms.db.bak.before_rbac` na serwerze do rollbacku.
+> **Ostatnia aktualizacja:** 2026-05-08 — Dashboard (mobile + desktop) filtruje
+> sekcje per rola (RBAC w pełni działa); zamknięte krytyczne fixy z review
+> 2026-04-20 (Magazyn header dark mode + `/o-klubie` realne nazwiska + Stadion
+> spójność pozycji). RBAC test praktyczny zatwierdzony, backup DB usunięty.
+> Hosting bez zmian: serwer domowy `wkswierzbice.tmielczarek.pl`, Docker
+> (`wks-web` SSR + `wks-cms`), SQLite z migracjami w prod, persist przez
+> mount katalogu `./persist`. Instrukcja: [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).
 
 ## Produkcja
 
@@ -333,15 +326,14 @@ Skrótowo:
 Pełna lista + estymaty + plan kolejności w
 [`docs/REVIEW-2026-04-20.md`](REVIEW-2026-04-20.md). W skrócie:
 
-**🔴 Krytyczne — zrobić przed pokazaniem zarządowi (~1–2h):**
-1. Header (i footer) nie reaguje na dark mode szablonu **magazyn** —
-   wygląda jak dwa różne projekty sklejone razem. Fix w `global.css`.
-2. `/o-klubie` ma losowe nazwiska zarządu/trenerów zamiast realnych
-   — zdjęcia w `public/team/zarzad/` + `public/team/trenerzy/` są realne
-   (z FB klubu) i czekają nieużywane. Wrócić do prawdziwych nazwisk
-   w `BOARD`/`STAFF` w `src/config/site.ts`.
-3. **Stadion**: niespójność pozycji `1.` (sticky LED) vs `2.` (hero, tabela)
-   — sprawdzić w `StadionHome.astro`.
+**🔴 Krytyczne — wszystkie ZAMKNIĘTE (2026-05-08):**
+1. ✅ Header (i footer) reagują na dark mode szablonu magazyn — dodane
+   reguły `html[data-template="magazyn"] body > header` w `global.css`.
+2. ✅ `/o-klubie` ma realne nazwiska zarządu (Sala, Majerski, Zdunek,
+   Posadowski, Sala, Czapla) + trenerów (Pożarycki, Rycombel) z prawdziwymi
+   zdjęciami. Naprawione w międzyczasie przez import danych do CMS.
+3. ✅ Stadion: pozycja spójna w sticky LED i hero — oba używają tego samego
+   propa `position` z `season.json` (sprawdzone na produkcji: `2.`).
 
 **🟠 Ważne — polerka (~1–2h):**
 4. **Marka**: countdown card znika na średnich ekranach (`hidden lg:block`).
@@ -428,25 +420,16 @@ Pełna lista + estymaty + plan kolejności w
 ## Następne kroki (roadmap)
 
 ### Pilne (do najbliższej sesji)
-- **Test praktyczny RBAC.** Etapy 1–3 wdrożone technicznie, ale jeszcze
-  nieprzeklikane od strony user-a. Plan testu:
-  1. Zaloguj się na produkcji jako admin.
-  2. Ustawienia → Role → „Stwórz nowy" → nazwa „Redaktor", zaznacz:
-     Aktualności (R/C/U/D), Mecze (R/U), Archiwum relacji (R), Live
-     Studio (special). Resztę zostaw pustą. Zapisz.
-  3. Ustawienia → Users → „Stwórz nowy" → email + hasło, rola: Redaktor.
-  4. Wyloguj się, zaloguj jako redaktor.
-  5. Sprawdź: w sidebarze widać TYLKO Treść (Aktualności), Mecze (Mecze
-     + Archiwum relacji), banner ⚡ Utwórz mecz live. Reszta (Drużyna,
-     Multimedia, Ustawienia, Users) — niewidoczna. Próba wejścia pod
-     `/admin/collections/sponsors` → 403/redirect.
-- **Po pomyślnym teście:** usunąć backup `cms.db.bak.before_rbac` z
-  serwera (`/srv/wks/wks_cms/deploy/wks/persist/`).
+- ✅ Test praktyczny RBAC zatwierdzony 2026-05-08 (admin testował rolę
+  „Fotograf" — sidebar i dashboard ukrywają niedozwolone sekcje, dostęp
+  do `/admin/collections/sponsors` blokowany).
+- ✅ Backup `cms.db.bak.before_rbac` usunięty z serwera.
+- ✅ Krytyczne fixy z review 2026-04-20 (punkty 1–3) zamknięte.
+- **Następnie:** „Ważne — polerka" z review (punkty 4–8, ~1–2h razem):
+  Marka countdown na md, Magazyn opacity numerów `01..05`, Magazyn ⚽ →
+  SVG, Stadion 3 statystyki na md, Sponsorzy puste sloty. Każdy ~15-30 min.
 
 ### Krótkoterminowo — przed spotkaniem z zarządem
-0. **NOWY** — domknąć krytyczne fixy z review 2026-04-20 (sekcja „Znane
-   problemy" wyżej, punkty 1–3). Bez tego magazyn jest niepokazywalny,
-   a `/o-klubie` rozjeżdża się z istniejącymi zdjęciami.
 1. Tomek decyduje: wariant 2 to zlecenie komercyjne czy prezent rodzinny
    (wpływa na Q14b).
 2. Tomek wybiera szatę A/B/C/D (lub zleca „wszystkie 4 na spotkanie jako

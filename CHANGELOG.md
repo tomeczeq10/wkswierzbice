@@ -13,6 +13,71 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-08 — Dashboard per-rola + zamknięcie krytycznych fixów z review 2026-04-20
+
+### Added
+
+- **Dashboard filtruje sekcje per rola** — zarówno mobile (`MobileDashboard.tsx`)
+  jak i desktop (`Dashboard.tsx`). Sidebar już chowa kolekcje bez READ
+  permission, ale wcześniej dashboard pokazywał wszystkie linki niezależnie
+  od roli — fotograf widział kafelki Aktualności, Zawodników, Sztabu itd.
+  Teraz każda sekcja (Live banner, Szybkie akcje, Smart match card, Recent
+  news, Kolekcje, Mecze i relacje, Ustawienia, Główne 3 karty kolekcji,
+  PostMatchPanel) sprawdza permissions i ukrywa się gdy nie pasuje.
+- Karty informacyjne (Najbliższy mecz, Ostatni wynik, Tabela ligi, Form
+  strip, Sezon mini-stats, Header) zostają widoczne dla każdej roli — to
+  publiczne info, kontekst pracy.
+- Layout dynamiczny: gdy lewa lub prawa kolumna pusta, druga zajmuje pełną
+  szerokość; gdy obie puste, cały main grid znika.
+
+### Changed
+
+- **Quick actions desktop**: „Dodaj zdjęcie" → „Menedżer galerii" (kolekcja
+  gallery jest `admin.hidden=true`, jedyna ścieżka idzie przez
+  `/admin/gallery-manager`).
+- **Galeria** usunięta z grupy CLUB w `Dashboard.tsx` (kolekcja hidden;
+  ścieżka idzie przez Menedżer galerii w Szybkich akcjach).
+- **PostMatchPanel** przyjmuje teraz props per zadanie (`canCreateNews`,
+  `canGalleryManager`, `canHeroSlides`, `canSync`) i filtruje listę zadań.
+
+### Fixed (zamknięcie krytycznych fixów z `docs/REVIEW-2026-04-20.md`)
+
+- ✅ **#1 Magazyn header dark mode** (BYŁO: ciemnozielony header `bg-brand-ink`
+  na czarnym body wyglądał jak dwa różne projekty sklejone razem). Dodane
+  reguły w `apps/web/src/styles/global.css` dla `html[data-template="magazyn"]
+  body > header` + `#mobile-menu` — czarne tło + ciemniejsze bordery
+  (`rgb(30 41 59)` slate-700). Header i footer teraz spójne stylistycznie
+  z resztą szablonu magazyn.
+- ✅ **#2 `/o-klubie` realne nazwiska zarządu i trenerów** — okazało się
+  że JUŻ było naprawione w międzyczasie (przez import danych do CMS Media
+  + wypełnienie kolekcji Staff/Board). Aktualnie zarząd renderuje 6 osób
+  z prawdziwymi nazwiskami (Robert Sala, Łukasz Majerski, Rafał Zdunek,
+  Marek Posadowski, Dariusz Sala, Wojciech Czapla) + zdjęcia z `/api/media/file/`.
+  Trenerzy: Dawid Pożarycki, Mateusz Rycombel.
+- ✅ **#3 Stadion: niespójność pozycji 1./2.** — JUŻ naprawione. Sticky LED
+  i hero używają tej samej zmiennej `position` (prop z `index.astro` →
+  `wksPosition` z `season.json`). Sprawdzone na produkcji: oba miejsca
+  pokazują `2.` + `53 pkt`.
+
+### Removed
+
+- Backup `cms.db.bak.before_rbac` z serwera produkcyjnego (po pomyślnym
+  teście praktycznym RBAC — admin testował role „Fotograf" i potwierdził
+  że sidebar + dashboard ukrywają niedozwolone sekcje).
+
+### Open / Next
+
+- **Krótkoterminowo (przed spotkaniem z zarządem)**: punkty 1–6 z
+  `docs/STATE.md` „Krótkoterminowo" — decyzja Tomka o wariancie 2 (komercja
+  vs prezent), wybór szaty A/B/C/D, prezentacja, jednostronicowe PDF, etc.
+- **„Ważne — polerka" z review 2026-04-20** (punkty 4–8): drobne CSS-y
+  (Marka countdown md, Magazyn opacity numerów, Stadion stat zawijanie,
+  Sponsorzy placeholdery, Magazyn ⚽ emoji). Każdy ~15-30 min.
+- **Duży temat w przyszłości**: kadra zawodników redesign (`/druzyny/*`)
+  — punkt 9 z review, 6-10h, osobna sesja.
+
+---
+
 ## 2026-05-07 — RBAC (dynamiczne role + permissions matrix) + grupowanie sidebar
 
 ### Added

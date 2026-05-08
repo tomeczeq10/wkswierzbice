@@ -356,6 +356,20 @@ html[data-template="magazyn"] .prose-club {
   --tw-prose-links: rgb(var(--club-secondary));
 }
 
+/* Header (sticky top) — głęboka czerń, spójna z body magazynu i footerem.
+   Bez tego header wisi ciemnozielony (bg-brand-ink) nad czarnym body
+   i wygląda jak dwa osobne projekty sklejone razem. */
+html[data-template="magazyn"] body > header,
+html[data-template="magazyn"] body > header #mobile-menu {
+  background: #000000 !important;
+}
+html[data-template="magazyn"] body > header {
+  border-bottom-color: rgb(30 41 59) !important;
+}
+html[data-template="magazyn"] body > header #mobile-menu {
+  border-top-color: rgb(30 41 59) !important;
+}
+
 /* Footer — głęboka czerń. */
 html[data-template="magazyn"] footer {
   background: #000000 !important;
