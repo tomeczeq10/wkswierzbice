@@ -124,6 +124,14 @@ export default buildConfig({
     prodMigrations: migrations,
   }),
   sharp: sharp as any,
+  // Limit body uploadów (zdjęcia z telefonów = 4–12 MB, zostawiam 25 MB zapasu).
+  // Bez tego wgrywanie pełnowymiarowych fotek z iPhone'a/Androida przez
+  // GalleryManager kończy się błędem 413/PayloadTooLarge.
+  upload: {
+    limits: {
+      fileSize: 25 * 1024 * 1024,
+    },
+  },
   endpoints: [
     {
       path: '/season/sync',

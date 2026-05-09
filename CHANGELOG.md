@@ -13,6 +13,52 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-09 — Galeria klubowa: jakość zdjęć w lightboxie (powód odejścia od FB)
+
+### Added
+
+- **Nowy image size `large`** w `Media.ts`: 1920 px szer., WebP q90, z
+  `withoutEnlargement: true` (zdjęcia mniejsze niż 1920 px nie są upscale'owane).
+  Wszystkie nowe uploady przez Menedżer galerii dostają ten wariant — to jest
+  wersja, którą widać po kliknięciu zdjęcia w lightboxie na `/galeria/<slug>`.
+- **Link „Pobierz oryginał"** pod podglądem zdjęcia w lightboxie galerii
+  ([`GalleryGrid.astro`](apps/web/src/components/GalleryGrid.astro)) —
+  rodzic/zawodnik może ściągnąć plik 1:1 (np. 4 MB JPG z telefonu) bez kompresji.
+- **Limit body uploadów** w `payload.config.ts`: 25 MB (było ~1 MB default Next).
+  Bez tego pełnowymiarowe fotki z iPhone'a/Androida (4–12 MB) wywalały upload.
+- **Backfill script** [`apps/cms/scripts/regenerate-media-sizes.ts`](apps/cms/scripts/regenerate-media-sizes.ts):
+  jednorazowo regeneruje warianty (w tym nowy `large`) dla istniejących plików
+  w bazie. Idempotent (`--size large` pomija rekordy które już mają), z `--force`
+  i `--dry-run`.
+
+### Changed
+
+- **`GalleryItem`** (`cms-gallery.ts`) ma teraz 3 źródła:
+  - `src` (640 px `card`) — kafelek w grid'zie, szybkie ładowanie
+  - `fullSrc` (1920 px `large`, fallback do oryginału) — lightbox
+  - `originalSrc` — link „Pobierz oryginał"
+- **Lightbox `GalleryGrid.astro`** ładuje `data-full-src` zamiast `data-src` —
+  twarze ostre przy zoomie. Wcześniej lightbox dostawał ten sam 640 px co
+  kafelek → pixele przy powiększeniu (dokładnie problem, dla którego klub
+  odchodzi od galerii FB).
+
+### Migration steps (po wdrożeniu)
+
+1. Restart CMS (nowy `Media` config zacznie generować `large` dla nowych uploadów).
+2. (Opcjonalnie) `npx tsx apps/cms/scripts/regenerate-media-sizes.ts --dry-run`
+   → potem bez `--dry-run`, żeby istniejące zdjęcia też dostały `large`.
+3. (Opcjonalnie) `npx payload generate:types` w `apps/cms` — `payload-types.ts`
+   doda pole `sizes.large` (frontend nie potrzebuje, bo używa cast'u, ale
+   warto regenerować dla porządku).
+
+### Open
+
+- **HEIC z iPhone'a** świadomie pominięty — iOS w 95% przypadków konwertuje na
+  JPEG przy upload do web. Dodać dopiero, gdy realnie zgłoszone (wymaga libheif
+  w obrazie Docker prod, ryzyko deploy).
+
+---
+
 ## 2026-05-08 — Dashboard per-rola + zamknięcie krytycznych fixów z review 2026-04-20
 
 ### Added

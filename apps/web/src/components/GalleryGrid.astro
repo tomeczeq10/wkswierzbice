@@ -18,6 +18,8 @@ const { items } = Astro.props;
             class="gallery-item group relative aspect-square overflow-hidden rounded-lg bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary"
             data-index={i}
             data-src={item.src}
+            data-full-src={item.fullSrc}
+            data-original-src={item.originalSrc}
             data-alt={item.alt}
             data-caption={item.caption ?? ""}
             aria-label={`Otwórz: ${item.alt}`}
@@ -73,6 +75,21 @@ const { items } = Astro.props;
         <figure class="max-w-5xl w-full">
           <img id="lb-img" class="max-h-[80vh] w-auto mx-auto rounded-lg" alt="" />
           <figcaption id="lb-caption" class="mt-3 text-center text-sm text-slate-300" />
+          <div class="mt-2 text-center">
+            <a
+              id="lb-download"
+              href="#"
+              download
+              class="inline-flex items-center gap-1.5 rounded-md border border-white/20 px-3 py-1.5 text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Pobierz oryginał
+            </a>
+          </div>
         </figure>
       </div>
 
@@ -82,6 +99,7 @@ const { items } = Astro.props;
           const lb = document.getElementById("lightbox");
           const img = document.getElementById("lb-img");
           const cap = document.getElementById("lb-caption");
+          const dl = document.getElementById("lb-download");
           const close = document.getElementById("lb-close");
           const prev = document.getElementById("lb-prev");
           const next = document.getElementById("lb-next");
@@ -91,9 +109,17 @@ const { items } = Astro.props;
             index = i;
             const el = items[index];
             if (!el || !img || !lb) return;
-            img.src = el.dataset.src || "";
+            // Lightbox ładuje "large" (1920 px) — wyraźny zoom na twarze.
+            // Fallback do "src" (640 px) jeśli z jakiegoś powodu brak.
+            img.src = el.dataset.fullSrc || el.dataset.src || "";
             img.alt = el.dataset.alt || "";
             if (cap) cap.textContent = el.dataset.caption || el.dataset.alt || "";
+            // Link „Pobierz oryginał" → 1:1 plik z uploadu.
+            if (dl) {
+              const orig = el.dataset.originalSrc || el.dataset.fullSrc || el.dataset.src || "";
+              dl.setAttribute("href", orig);
+              dl.style.display = orig ? "" : "none";
+            }
             lb.classList.remove("hidden");
             lb.classList.add("flex");
             document.body.style.overflow = "hidden";

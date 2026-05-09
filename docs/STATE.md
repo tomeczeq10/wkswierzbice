@@ -4,10 +4,14 @@
 > Kiedyś "zatnie się" Claude / nowy rozmówca przychodzi bez kontekstu — to
 > pierwszy plik, do którego ma zajrzeć.
 >
-> **Ostatnia aktualizacja:** 2026-05-08 — Dashboard (mobile + desktop) filtruje
-> sekcje per rola (RBAC w pełni działa); zamknięte krytyczne fixy z review
-> 2026-04-20 (Magazyn header dark mode + `/o-klubie` realne nazwiska + Stadion
-> spójność pozycji). RBAC test praktyczny zatwierdzony, backup DB usunięty.
+> **Ostatnia aktualizacja:** 2026-05-09 — Galeria klubowa: jakość zdjęć w
+> lightboxie (powód odejścia od FB). Dodany image size `large` (1920 px WebP
+> q90) używany przez lightbox `/galeria/<slug>`, link „Pobierz oryginał" pod
+> podglądem (1:1 plik z uploadu), limit body uploadów podniesiony do 25 MB
+> (było ~1 MB default Next, blokowało wgrywanie zdjęć z telefonów). Wcześniej
+> lightbox dostawał ten sam 640 px co kafelek → twarze pikselowały się przy
+> zoomie, dokładnie jak na FB. Backfill istniejących plików:
+> `apps/cms/scripts/regenerate-media-sizes.ts` (idempotent, `--dry-run`).
 > Hosting bez zmian: serwer domowy `wkswierzbice.tmielczarek.pl`, Docker
 > (`wks-web` SSR + `wks-cms`), SQLite z migracjami w prod, persist przez
 > mount katalogu `./persist`. Instrukcja: [`docs/DEPLOY-HOME-SERVER.md`](DEPLOY-HOME-SERVER.md).

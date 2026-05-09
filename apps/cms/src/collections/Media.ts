@@ -16,13 +16,15 @@ const uploadsDir =
  * Storage: local FS (default Payload — `apps/cms/media/`). W produkcji to samo
  * na VPS (Etap 17).
  *
- * Image sizes (Wariant A — decyzja Tomka 2026-04-26):
- *   - thumbnail: 320 px szer., zachowuje proporcje
- *   - card:      640 px szer., zachowuje proporcje (główne użycie: NewsCard, lista)
+ * Image sizes:
+ *   - thumbnail: 320 px szer., zachowuje proporcje (kafelek listy / picker)
+ *   - card:      640 px szer., zachowuje proporcje (NewsCard, grid galerii)
  *   - hero:      1200×630 (ratio 1.91:1, og:image friendly), crop center (single news header)
+ *   - large:     1920 px szer., zachowuje proporcje (lightbox galerii — decyzja 2026-05-09)
  *
- * Wszystkie warianty generowane w WebP (lepsza kompresja). Oryginał zachowany w
- * formacie wgranym (JPEG/PNG/WebP/GIF) — edytor widzi w panelu to, co wgrał.
+ * Wszystkie warianty generowane w WebP. Oryginał zachowany w formacie wgranym
+ * (JPEG/PNG/WebP/GIF) — edytor widzi w panelu to, co wgrał, a frontend galerii
+ * udostępnia link „Pobierz oryginał" (1:1 plik z telefonu) pod lightboxem.
  *
  * Pole `alt` jest **opcjonalne** — bo ten sam plik (np. `herb-wks.png`) jest
  * używany przez wiele newsów z różnymi alt-textami; alt per-context trzymamy w
@@ -79,6 +81,16 @@ export const Media: CollectionConfig = {
         height: 630,
         position: 'center',
         formatOptions: { format: 'webp', options: { quality: 85 } },
+      },
+      {
+        name: 'large',
+        width: 1920,
+        height: undefined,
+        // withoutEnlargement: true — Sharp domyślnie enlarguje przy resize.
+        // Tu wymuszamy: jeśli oryginał < 1920 px, nie skalujemy w górę
+        // (uniknie sztucznego rozmycia).
+        withoutEnlargement: true,
+        formatOptions: { format: 'webp', options: { quality: 90 } },
       },
     ],
   },

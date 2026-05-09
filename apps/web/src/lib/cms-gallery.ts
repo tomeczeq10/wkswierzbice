@@ -20,7 +20,12 @@ const FETCH_TIMEOUT_MS = 2500
 // ── Typy eksportowane ──────────────────────────────────────────────────────────
 
 export type GalleryItem = {
+  /** Mała wersja do grid'u (card 640 px) — szybkie ładowanie kafelków. */
   src: string
+  /** Duża wersja do lightboxa (large 1920 px) — twarze ostre przy zoomie. */
+  fullSrc: string
+  /** Oryginał z uploadu (1:1, np. 4 MB JPG z telefonu) — link „Pobierz oryginał". */
+  originalSrc: string
   alt: string
   caption?: string
 }
@@ -71,11 +76,36 @@ function pickGallerySrc(media: Media | number | null | undefined): string | unde
   return absolutizeCmsUrl(url)
 }
 
+/**
+ * Duża wersja do lightboxa: `large` (1920 px WebP q90) → fallback do oryginału,
+ * aż na końcu do `card`. Dla starych zdjęć (sprzed dodania `large` size) w
+ * praktyce zwróci oryginał, dopóki backfill nie wygeneruje wariantu.
+ */
+function pickGalleryFullSrc(media: Media | number | null | undefined): string | undefined {
+  if (!media || typeof media === 'number') return undefined
+  const url =
+    (media.sizes as Record<string, { url?: string | null } | undefined> | undefined)?.large?.url ??
+    media.url ??
+    media.sizes?.card?.url ??
+    null
+  return absolutizeCmsUrl(url)
+}
+
+function pickGalleryOriginalSrc(media: Media | number | null | undefined): string | undefined {
+  if (!media || typeof media === 'number') return undefined
+  return absolutizeCmsUrl(media.url ?? null)
+}
+
 function adaptCmsGallery(doc: GalleryDoc): GalleryItem | null {
-  const src = pickGallerySrc(doc.image as Media | number | null | undefined)
+  const media = doc.image as Media | number | null | undefined
+  const src = pickGallerySrc(media)
   if (!src) return null
+  const fullSrc = pickGalleryFullSrc(media) ?? src
+  const originalSrc = pickGalleryOriginalSrc(media) ?? fullSrc
   return {
     src,
+    fullSrc,
+    originalSrc,
     alt: doc.alt,
     caption: doc.caption ?? undefined,
   }
