@@ -51,11 +51,31 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
    doda pole `sizes.large` (frontend nie potrzebuje, bo używa cast'u, ale
    warto regenerować dla porządku).
 
+### Fixed (hotfix tej samej sesji)
+
+- **Migracja SQLite** `20260509_120000_media_sizes_large` — pierwszy deploy
+  z `large` size złamał prod (CMS sypał `LibsqlError: no such column:
+  sizes_large_url` na każdym `SELECT` z tabeli `media`, wszystkie endpointy
+  CMS zwracały 500, frontend fall-backował do site.ts). Payload generuje
+  per image size 6 kolumn (url/width/height/mime_type/filesize/filename),
+  w prod auto-push jest wyłączony, działa tylko `prodMigrations`. Migracja
+  dodaje brakujące kolumny przez `ALTER TABLE … ADD COLUMN` (bezpieczne,
+  NULL allowed) + index na `sizes_large_filename`.
+  - **Lekcja na przyszłość**: każde dodanie/usunięcie image size w `Media.ts`
+    wymaga odpowiedniej migracji prod. Lokalnie dev `push: true` to ukrywa.
+
 ### Open
 
 - **HEIC z iPhone'a** świadomie pominięty — iOS w 95% przypadków konwertuje na
   JPEG przy upload do web. Dodać dopiero, gdy realnie zgłoszone (wymaga libheif
   w obrazie Docker prod, ryzyko deploy).
+- **Backfill istniejących zdjęć** nie został wykonany na prod — standalone
+  Docker bundle nie zawiera `apps/cms/scripts/`, więc skrypt
+  `regenerate-media-sizes.ts` nie da się uruchomić w kontenerze. Dla
+  istniejących 46 plików w `/data/wks/media/` lightbox pokazuje **oryginał**
+  z uploadu (działa fallback w `pickGalleryFullSrc` — pełna jakość, ale
+  wolniejsze ładowanie). Nowe uploady automatycznie dostają `large`. Backfill
+  można dodać później jako Payload endpoint chroniony permission check.
 
 ---
 
