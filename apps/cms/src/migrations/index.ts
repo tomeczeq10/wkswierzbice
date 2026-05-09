@@ -14,6 +14,7 @@ import * as migration_20260502_140000_matches_source from './20260502_140000_mat
 import * as migration_20260505_gallery_parent from './20260505_gallery_parent';
 import * as migration_20260506_220000_roles_rbac from './20260506_220000_roles_rbac';
 import * as migration_20260507_055000_roles_locked_docs_fix from './20260507_055000_roles_locked_docs_fix';
+import * as migration_20260509_120000_media_sizes_large from './20260509_120000_media_sizes_large';
 
 export const migrations = [
   {
@@ -95,5 +96,10 @@ export const migrations = [
     up: migration_20260507_055000_roles_locked_docs_fix.up,
     down: migration_20260507_055000_roles_locked_docs_fix.down,
     name: '20260507_055000_roles_locked_docs_fix',
+  },
+  {
+    up: migration_20260509_120000_media_sizes_large.up,
+    down: migration_20260509_120000_media_sizes_large.down,
+    name: '20260509_120000_media_sizes_large',
   },
 ];
