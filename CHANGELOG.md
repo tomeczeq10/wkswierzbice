@@ -13,6 +13,31 @@ Aktualny snapshot stanu projektu: [`docs/STATE.md`](docs/STATE.md).
 
 ---
 
+## 2026-05-12 — Galeria: filtr po dacie + sponsorzy bez efektu szarości
+
+### Added
+
+- **Filtr galerii po dacie** na `/galeria` ([`galeria.astro`](apps/web/src/pages/galeria.astro)):
+  dwa kaskadowe selecty Rok → Miesiąc + przycisk „Wyczyść". Pole „Miesiąc"
+  aktywne dopiero po wybraniu roku i listuje tylko te miesiące, w których
+  realnie są albumy (`eventDate`). Filtruje karty albumów client-side
+  (`data-year` / `data-month` na każdej karcie), bez przeładowania. UX dla
+  rodzica „szukam zdjęć z meczu w kwietniu". Komunikat „Brak albumów dla
+  wybranego okresu" gdy filtr nic nie zwraca.
+
+### Changed
+
+- **Sponsorzy: logo zawsze w kolorze** ([`SponsorGrid.astro`](apps/web/src/components/SponsorGrid.astro),
+  [`sponsorzy.astro`](apps/web/src/pages/sponsorzy.astro)). Usunięty efekt
+  `grayscale group-hover:grayscale-0` — wcześniej logo było szare i kolorowało
+  się dopiero po najechaniu. Hover na ramce (`hover:border-brand-primary`)
+  zachowany.
+- **Sponsorzy bez `website`** renderują się jako `<div>` zamiast `<a>` —
+  kafelek nieklikalny, brak `target="_blank"`, brak pustego przekierowania.
+  Klikalność wraca automatycznie po wpisaniu URL w panelu (`Sponsors.website`).
+
+---
+
 ## 2026-05-09 — Galeria klubowa: jakość zdjęć w lightboxie (powód odejścia od FB)
 
 ### Added

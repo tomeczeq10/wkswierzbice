@@ -19,21 +19,33 @@ const items = variant === "compact" ? all.slice(0, 6) : all;
   ]}
 >
   {
-    items.map((s) => (
-      <a
-        href={s.url}
-        target="_blank"
-        rel="noopener"
-        title={s.name}
-        class="group flex items-center justify-center bg-white rounded-lg border border-slate-200 p-4 h-24 hover:border-brand-primary transition-colors"
-      >
+    items.map((s) => {
+      const hasUrl = Boolean(s.url && s.url.trim());
+      const tileClass =
+        "flex items-center justify-center bg-white rounded-lg border border-slate-200 p-4 h-24";
+      const imgEl = (
         <img
           src={s.logo}
           alt={s.name}
           loading="lazy"
-          class="max-h-16 max-w-full object-contain grayscale group-hover:grayscale-0 transition duration-300"
+          class="max-h-16 max-w-full object-contain"
         />
-      </a>
-    ))
+      );
+      return hasUrl ? (
+        <a
+          href={s.url}
+          target="_blank"
+          rel="noopener"
+          title={s.name}
+          class={`${tileClass} hover:border-brand-primary transition-colors`}
+        >
+          {imgEl}
+        </a>
+      ) : (
+        <div title={s.name} class={tileClass}>
+          {imgEl}
+        </div>
+      );
+    })
   }
 </div>
