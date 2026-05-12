@@ -10,10 +10,21 @@ import MobileDashboard from './MobileDashboard'
 // (Najbliższy mecz, Ostatni wynik, Tabela) zostają widoczne dla każdej roli.
 
 type RoleObj = { name?: string; permissions?: any } | null
-const useRole = (): RoleObj => {
+
+// Hook zwraca rolę + flagę userLoaded. `user === undefined` oznacza
+// że Payload jeszcze nie zakończył initial fetchowania zalogowanego usera.
+// Bez tej flagi dashboard renderuje się jako "niezalogowany" w pierwszym
+// momencie (wszystkie canRead/canCreate zwracają false → sekcje znikają),
+// co user widzi jako "zaraz po loginie dashboard jest pusty, dopiero po
+// refresh się pojawia treść".
+const useRoleState = (): { role: RoleObj; userLoaded: boolean } => {
   const { user } = useAuth()
+  const userLoaded = user !== undefined
   const r: any = (user as any)?.role
-  return r && typeof r === 'object' ? r : null
+  return {
+    role: r && typeof r === 'object' ? r : null,
+    userLoaded,
+  }
 }
 const isAdminRole = (role: RoleObj): boolean => role?.name === 'Administrator'
 
@@ -787,7 +798,7 @@ type LiveSnapshot = {
 
 function DashboardDesktop() {
   // ── RBAC ──
-  const role = useRole()
+  const { role, userLoaded } = useRoleState()
   const admin = isAdminRole(role)
   // Implicite: liveStudio = matches.read + liveArchives.read (lustrzane do
   // hasPermission.LIVE_STUDIO_IMPLIES — operator live musi widzieć terminarz
@@ -882,6 +893,28 @@ function DashboardDesktop() {
       setSyncing(false)
     }
   }, [syncing])
+
+  // ── Pre-auth guard: dopóki Payload nie zwróci użytkownika, nie filtrujemy.
+  // Bez tego user widziałby pusty dashboard (sekcje filtrowane permission-em
+  // znikają przy `userLoaded === false`) aż do pierwszego refresha.
+  if (!userLoaded) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: T.subtle,
+          fontSize: 13,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          background: T.bg,
+        }}
+      >
+        Ładowanie…
+      </div>
+    )
+  }
 
   // Derived season data
   const sd         = season?.data
