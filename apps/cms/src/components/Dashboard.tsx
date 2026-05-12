@@ -11,19 +11,51 @@ import MobileDashboard from './MobileDashboard'
 
 type RoleObj = { name?: string; permissions?: any } | null
 
-// Hook zwraca rolę + flagę userLoaded. `user === undefined` oznacza
-// że Payload jeszcze nie zakończył initial fetchowania zalogowanego usera.
-// Bez tej flagi dashboard renderuje się jako "niezalogowany" w pierwszym
-// momencie (wszystkie canRead/canCreate zwracają false → sekcje znikają),
-// co user widzi jako "zaraz po loginie dashboard jest pusty, dopiero po
-// refresh się pojawia treść".
+// Hook zwraca rolę + flagę userLoaded. Problem przy pierwszym zalogowaniu:
+// `useAuth().user.role` może wrócić jako ID (number) zamiast pełnego obiektu
+// z permissions, niezależnie od `auth.depth: 1` w Users collection (Payload UI
+// cache'uje user z innym depth). Wtedy `role.permissions` to undefined →
+// wszystkie sekcje filtrowane permission-em znikają.
+//
+// Rozwiązanie: oprócz polegania na `useAuth()`, robimy własny `GET /api/users/me?depth=1`
+// po mount i tam dostajemy rolę z pełnymi permissions. Cache w state komponentu.
 const useRoleState = (): { role: RoleObj; userLoaded: boolean } => {
   const { user } = useAuth()
-  const userLoaded = user !== undefined
-  const r: any = (user as any)?.role
+  const [fetchedRole, setFetchedRole] = useState<RoleObj>(null)
+  const [roleLoaded, setRoleLoaded] = useState(false)
+
+  useEffect(() => {
+    // Jeśli user już ma populated rolę (object z permissions), użyjemy jej.
+    const r: any = (user as any)?.role
+    if (r && typeof r === 'object' && r.permissions) {
+      setFetchedRole(r)
+      setRoleLoaded(true)
+      return
+    }
+    // Inaczej: zalogowany ale brak role.permissions → fetchujemy ręcznie.
+    if (user) {
+      let cancelled = false
+      fetch('/api/users/me?depth=1', { credentials: 'include' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (cancelled) return
+          const role = data?.user?.role
+          if (role && typeof role === 'object') setFetchedRole(role)
+          setRoleLoaded(true)
+        })
+        .catch(() => {
+          if (!cancelled) setRoleLoaded(true)
+        })
+      return () => {
+        cancelled = true
+      }
+    }
+    // user === null lub undefined — czekamy.
+  }, [user])
+
   return {
-    role: r && typeof r === 'object' ? r : null,
-    userLoaded,
+    role: fetchedRole,
+    userLoaded: user !== undefined && roleLoaded,
   }
 }
 const isAdminRole = (role: RoleObj): boolean => role?.name === 'Administrator'
